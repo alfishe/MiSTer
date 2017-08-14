@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 #include <cstdarg>
+#include <string.h>
+#include <errno.h>
 
 // Field definitions
 char logger::buffer[MAX_LOG_MESSAGE_LENGTH];
@@ -65,4 +67,13 @@ void logger::trace(const char* format, ...)
 	snprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
 
 	fprintf(stderr, buffer);
+}
+
+
+
+char* logger::geterror()
+{
+	char* result = strerror(errno);
+
+	return result;
 }

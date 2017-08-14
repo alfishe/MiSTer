@@ -4,7 +4,9 @@
 #define MAX_LOG_MESSAGE_LENGTH 1024
 
 // Shortcuts
-#define LOGERROR
+#define LOGINFO(...) logger::info(__VA_ARGS__)
+#define LOGWARN(...) logger::warning(__VA_ARGS__)
+#define LOGERROR(...) logger::error(__VA_ARGS__)
 
 class logger
 {
@@ -21,6 +23,9 @@ public:
 
 	static void debug(const char* format, ...);
 	static void trace(const char* format, ...);
+
+	// System errors processing helpers
+	static char* geterror();
 
 private:
 	/// Static class, disallow objects creation

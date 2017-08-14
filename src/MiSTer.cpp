@@ -11,7 +11,8 @@ using namespace std;
 #endif
 
 
-int main() {
+int main()
+{
 	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
 	return 0;
 }

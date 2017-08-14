@@ -29,6 +29,7 @@ public:
 
 	void core_reset(int reset);
 	int get_core_id();
+
 	void app_restart();
 	char* get_app_name();
 

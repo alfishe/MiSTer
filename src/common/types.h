@@ -14,6 +14,10 @@ typedef struct
 	__off64_t size;
 	__off64_t offset;
 	char      name[NAME_MAX + 1];
+
+	// New attributes
+	bool		cacheable;
+	bool		readonly;
 }  fileDescriptor;
 
 

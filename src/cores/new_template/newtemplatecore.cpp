@@ -1,18 +1,22 @@
-/*
- * newtemplatecore.cpp
- *
- *  Created on: Aug 12, 2017
- *      Author: dev
- */
-
 #include "newtemplatecore.h"
 
-newtemplatecore::newtemplatecore() {
-	// TODO Auto-generated constructor stub
-
+newtemplatecore::newtemplatecore()
+{
 }
 
-newtemplatecore::~newtemplatecore() {
-	// TODO Auto-generated destructor stub
+newtemplatecore::~newtemplatecore()
+{
+}
+
+bool newtemplatecore::init()
+{
+	bool result = false;
+
+	return result;
+}
+
+void newtemplatecore::finalize()
+{
+
 }
 
