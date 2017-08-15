@@ -11,13 +11,14 @@ class filemanager
 public:
 	// Files/folders information
 	static bool isFolderExists(char *path);
-	static bool isFileExists(char *path);
+	static bool isFileExist(char *path);
 	static bool isFileWritable(char *path);
 	static uint64_t getFileSize(char *path);
 	static uint64_t getFileSize(int fd);
 	static uint64_t getDiskFreeSpace();
 
 	// Raw POSIX oriented file methods
+	static void flush();
 	static int openFileReadOnly(char *path);
 	static bool fileSeek(int fd, __off64_t offset, int origin);
 
@@ -29,7 +30,7 @@ public:
 
 
 	// File operations
-	static uint8_t* readFileIntoMemory(char *filename, int maxSize);
+	static uint8_t* readFileIntoMemory(char *filename, void *pBuffer, int nSize);
 	static bool readFileIntoMemory(char *filename, uint8_t* buffer, int bufferSize);
 
 

@@ -24,7 +24,7 @@ bool filemanager::isFolderExists(char *path)
 	return result;
 }
 
-bool filemanager::isFileExists(char *path)
+bool filemanager::isFileExist(char *path)
 {
 	bool result = false;
 
@@ -100,6 +100,14 @@ uint64_t filemanager::getDiskFreeSpace()
 	return result;
 }
 
+/**
+ * Flush all unsaved FS information
+ */
+void filemanager::flush()
+{
+	sync();
+}
+
 /*
  * file: file descriptor
  * offset: Offset value in bytes
@@ -161,22 +169,17 @@ bool filemanager::fileSeek(int fd, __off64_t offset, int origin)
 }
 
 
-uint8_t* filemanager::readFileIntoMemory(char *filename, int maxSize)
+uint8_t* filemanager::readFileIntoMemory(char *filename, void *pBuffer, int nSize)
 {
 	uint8_t* result = nullptr;
 
 	// Initial validation
-	if (filename == nullptr)
+	if (filename == nullptr || pBuffer == nullptr)
 	{
-		// No filename provided
 		return result;
 	}
 
-	if (maxSize > MAX_MEMORY_BUFFER)
-	{
-		// Memory block can be too large. Disallow operation
-		return result;
-	}
+
 
 
 	return result;

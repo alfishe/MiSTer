@@ -11,7 +11,7 @@ using namespace std;
 #endif
 
 
-int main()
+int main(int argc, char *argv[])
 {
 	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
 	return 0;
