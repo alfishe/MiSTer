@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "socfpga_base_addrs.h"
+#include "../common/consts.h"
 
 // Shortcuts to common functionality
 #define DISKLED_ON  fpga::instance().set_led(ON)
@@ -17,7 +18,7 @@ class fpga
 // Fields
 private:
 	int mem_fd = -1;
-	uint32_t *map_base = nullptr;
+	uint32_t *map_base = INVALID_ADDRESS_UINT32;
 
 	// Map SocFPGA standard address regions to readable structures
 	struct socfpga_reset_manager  *reset_regs = (socfpga_reset_manager *)((void *)SOCFPGA_RSTMGR_ADDRESS);

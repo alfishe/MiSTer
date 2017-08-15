@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "../common/consts.h"
 #include "../common/addresses.h"
 #include "socfpga_reset_manager.h"
 #include "socfpga_nic301.h"
@@ -31,10 +32,10 @@ fpga::fpga()
 
 fpga::~fpga()
 {
-	if (map_base != -1 && mem_fd != -1)
+	if (map_base != INVALID_ADDRESS_UINT32 && mem_fd != -1)
 	{
 		munmap(map_base, FPGA_REG_SIZE);
-		map_base = -1;
+		map_base = INVALID_ADDRESS_UINT32;
 	}
 
 	if (mem_fd != -1)
@@ -52,7 +53,7 @@ bool fpga::init()
 	if ((mem_fd = open("/dev/mem", O_RDWR | O_SYNC)) != -1)
 	{
 		map_base = (uint32_t *)mmap(nullptr, FPGA_REG_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, FPGA_REG_BASE);
-		if (map_base != (void *)-1)
+		if (map_base != (uint32_t *)INVALID_ADDRESS)
 		{
 			// Info logging
 			LOGINFO("FPGA address space mapped into the process successfully");
