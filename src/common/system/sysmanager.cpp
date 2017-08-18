@@ -8,6 +8,9 @@
 #include <limits.h>
 #include "../../fpga/fpga.h"
 
+/*
+ * Get application executable name (from Linux processes list)
+ */
 char* sysmanager::getApplicationName()
 {
 	static char dest[PATH_MAX];
@@ -20,6 +23,9 @@ char* sysmanager::getApplicationName()
 	return dest;
 }
 
+/*
+ * Fully restart application
+ */
 void sysmanager::restartApplication()
 {
 	// Flush all pending changes to disk(s)

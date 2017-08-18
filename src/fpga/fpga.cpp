@@ -14,6 +14,7 @@
 #include "../common/consts.h"
 #include "../common/addresses.h"
 #include "socfpga_reset_manager.h"
+#include "socfpga_fpga_manager.h"
 #include "socfpga_nic301.h"
 #include "socfpga_system_manager.h"
 #include "../common/file/filemanager.h"
@@ -88,10 +89,10 @@ void fpga::reboot(bool cold)
 void fpga::core_reset(bool reset)
 {
 	// Read state for bits 30 and 31 (buttons
-	uint32_t gpo = fpga_gpo_read() & ~0xC0000000;
+	uint32_t gpo = gpo_read() & ~0xC0000000;
 
 	// Set bit 30 if reset is requested, and bit 31 if not
-	fpga_gpo_write(reset ? gpo | 0x40000000 : gpo | 0x80000000);
+	gpo_write(reset ? gpo | 0x40000000 : gpo | 0x80000000);
 }
 
 // FPGA load
@@ -175,6 +176,56 @@ bool fpga::load_rbf(const char *name)
 	return result;
 }
 
+bool fpga::program(const void* rbf_data, uint32_t rbf_size)
+{
+	bool result = false;
+
+	// Validation checks
+	if (rbf_data == nullptr || rbf_size == 0)
+	{
+		LOGERROR("FPGA: Unable to program with empty data.\n");
+		return result;
+	}
+
+	if ((uint32_t)rbf_data & 0x3)
+	{
+		LOGERROR("FPGA: Unaligned data, needs to be aligned to 4-bytes (32-bit) boundary.\n");
+		return result;
+	}
+
+	// References:
+	// Altera Cyclone C Hard Processor System Technical Reference Manual:
+	//		Booting and Configuration - http://www.altera.com/literature/hb/cyclone-v/cv_5400A.pdf
+	//		FPGA Manager (Section 4) - http://www.altera.com/literature/hb/cyclone-v/cv_54013.pdf
+	//		Figure 7-1: Configuration Sequence for Cyclone V Devices - http://www.altera.com/literature/hb/cyclone-v/cv_52007.pdf
+
+	// Step 1: Initialize FPGA manager
+	result = fpgamanager_init_programming();
+
+	if (result)
+	{
+		// Step 2: Write RBF data to FPGA manager
+		fpgamanager_program_write(rbf_data, rbf_size);
+
+		// Step 3: Verify FPGA configured successfully
+		result = fpgamanager_program_poll_cd();
+
+		if (result)
+		{
+			// Step 4: Verify FPGA started initialization from RBF data
+			result = fpgamanager_program_poll_initphase();
+
+			if (result)
+			{
+				// Step 5: Verify FPGA returned back to user mode with new bitstream
+				result = fpgamgr_program_poll_usermode();
+			}
+		}
+	}
+
+	return result;
+}
+
 void fpga::do_bridge(bool enable)
 {
 	if (enable)
@@ -196,17 +247,17 @@ void fpga::do_bridge(bool enable)
 // Indicators
 void fpga::set_led(bool on)
 {
-	uint32_t gpo = fpga_gpo_read();
-	fpga_gpo_write(on ? gpo | 0x20000000 : gpo & ~0x20000000);
+	uint32_t gpo = gpo_read();
+	gpo_write(on ? gpo | 0x20000000 : gpo & ~0x20000000);
 }
 
 int fpga::get_buttons_state()
 {
 	int result = 0;
 
-	fpga_gpo_write(fpga_gpo_read() | 0x80000000);
+	gpo_write(gpo_read() | 0x80000000);
 
-	int gpi = fpga_gpi_read();
+	int gpi = gpi_read();
 
 
 	if (gpi >= 0)
@@ -224,24 +275,26 @@ int fpga::get_buttons_state()
 
 // Helper methods
 
-void fpga::fpga_gpo_write(uint32_t value)
+void fpga::gpo_write(uint32_t value)
 {
 	// Store new value in caching variable
 	this->gpo_caching_copy = value;
 
 	// Write value into memory-mapped register
-	writel(value, (void*)(SOCFPGA_MGR_ADDRESS + 0x10));
+	writel(value, &fpgamgr_regs->gpo);
 }
 
-uint32_t fpga::fpga_gpo_read()
+uint32_t fpga::gpo_read()
 {
 	// Return cached copy of gpo register to save time
 	return this->gpo_caching_copy; //readl((void*)(SOCFPGA_MGR_ADDRESS + 0x10));
 }
 
-uint32_t fpga::fpga_gpi_read()
+uint32_t fpga::gpi_read()
 {
-	return readl((void*)(SOCFPGA_MGR_ADDRESS + 0x14));
+	uint32_t result = readl(&fpgamgr_regs->gpi);
+
+	return result;
 }
 
 void fpga::fpga_core_write(uint32_t offset, uint32_t value)
@@ -260,3 +313,309 @@ uint32_t fpga::fpga_core_read(uint32_t offset)
 	return result;
 }
 
+// FPGA manager helpers
+
+/*
+ * Get the FPGA mode (stat -> [2:0] mode)
+ */
+uint32_t fpga::fpgamanager_get_mode()
+{
+	uint32_t val = readl(&fpgamgr_regs->stat);
+	val &= FPGAMGRREGS_STAT_MODE_MASK;
+
+	return val;
+}
+
+/*
+ * Set CD (Clock Divisor) ratio
+ */
+void fpga::fpgamanager_set_cd_ratio(uint32_t ratio)
+{
+	clrsetbits_le32(
+		&fpgamgr_regs->ctrl,
+		0x3 << FPGAMGRREGS_CTRL_CDRATIO_LSB,
+		(ratio & 0x3) << FPGAMGRREGS_CTRL_CDRATIO_LSB);
+}
+
+bool fpga::fpgamanager_dclkcnt_set(uint32_t cnt)
+{
+	bool result = false;
+	uint32_t i;
+
+	// Clear done bit if set
+	if (readl(&fpgamgr_regs->dclkstat))
+		writel(FPGAMGRREGS_DCLKSTAT_DCNTDONE, &fpgamgr_regs->dclkstat);
+
+	// Request DCLK pulses
+	writel(cnt, &fpgamgr_regs->dclkcnt);
+
+	// Wait till the dclkcnt set is done
+	for (i = 0; i < FPGA_TIMEOUT_COUNT; i++)
+	{
+		if (!readl(&fpgamgr_regs->dclkstat))
+			continue;
+
+		writel(FPGAMGRREGS_DCLKSTAT_DCNTDONE, &fpgamgr_regs->dclkstat);
+		result = true;
+		break;
+	}
+
+	return result;
+}
+
+bool fpga::fpgamanager_init_programming()
+{
+	bool result = false;
+
+	uint32_t msel;
+	uint32_t i;
+
+	// Get the MSEL bits
+	msel = readl(&fpgamgr_regs->stat);
+	msel &= FPGAMGRREGS_STAT_MSEL_MASK;
+	msel >>= FPGAMGRREGS_STAT_MSEL_LSB;
+
+	if (msel & 0x8) // MSEL[3] = 1
+	{
+		// Cfg width = 32 bit
+		setbits_le32(&fpgamgr_regs->ctrl, FPGAMGRREGS_CTRL_CFGWDTH_MASK);
+
+		// Set clock ratio
+		uint8_t masked_bits = msel & 0x03;
+		switch (masked_bits)
+		{
+			case 0x00:
+				// MSEL[1:0] = 0, CD Ratio = 1
+				fpgamanager_set_cd_ratio(CDRATIO_x1);
+				break;
+			case 0x01:
+				// MSEL[1:0] = 1, CD Ratio = 4
+				fpgamanager_set_cd_ratio(CDRATIO_x4);
+				break;
+			case 0x02:
+				// MSEL[1:0] = 2, CD Ratio = 8
+				fpgamanager_set_cd_ratio(CDRATIO_x8);
+				break;
+		}
+	}
+	else  // MSEL[3] = 0
+	{
+		// Cfg width = 16 bit
+		clrbits_le32(&fpgamgr_regs->ctrl, FPGAMGRREGS_CTRL_CFGWDTH_MASK);
+
+		// Set clock ratio
+		uint8_t masked_bits = msel & 0x03;
+		switch (masked_bits)
+		{
+			case 0x00:
+				// MSEL[1:0] = 0, CD Ratio = 1
+				fpgamanager_set_cd_ratio(CDRATIO_x1);
+				break;
+			case 0x01:
+				// MSEL[1:0] = 1, CD Ratio = 2
+				fpgamanager_set_cd_ratio(CDRATIO_x2);
+				break;
+			case 0x02:
+				// MSEL[1:0] = 2, CD Ratio = 4
+				fpgamanager_set_cd_ratio(CDRATIO_x4);
+				break;
+		}
+	}
+
+	// Enable FPGA Manager configuration
+	clrbits_le32(&fpgamgr_regs->ctrl, FPGAMGRREGS_CTRL_NCE_MASK);
+
+	// Enable FPGA Manager drive over configuration line
+	setbits_le32(&fpgamgr_regs->ctrl, FPGAMGRREGS_CTRL_EN_MASK);
+
+	// Put FPGA into reset phase
+	setbits_le32(&fpgamgr_regs->ctrl, FPGAMGRREGS_CTRL_NCONFIGPULL_MASK);
+
+	// Wait when FPGA enters reset phase (with timeout)
+	for (i = 0; i < FPGA_TIMEOUT_COUNT; i++)
+	{
+		if (fpgamanager_get_mode() == FPGAMGRREGS_STAT_MODE_RESETPHASE)
+			break;
+	}
+
+	// If successfully entered into reset mode
+	if (fpgamanager_get_mode() == FPGAMGRREGS_STAT_MODE_RESETPHASE)
+	{
+		// Release FPGA from reset phase, entering configuration mode
+		clrbits_le32(&fpgamgr_regs->ctrl, FPGAMGRREGS_CTRL_NCONFIGPULL_MASK);
+
+		// Wait until FPGA enters configuration mode (with timeout)
+		for (i = 0; i < FPGA_TIMEOUT_COUNT; i++)
+		{
+			if (fpgamanager_get_mode() == FPGAMGRREGS_STAT_MODE_CFGPHASE)
+				break;
+		}
+
+		if (fpgamanager_get_mode() == FPGAMGRREGS_STAT_MODE_CFGPHASE)
+		{
+			// Clear all interrupts in CB Monitor
+			writel(0x0FFF, &fpgamgr_regs->gpio_porta_eoi);
+
+			// Enable AXI configuration
+			setbits_le32(&fpgamgr_regs->ctrl, FPGAMGRREGS_CTRL_AXICFGEN_MASK);
+
+			result = true;
+		}
+		else
+		{
+			LOGERROR("FPGA: Could not enter into configuration mode\n");
+		}
+	}
+	else
+	{
+		LOGERROR("FPGA: Could not enter the reset mode\n");
+	}
+
+	return result;
+}
+
+/*
+ * Write the RBF data to FPGA Manager
+ */
+void fpga::fpgamanager_program_write(const void *rbf_data, uint32_t rbf_size)
+{
+	uint32_t src = (uint32_t)rbf_data;
+	uint32_t dst = (uint32_t)MAP_ADDR(SOCFPGA_FPGAMGRDATA_ADDRESS);
+
+	// Number of loops for 32-byte long copy operations
+	uint32_t loops32 = rbf_size / 32;
+
+	// Number of loops for 4-byte long copy cycles + trailing bytes
+	uint32_t loops4 = DIV_ROUND_UP(rbf_size % 32, 4);
+
+	// Write .rbf data to FPGA Manager address block in two steps:
+	// First: fast copy using 32-byte blocks
+	// Second: 4-byte blocks copy for the rest of content
+	// Node, it's highly undesirable to use r7 in GCC embedded asm. that's why u-boot-derived code modified
+	__asm volatile
+	(
+		"1:	ldmia %0!,{r0-r6}   \n" // Loop 1
+		"	stmia %1!,{r0-r6}   \n"
+		"	sub	  %1, #32       \n"
+		"	subs  %2, #1        \n"
+ 		"	bne   1b            \n" // End of Loop 1
+		"	cmp   %3, #0        \n"
+		"	beq   3f            \n"
+		"2:	ldr	  %2, [%0], #4  \n" // Loop 2
+		"	str   %2, [%1]      \n"
+		"	subs  %3, #1        \n"
+		"	bne   2b            \n" // End of Loop 2
+		"3:	nop                 \n"
+		: "+r"(src), "+r"(dst), "+r"(loops32), "+r"(loops4) :
+		: "r0", "r1", "r2", "r3", "r4", "r5", "r6", "cc"
+	);
+}
+
+/*
+ * Ensure the FPGA finished configuration
+ */
+bool fpga::fpgamanager_program_poll_cd()
+{
+	bool result = false;
+
+	const uint32_t success_mask = FPGAMGRREGS_MON_GPIO_EXT_PORTA_CD;
+	const uint32_t error_mask = FPGAMGRREGS_MON_GPIO_EXT_PORTA_NS;
+
+	uint32_t reg;
+	uint32_t success;
+	uint32_t error;
+	uint32_t i;
+
+	// Wait until FPGA configuration completes (with timeout)
+	for (i = 0; i < FPGA_TIMEOUT_COUNT; i++)
+	{
+		reg = readl(&fpgamgr_regs->gpio_ext_porta);
+		success = reg & success_mask;
+		error = reg & error_mask;
+
+		if (success)
+		{
+			// CONF_DONE released high - means success
+			result = true;
+			break;
+		}
+
+		if (!error)
+		{
+			// nSTATUS pulled low - Configuration error happened
+			LOGERROR("FPGA: error during configuring. nSTATUS set to 0");
+		}
+	}
+
+	if (result && i < FPGA_TIMEOUT_COUNT)
+	{
+		// FPGA reconfiguration fit into time slot. Everything works as expected.
+
+		// Disable AXI configuration
+		clrbits_le32(&fpgamgr_regs->ctrl, FPGAMGRREGS_CTRL_AXICFGEN_MASK);
+
+		result = true;
+	}
+	else
+	{
+		printf("FPGA: Timeout waiting for programming and reconfiguration finished\n");
+	}
+
+	return result;
+}
+
+bool fpga::fpgamanager_program_poll_initphase()
+{
+	bool result = false;
+
+	uint32_t reg;
+
+	// Additional clocks for the CB to enter initialization phase
+	fpgamanager_dclkcnt_set(0x4);
+
+	//  Wait until FPGA enters init phase or user mode
+	for (uint32_t i = 0; i < FPGA_TIMEOUT_COUNT; i++)
+	{
+		reg = fpgamanager_get_mode();
+
+		if (reg == FPGAMGRREGS_STAT_MODE_INITPHASE || reg == FPGAMGRREGS_STAT_MODE_USERMODE)
+		{
+			result = true;
+			break;
+		}
+	}
+
+	return result;
+}
+
+/*
+ * Ensure the FPGA entered user mode
+ */
+bool fpga::fpgamgr_program_poll_usermode()
+{
+	bool result;
+
+	// Additional clocks for the CB to exit initialization phase
+	fpgamanager_dclkcnt_set(0x5000);
+
+
+	// Wait until FPGA enters user mode (with timeout)
+	for (uint32_t i = 0; i < FPGA_TIMEOUT_COUNT; i++)
+	{
+		if (fpgamanager_get_mode() == FPGAMGRREGS_STAT_MODE_USERMODE)
+		{
+			result = true;
+			break;
+		}
+	}
+
+	if (!result)
+	{
+		LOGERROR("FPGA: didn't entered user mode within waiting period");
+	}
+
+	// To release FPGA Manager drive over configuration line
+	clrbits_le32(&fpgamgr_regs->ctrl, FPGAMGRREGS_CTRL_EN_MASK);
+
+	return result;
+}

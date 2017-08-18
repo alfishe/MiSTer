@@ -13,6 +13,9 @@
 #define MAP_ADDR(x) (volatile uint32_t*)(&fpga::instance().map_base[(((uint32_t)(x)) & 0xFFFFFF) >> 2])
 #define IS_REG(x) (((((uint32_t)(x))-1)>=(FPGA_REG_BASE - 1)) && ((((uint32_t)(x))-1)<(FPGA_REG_BASE + FPGA_REG_SIZE - 1)))
 
+// Generic rounding for alignment
+#define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
+
 class fpga
 {
 // Fields
@@ -64,6 +67,28 @@ public:
 		return *MAP_ADDR(reg);
 	}
 
+	static __inline void clrbits_le32(void* addr, uint32_t clear)
+		{
+			uint32_t reg = readl(addr);
+			reg &= ~clear;
+			writel(reg, addr);
+		}
+
+	static __inline void setbits_le32(void* addr, uint32_t set)
+	{
+		uint32_t reg = readl(addr);
+		reg |= set;
+		writel(reg, addr);
+	}
+
+	static __inline void clrsetbits_le32(void* addr, uint32_t clear, uint32_t set)
+	{
+		uint32_t reg = readl(addr);
+		reg &= ~clear;
+		reg |= set;
+		writel(reg, addr);
+	}
+
 	// Service methods
 	bool init();
 	void reboot(bool cold);
@@ -77,6 +102,7 @@ public:
 
 	// FPGA load methods
 	bool load_rbf(const char *name);
+	bool program(const void* rbf_data, uint32_t rbf_size);
 
 	void do_bridge(bool enable);
 
@@ -85,11 +111,21 @@ public:
 	int get_buttons_state();
 
 	// Helper methods
-	void fpga_gpo_write(uint32_t value);
-	uint32_t fpga_gpo_read();
-	uint32_t fpga_gpi_read();
+	void gpo_write(uint32_t value);
+	uint32_t gpo_read();
+	uint32_t gpi_read();
 	void fpga_core_write(uint32_t offset, uint32_t value);
 	uint32_t fpga_core_read(uint32_t offset);
+
+	// FPGA manager helpers
+	bool fpgamanager_init_programming();
+	void fpgamanager_program_write(const void *rbf_data, uint32_t rbf_size);
+	bool fpgamanager_program_poll_cd();
+	bool fpgamanager_program_poll_initphase();
+	bool fpgamgr_program_poll_usermode();
+	uint32_t fpgamanager_get_mode();
+	void fpgamanager_set_cd_ratio(uint32_t ratio);
+	bool fpgamanager_dclkcnt_set(uint32_t cnt);
 };
 
 #endif /* FPGA_FPGA_H_ */

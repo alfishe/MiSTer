@@ -10,7 +10,7 @@
 #define MAX_MEMORY_BUFFER 134217728
 
 // Timeout count for FPGA (in clock counts)
-#define FPGA_TIMEOUT_CNT	 0x1000000
+#define FPGA_TIMEOUT_COUNT	 0x1000000
 
 // Invalid address (0xFFFFFFFF or-1), casted to required pointer type
 #define INVALID_ADDRESS (void *)-1
