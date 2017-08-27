@@ -11,4 +11,9 @@
  */
 #define FPGA_REG_SIZE 0x01000000
 
+/*
+ * Max allowed offset for FPGA addresses
+ */
+#define MAX_FPGA_OFFSET 0x1FFFFF
+
 #endif /* COMMON_ADDRESSES_H_ */

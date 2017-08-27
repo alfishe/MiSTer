@@ -18,7 +18,7 @@ typedef struct
 	// New attributes
 	bool		cacheable;
 	bool		readonly;
-}  fileDescriptor;
+}  FileDescriptor;
 
 
 

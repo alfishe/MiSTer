@@ -113,7 +113,7 @@ void filemanager::flush()
  * offset: Offset value in bytes
  * origin: Origin for offset. Acceptable values: SEEK_SET, SEEK_CUR, SEEK_END. See: https://linux.die.net/man/3/lseek64
  */
-bool fileSeek(fileDescriptor *file, __off64_t offset, int origin)
+bool filemanager::fileSeek(FileDescriptor *file, __off64_t offset, int origin)
 {
 	bool result = false;
 
@@ -168,26 +168,85 @@ bool filemanager::fileSeek(int fd, __off64_t offset, int origin)
 	return result;
 }
 
-
-uint8_t* filemanager::readFileIntoMemory(char *filename, void *pBuffer, int nSize)
+bool filemanager::openFile(FileDescriptor *file, char *filepath)
 {
-	uint8_t* result = nullptr;
-
-	// Initial validation
-	if (filename == nullptr || pBuffer == nullptr)
-	{
-		return result;
-	}
-
-
-
+	bool result = false;
 
 	return result;
 }
 
-bool filemanager::readFileIntoMemory(char *filename, uint8_t* buffer, int bufferSize)
+bool filemanager::openFileReadOnly(FileDescriptor *file, char *filepath)
 {
 	bool result = false;
+
+	return result;
+}
+
+void filemanager::closeFile(FileDescriptor *file)
+{
+	if (file != nullptr && file->fd != INVALID_FILE_DESCRIPTOR)
+	{
+		close(file->fd);
+		file->fd = INVALID_FILE_DESCRIPTOR;
+	}
+}
+
+bool filemanager::readFile(FileDescriptor *file, uint8_t *buffer, uint32_t bufferSize)
+{
+	bool result = false;
+
+	if (file != nullptr && file->fd != INVALID_FILE_DESCRIPTOR && buffer != nullptr && bufferSize > 0)
+	{
+		int res = read(file->fd, buffer, bufferSize);
+
+		if (res > 0)
+		{
+			result = true;
+		}
+		else
+		{
+			LOGWARN("Unable to read file: %s into buffer with size=%ul", file->name, bufferSize);
+		}
+	}
+
+	return result;
+}
+
+bool filemanager::writeFile(FileDescriptor *file, uint8_t *buffer, uint32_t bufferSize)
+{
+	bool result = false;
+
+	if (file != nullptr && file->fd != INVALID_FILE_DESCRIPTOR && !file->readonly)
+	{
+		if (writeFile(file, buffer, bufferSize))
+		{
+			result = true;
+		}
+	}
+
+	return result;
+}
+
+bool filemanager::readFileIntoMemory(char *filepath, uint8_t* buffer, uint32_t bufferSize)
+{
+	bool result = false;
+
+	// Initial validation
+	if (filepath == nullptr || buffer == nullptr || bufferSize == 0)
+	{
+		return result;
+	}
+
+	FileDescriptor file;
+	if (openFileReadOnly(&file, filepath))
+	{
+		if (readFile(&file, buffer, bufferSize))
+		{
+			result = true;
+		}
+
+		closeFile(&file);
+	}
 
 	return result;
 }

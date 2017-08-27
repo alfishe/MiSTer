@@ -114,8 +114,8 @@ public:
 	void gpo_write(uint32_t value);
 	uint32_t gpo_read();
 	uint32_t gpi_read();
-	void fpga_core_write(uint32_t offset, uint32_t value);
-	uint32_t fpga_core_read(uint32_t offset);
+	void core_write(uint32_t offset, uint32_t value);
+	uint32_t core_read(uint32_t offset);
 
 	// FPGA manager helpers
 	bool fpgamanager_init_programming();

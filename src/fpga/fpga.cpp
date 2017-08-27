@@ -131,7 +131,7 @@ bool fpga::load_rbf(const char *name)
 			void* buffer = malloc(filesize);
 			if (buffer != nullptr)
 			{
-				if (filemanager::readFileIntoMemory(filepath, buffer, filesize))
+				if (filemanager::readFileIntoMemory(filepath, (uint8_t *)buffer, filesize))
 				{
 
 				}
@@ -297,18 +297,24 @@ uint32_t fpga::gpi_read()
 	return result;
 }
 
-void fpga::fpga_core_write(uint32_t offset, uint32_t value)
+void fpga::core_write(uint32_t offset, uint32_t value)
 {
-	if (offset <= 0x1FFFFF)
+	if (offset <= MAX_FPGA_OFFSET)
+	{
+		// Write 32-bit value using aligned offset address
 		writel(value, (void*)(SOCFPGA_LWFPGASLAVES_ADDRESS + (offset & ~3)));
+	}
 }
 
-uint32_t fpga::fpga_core_read(uint32_t offset)
+uint32_t fpga::core_read(uint32_t offset)
 {
 	uint32_t result = 0;
 
-	if (offset <= 0x1FFFFF)
+	if (offset <= MAX_FPGA_OFFSET)
+	{
+		// Read 32-bit value using aligned offset address
 		result = readl((void*)(SOCFPGA_LWFPGASLAVES_ADDRESS + (offset & ~3)));
+	}
 
 	return result;
 }
@@ -544,6 +550,7 @@ bool fpga::fpgamanager_program_poll_cd()
 		{
 			// nSTATUS pulled low - Configuration error happened
 			LOGERROR("FPGA: error during configuring. nSTATUS set to 0");
+			break;
 		}
 	}
 

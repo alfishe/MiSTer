@@ -6,6 +6,8 @@
 #include "../../common/consts.h"
 #include "../../common/types.h"
 
+#define INVALID_FILE_DESCRIPTOR -1
+
 class filemanager
 {
 public:
@@ -17,25 +19,31 @@ public:
 	static uint64_t getFileSize(int fd);
 	static uint64_t getDiskFreeSpace();
 
-	// Raw POSIX oriented file methods
+	// Raw POSIX oriented file methods (for compatibility only)
 	static void flush();
-	static int openFileReadOnly(char *path);
+	static int openFileReadOnly(char *filepath);
 	static bool fileSeek(int fd, __off64_t offset, int origin);
 
 	// Higher level fileDescriptor oriented file methods
-	static fileDescriptor getFileInfo(char *path);
-	static fileDescriptor getFileInfo(int fd);
-	static bool fileSeek(fileDescriptor *file, __off64_t offset, int origin);
+	static FileDescriptor getFileInfo(char *path);
+	static FileDescriptor getFileInfo(int fd);
+	static bool fileSeek(FileDescriptor *file, __off64_t offset, int origin);
+	static bool openFile(FileDescriptor *file, char *filepath);
+	static bool openFileReadOnly(FileDescriptor *file, char *filepath);
+	static void closeFile(FileDescriptor *file);
 
+	// Partial file operations
+	static bool readFile(FileDescriptor *file, uint8_t *buffer, uint32_t bufferSize);
+	static bool writeFile(FileDescriptor *file, uint8_t *buffer, uint32_t bufferSize);
 
+	// Sector operations
+	static bool readSector(FileDescriptor *file, uint8_t *buffer);
+	static bool writeSector(FileDescriptor *file, uint8_t *buffer);
 
-	// File operations
-	static uint8_t* readFileIntoMemory(char *filename, void *pBuffer, int nSize);
-	static bool readFileIntoMemory(char *filename, uint8_t* buffer, int bufferSize);
-
+	// Whole file operations
+	static bool readFileIntoMemory(char *filepath, uint8_t* buffer, uint32_t bufferSize);
 
 	// Complex file operations using plugins
-
 	static bool lockFileForCore(char *path, char *core);
 	static bool unlockFileForCore(char *path, char* *core);
 
