@@ -1,6 +1,6 @@
-#include "fpga.h"
-#include "../common/logger/logger.h"
+#include "fpgadevice.h"
 
+#include "../common/logger/logger.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "fpgaconnector.h"
 #include "../common/consts.h"
 #include "../common/addresses.h"
 #include "socfpga_reset_manager.h"
@@ -20,18 +21,19 @@
 #include "../common/file/filemanager.h"
 #include "../common/system/sysmanager.h"
 
-fpga& fpga::instance()
+FPGADevice& FPGADevice::instance()
 {
-	static fpga instance;
+	static FPGADevice instance;
 
 	return instance;
 }
 
-fpga::fpga()
+FPGADevice::FPGADevice()
 {
+	connector = new FPGAConnector(this);
 }
 
-fpga::~fpga()
+FPGADevice::~FPGADevice()
 {
 	if (map_base != INVALID_ADDRESS_UINT32 && mem_fd != -1)
 	{
@@ -46,7 +48,7 @@ fpga::~fpga()
 }
 
 
-bool fpga::init()
+bool FPGADevice::init()
 {
 	bool result = false;
 
@@ -73,7 +75,7 @@ bool fpga::init()
 /*
  * Sends signal to FPGA fabric to reset
  */
-void fpga::reboot(bool cold)
+void FPGADevice::reboot(bool cold)
 {
 	core_reset(true);
 
@@ -86,7 +88,7 @@ void fpga::reboot(bool cold)
 	while (1);
 }
 
-void fpga::core_reset(bool reset)
+void FPGADevice::core_reset(bool reset)
 {
 	// Read state for bits 30 and 31 (buttons
 	uint32_t gpo = gpo_read() & ~0xC0000000;
@@ -96,7 +98,7 @@ void fpga::core_reset(bool reset)
 }
 
 // FPGA load
-bool fpga::load_rbf(const char *name)
+bool FPGADevice::load_rbf(const char *name)
 {
 	bool result = false;
 
@@ -176,7 +178,7 @@ bool fpga::load_rbf(const char *name)
 	return result;
 }
 
-bool fpga::program(const void* rbf_data, uint32_t rbf_size)
+bool FPGADevice::program(const void* rbf_data, uint32_t rbf_size)
 {
 	bool result = false;
 
@@ -226,7 +228,7 @@ bool fpga::program(const void* rbf_data, uint32_t rbf_size)
 	return result;
 }
 
-void fpga::do_bridge(bool enable)
+void FPGADevice::do_bridge(bool enable)
 {
 	if (enable)
 	{
@@ -245,13 +247,13 @@ void fpga::do_bridge(bool enable)
 
 
 // Indicators
-void fpga::set_led(bool on)
+void FPGADevice::set_led(bool on)
 {
 	uint32_t gpo = gpo_read();
 	gpo_write(on ? gpo | 0x20000000 : gpo & ~0x20000000);
 }
 
-int fpga::get_buttons_state()
+int FPGADevice::get_buttons_state()
 {
 	int result = 0;
 
@@ -275,7 +277,7 @@ int fpga::get_buttons_state()
 
 // Helper methods
 
-void fpga::gpo_write(uint32_t value)
+void FPGADevice::gpo_write(uint32_t value)
 {
 	// Store new value in caching variable
 	this->gpo_caching_copy = value;
@@ -284,20 +286,20 @@ void fpga::gpo_write(uint32_t value)
 	writel(value, &fpgamgr_regs->gpo);
 }
 
-uint32_t fpga::gpo_read()
+uint32_t FPGADevice::gpo_read()
 {
 	// Return cached copy of gpo register to save time
 	return this->gpo_caching_copy; //readl((void*)(SOCFPGA_MGR_ADDRESS + 0x10));
 }
 
-uint32_t fpga::gpi_read()
+uint32_t FPGADevice::gpi_read()
 {
 	uint32_t result = readl(&fpgamgr_regs->gpi);
 
 	return result;
 }
 
-void fpga::core_write(uint32_t offset, uint32_t value)
+void FPGADevice::core_write(uint32_t offset, uint32_t value)
 {
 	if (offset <= MAX_FPGA_OFFSET)
 	{
@@ -306,7 +308,7 @@ void fpga::core_write(uint32_t offset, uint32_t value)
 	}
 }
 
-uint32_t fpga::core_read(uint32_t offset)
+uint32_t FPGADevice::core_read(uint32_t offset)
 {
 	uint32_t result = 0;
 
@@ -324,7 +326,7 @@ uint32_t fpga::core_read(uint32_t offset)
 /*
  * Get the FPGA mode (stat -> [2:0] mode)
  */
-uint32_t fpga::fpgamanager_get_mode()
+uint32_t FPGADevice::fpgamanager_get_mode()
 {
 	uint32_t val = readl(&fpgamgr_regs->stat);
 	val &= FPGAMGRREGS_STAT_MODE_MASK;
@@ -335,7 +337,7 @@ uint32_t fpga::fpgamanager_get_mode()
 /*
  * Set CD (Clock Divisor) ratio
  */
-void fpga::fpgamanager_set_cd_ratio(uint32_t ratio)
+void FPGADevice::fpgamanager_set_cd_ratio(uint32_t ratio)
 {
 	clrsetbits_le32(
 		&fpgamgr_regs->ctrl,
@@ -343,7 +345,7 @@ void fpga::fpgamanager_set_cd_ratio(uint32_t ratio)
 		(ratio & 0x3) << FPGAMGRREGS_CTRL_CDRATIO_LSB);
 }
 
-bool fpga::fpgamanager_dclkcnt_set(uint32_t cnt)
+bool FPGADevice::fpgamanager_dclkcnt_set(uint32_t cnt)
 {
 	bool result = false;
 	uint32_t i;
@@ -369,7 +371,7 @@ bool fpga::fpgamanager_dclkcnt_set(uint32_t cnt)
 	return result;
 }
 
-bool fpga::fpgamanager_init_programming()
+bool FPGADevice::fpgamanager_init_programming()
 {
 	bool result = false;
 
@@ -483,7 +485,7 @@ bool fpga::fpgamanager_init_programming()
 /*
  * Write the RBF data to FPGA Manager
  */
-void fpga::fpgamanager_program_write(const void *rbf_data, uint32_t rbf_size)
+void FPGADevice::fpgamanager_program_write(const void *rbf_data, uint32_t rbf_size)
 {
 	uint32_t src = (uint32_t)rbf_data;
 	uint32_t dst = (uint32_t)MAP_ADDR(SOCFPGA_FPGAMGRDATA_ADDRESS);
@@ -520,7 +522,7 @@ void fpga::fpgamanager_program_write(const void *rbf_data, uint32_t rbf_size)
 /*
  * Ensure the FPGA finished configuration
  */
-bool fpga::fpgamanager_program_poll_cd()
+bool FPGADevice::fpgamanager_program_poll_cd()
 {
 	bool result = false;
 
@@ -571,7 +573,7 @@ bool fpga::fpgamanager_program_poll_cd()
 	return result;
 }
 
-bool fpga::fpgamanager_program_poll_initphase()
+bool FPGADevice::fpgamanager_program_poll_initphase()
 {
 	bool result = false;
 
@@ -598,7 +600,7 @@ bool fpga::fpgamanager_program_poll_initphase()
 /*
  * Ensure the FPGA entered user mode
  */
-bool fpga::fpgamgr_program_poll_usermode()
+bool FPGADevice::fpgamgr_program_poll_usermode()
 {
 	bool result;
 

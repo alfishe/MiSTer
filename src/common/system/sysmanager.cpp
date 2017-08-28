@@ -6,7 +6,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <limits.h>
-#include "../../fpga/fpga.h"
+
+#include "../../fpga/fpgadevice.h"
 
 /*
  * Get application executable name (from Linux processes list)
@@ -31,7 +32,7 @@ void sysmanager::restartApplication()
 	// Flush all pending changes to disk(s)
 	sync();
 
-	fpga::instance().core_reset(true);
+	FPGADevice::instance().core_reset(true);
 
 	char *appname = getApplicationName();
 	printf("Restarting the %s...\n", appname);
@@ -42,7 +43,7 @@ void sysmanager::restartApplication()
 
 	// Control won't reach this point in normal conditions
 	LOGERROR("Spawning via execve failed. Rebooting the device ...\n");
-	fpga::instance().fpga::reboot(false);
+	FPGADevice::instance().reboot(false);
 }
 
 const char* sysmanager::getDataRootDir()

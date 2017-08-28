@@ -16,4 +16,7 @@
 #define INVALID_ADDRESS (void *)-1
 #define INVALID_ADDRESS_UINT32 (uint32_t *)-1
 
+// File descriptor constant
+#define INVALID_FILE_DESCRIPTOR -1
+
 #endif /* COMMON_CONSTS_H_ */

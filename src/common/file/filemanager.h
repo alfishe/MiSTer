@@ -6,8 +6,6 @@
 #include "../../common/consts.h"
 #include "../../common/types.h"
 
-#define INVALID_FILE_DESCRIPTOR -1
-
 class filemanager
 {
 public:

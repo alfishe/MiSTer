@@ -11,17 +11,17 @@
 
 struct socfpga_reset_manager
 {
-	uint32_t	status;
-	uint32_t	ctrl;
-	uint32_t	counts;
-	uint32_t	padding1;
-	uint32_t	mpu_mod_reset;
-	uint32_t	per_mod_reset;
-	uint32_t	per2_mod_reset;
-	uint32_t	brg_mod_reset;
-	uint32_t	misc_mod_reset;
-	uint32_t	padding2[12];
-	uint32_t	tstscratch;
+	uint32_t status;
+	uint32_t	 ctrl;
+	uint32_t	 counts;
+	uint32_t	 padding1;
+	uint32_t	 mpu_mod_reset;
+	uint32_t	 per_mod_reset;
+	uint32_t	 per2_mod_reset;
+	uint32_t	 brg_mod_reset;
+	uint32_t	 misc_mod_reset;
+	uint32_t	 padding2[12];
+	uint32_t	 tstscratch;
 };
 
 #if defined(CONFIG_SOCFPGA_VIRTUAL_TARGET)

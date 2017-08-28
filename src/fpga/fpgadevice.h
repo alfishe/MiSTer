@@ -1,27 +1,31 @@
-#ifndef FPGA_FPGA_H_
-#define FPGA_FPGA_H_
+#ifndef FPGA_FPGADEVICE_H_
+#define FPGA_FPGADEVICE_H_
 
 #include <stdint.h>
 #include "socfpga_base_addrs.h"
 #include "../common/consts.h"
 
 // Shortcuts to common functionality
-#define DISKLED_ON  fpga::instance().set_led(ON)
-#define DISKLED_OFF fpga::instance().set_led(OFF)
+#define DISKLED_ON  FPGADevice::instance().set_led(ON)
+#define DISKLED_OFF FPGADevice::instance().set_led(OFF)
 
 // Map I/O register address against base address
-#define MAP_ADDR(x) (volatile uint32_t*)(&fpga::instance().map_base[(((uint32_t)(x)) & 0xFFFFFF) >> 2])
+#define MAP_ADDR(x) (volatile uint32_t*)(&FPGADevice::instance().map_base[(((uint32_t)(x)) & 0xFFFFFF) >> 2])
 #define IS_REG(x) (((((uint32_t)(x))-1)>=(FPGA_REG_BASE - 1)) && ((((uint32_t)(x))-1)<(FPGA_REG_BASE + FPGA_REG_SIZE - 1)))
 
 // Generic rounding for alignment
 #define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
 
-class fpga
+// Forward declaration. Included from fpgadevice.cpp
+class FPGAConnector;
+
+class FPGADevice
 {
 // Fields
 private:
-	int mem_fd = -1;
+	int mem_fd = INVALID_FILE_DESCRIPTOR;
 	uint32_t *map_base = INVALID_ADDRESS_UINT32;
+	FPGAConnector *connector = nullptr;
 
 	// Map SocFPGA standard address regions to readable structures
 	struct socfpga_reset_manager  *reset_regs = (socfpga_reset_manager *)((void *)SOCFPGA_RSTMGR_ADDRESS);
@@ -32,15 +36,14 @@ private:
 	// Cached "shadow" copy of FPGA gpo register
 	volatile uint32_t gpo_caching_copy = 0;
 
-
 // Methods
 public:
 	// Singleton instance
-	static fpga& instance();
+	static FPGADevice& instance();
 
 	// Constructors / destructors
-	fpga();
-	virtual ~fpga();
+	FPGADevice();
+	virtual ~FPGADevice();
 
 	// Register access
 	static __inline void writel(uint32_t val, const void* reg)
@@ -128,4 +131,4 @@ public:
 	bool fpgamanager_dclkcnt_set(uint32_t cnt);
 };
 
-#endif /* FPGA_FPGA_H_ */
+#endif /* FPGA_FPGADEVICE_H_ */
