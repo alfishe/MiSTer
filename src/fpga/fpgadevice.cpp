@@ -12,6 +12,7 @@
 #include <fcntl.h>
 
 #include "fpgaconnector.h"
+#include "fpgacommand.h"
 #include "../common/consts.h"
 #include "../common/addresses.h"
 #include "socfpga_reset_manager.h"
@@ -31,10 +32,23 @@ FPGADevice& FPGADevice::instance()
 FPGADevice::FPGADevice()
 {
 	connector = new FPGAConnector(this);
+	command = new FPGACommand(connector);
 }
 
 FPGADevice::~FPGADevice()
 {
+	if (command != nullptr)
+	{
+		delete command;
+		command = nullptr;
+	}
+
+	if (connector != nullptr)
+	{
+		delete connector;
+		connector = nullptr;
+	}
+
 	if (map_base != INVALID_ADDRESS_UINT32 && mem_fd != -1)
 	{
 		munmap(map_base, FPGA_REG_SIZE);
@@ -44,6 +58,7 @@ FPGADevice::~FPGADevice()
 	if (mem_fd != -1)
 	{
 		close(mem_fd);
+		mem_fd = INVALID_FILE_DESCRIPTOR;
 	}
 }
 

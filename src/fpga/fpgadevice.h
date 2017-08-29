@@ -16,8 +16,9 @@
 // Generic rounding for alignment
 #define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
 
-// Forward declaration. Included from fpgadevice.cpp
+// Forward declarations. Included from fpgadevice.cpp
 class FPGAConnector;
+class FPGACommand;
 
 class FPGADevice
 {
@@ -25,7 +26,6 @@ class FPGADevice
 private:
 	int mem_fd = INVALID_FILE_DESCRIPTOR;
 	uint32_t *map_base = INVALID_ADDRESS_UINT32;
-	FPGAConnector *connector = nullptr;
 
 	// Map SocFPGA standard address regions to readable structures
 	struct socfpga_reset_manager  *reset_regs = (socfpga_reset_manager *)((void *)SOCFPGA_RSTMGR_ADDRESS);
@@ -40,6 +40,10 @@ private:
 public:
 	// Singleton instance
 	static FPGADevice& instance();
+
+	// FPGA interfacing helpers
+	FPGAConnector *connector = nullptr;
+	FPGACommand *command = nullptr;
 
 	// Constructors / destructors
 	FPGADevice();
