@@ -14,6 +14,9 @@
 
 #define SWAPW(a) ((((a)<<8)&0xff00)|(((a)>>8)&0x00ff))
 
+/*
+ * Provides HPS<-> FPGA data transfer via 32-bit gpo and gpi registers
+ */
 class FPGAConnector
 {
 private:
@@ -24,6 +27,7 @@ public:
 	FPGAConnector(FPGADevice *fpga);
 	virtual ~FPGAConnector();
 
+	// Functional methods
 	void enableFPGA();
 	void disableFPGA();
 
@@ -36,10 +40,11 @@ public:
 	void enableDMode();
 	void disableDMode();
 
-	void read(uint8_t *addr, uint16_t len, int wide);
-	void write(uint8_t *addr, uint16_t len, int wide);
-	void spi_block_read(uint8_t *addr, int wide);
-	void spi_block_write(uint8_t *addr, int wide);
+	// Low-level data transfer methods
+	void read(uint8_t *addr, uint16_t len, bool use16bit);
+	void write(uint8_t *addr, uint16_t len, bool use16bit);
+	uint8_t transferByte(uint8_t byte);
+	uint16_t transferWord(uint16_t word);
 
 protected:
 	// Helper methods
