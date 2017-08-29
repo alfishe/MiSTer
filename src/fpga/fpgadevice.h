@@ -22,8 +22,8 @@ class FPGACommand;
 
 class FPGADevice
 {
-// Fields
-private:
+protected:
+	// Fields
 	int mem_fd = INVALID_FILE_DESCRIPTOR;
 	uint32_t *map_base = INVALID_ADDRESS_UINT32;
 

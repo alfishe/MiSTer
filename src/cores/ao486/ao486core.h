@@ -1,9 +1,9 @@
 #ifndef CORES_AO486_AO486CORE_H_
 #define CORES_AO486_AO486CORE_H_
 
-#include "../../interfaces/coreinterface.h"
+#include "../../interfaces/icoreinterface.h"
 
-class ao486core: public coreinterface
+class ao486core: public ICoreInterface
 {
 public:
 	ao486core();

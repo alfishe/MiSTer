@@ -1,9 +1,9 @@
 #ifndef CORES_NEW_TEMPLATE_NEWTEMPLATECORE_H_
 #define CORES_NEW_TEMPLATE_NEWTEMPLATECORE_H_
 
-#include "../../interfaces/coreinterface.h"
+#include "../../interfaces/icoreinterface.h"
 
-class newtemplatecore: public coreinterface
+class newtemplatecore: public ICoreInterface
 {
 public:
 	newtemplatecore();

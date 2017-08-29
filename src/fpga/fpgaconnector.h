@@ -27,7 +27,7 @@ public:
 	FPGAConnector(FPGADevice *fpga);
 	virtual ~FPGAConnector();
 
-	// Functional methods
+	// Drive control flags methods
 	void enableFPGA();
 	void disableFPGA();
 
