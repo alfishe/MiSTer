@@ -2,9 +2,9 @@
 Main_MiSTer rework on C++. Re-architecture and preparing for future expansion
 
 ToDo:
-1. Establish modular structure
-2. Prepare common functionality/logic for: files, logging, disk images
-3. Transfer startup/FPGA bitstream load functionality
+1. ~~Establish modular structure~~
+2. Prepare common functionality/logic for: ~~files~~, ~~logging~~, disk images
+3. Transfer ~~startup~~/FPGA bitstream load functionality
 4. Transfer OSD menu parts
 5. Transfer I/O and FPGA interconnects
 6. Modernize all file/disk image operations using unified logic
