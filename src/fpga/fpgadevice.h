@@ -22,9 +22,14 @@ class FPGACommand;
 
 class FPGADevice
 {
+	// Allow those classes to access protected methods and properties directly (save on property methods)
+	friend class FPGAConnector;
+	friend class FPGACommand;
+
 protected:
 	// Fields
-	int mem_fd = INVALID_FILE_DESCRIPTOR;
+	bool isInitialized = false;
+	int fdFPGAMemory = INVALID_FILE_DESCRIPTOR;
 	uint32_t *map_base = INVALID_ADDRESS_UINT32;
 
 	// Map SocFPGA standard address regions to readable structures
@@ -46,56 +51,13 @@ public:
 	FPGACommand *command = nullptr;
 
 	// Constructors / destructors
-	FPGADevice();
+	FPGADevice(const FPGADevice& that) = delete; // Copy constructor is forbidden here (C++11 feature)
 	virtual ~FPGADevice();
+private:
+	// Private constructor to prevent explicit instantiation (only singleton instantiation allowed for now)
+	FPGADevice();
 
-	// Register access
-	static __inline void writel(uint32_t val, const void* reg)
-	{
-	/*
-		if (!IS_REG(reg))
-		{
-			printf("ERROR: Trying to write undefined address: %p\n.", reg);
-			fatal(-1);
-		}
-	*/
-		*MAP_ADDR(reg) = val;
-	}
-
-	static __inline uint32_t readl(const void* reg)
-	{
-	/*
-		if (!IS_REG(reg))
-		{
-			printf("ERROR: Trying to read undefined address: %p\n.", reg);
-			fatal(-1);
-		}
-	*/
-		return *MAP_ADDR(reg);
-	}
-
-	static __inline void clrbits_le32(void* addr, uint32_t clear)
-		{
-			uint32_t reg = readl(addr);
-			reg &= ~clear;
-			writel(reg, addr);
-		}
-
-	static __inline void setbits_le32(void* addr, uint32_t set)
-	{
-		uint32_t reg = readl(addr);
-		reg |= set;
-		writel(reg, addr);
-	}
-
-	static __inline void clrsetbits_le32(void* addr, uint32_t clear, uint32_t set)
-	{
-		uint32_t reg = readl(addr);
-		reg &= ~clear;
-		reg |= set;
-		writel(reg, addr);
-	}
-
+public:
 	// Service methods
 	bool init();
 	void reboot(bool cold);
@@ -105,7 +67,6 @@ public:
 	bool is_fpga_ready(int quick);
 	int get_fpga_mode();
 	void core_reset(bool reset);
-	int get_core_id();
 
 	// FPGA load methods
 	bool load_rbf(const char *name);
@@ -116,6 +77,54 @@ public:
 	// Indicators
 	void set_led(bool on);
 	int get_buttons_state();
+
+protected:
+	// Register access
+	static __inline void writel(uint32_t val, const void* reg) __attribute__((always_inline))
+	{
+		/*
+			if (!IS_REG(reg))
+			{
+				printf("ERROR: Trying to write undefined address: %p\n.", reg);
+				fatal(-1);
+			}
+		*/
+		*MAP_ADDR(reg) = val;
+	}
+
+	static __inline uint32_t readl(const void* reg) __attribute__((always_inline))
+	{
+		/*
+			if (!IS_REG(reg))
+			{
+				printf("ERROR: Trying to read undefined address: %p\n.", reg);
+				fatal(-1);
+			}
+		*/
+		return *MAP_ADDR(reg);
+	}
+
+	static __inline void clrbits_le32(void* addr, uint32_t clear) __attribute__((always_inline))
+	{
+		uint32_t reg = readl(addr);
+		reg &= ~clear;
+		writel(reg, addr);
+	}
+
+	static __inline void setbits_le32(void* addr, uint32_t set) __attribute__((always_inline))
+	{
+		uint32_t reg = readl(addr);
+		reg |= set;
+		writel(reg, addr);
+	}
+
+	static __inline void clrsetbits_le32(void* addr, uint32_t clear, uint32_t set) __attribute__((always_inline))
+	{
+		uint32_t reg = readl(addr);
+		reg &= ~clear;
+		reg |= set;
+		writel(reg, addr);
+	}
 
 	// Helper methods
 	void gpo_write(uint32_t value);

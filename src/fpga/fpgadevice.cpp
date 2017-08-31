@@ -31,12 +31,18 @@ FPGADevice& FPGADevice::instance()
 
 FPGADevice::FPGADevice()
 {
+	TRACE("FPGADevice()");
+
 	connector = new FPGAConnector(this);
 	command = new FPGACommand(connector);
+
+	init();
 }
 
 FPGADevice::~FPGADevice()
 {
+	TRACE("~FPGADevice()");
+
 	if (command != nullptr)
 	{
 		delete command;
@@ -49,16 +55,16 @@ FPGADevice::~FPGADevice()
 		connector = nullptr;
 	}
 
-	if (map_base != INVALID_ADDRESS_UINT32 && mem_fd != -1)
+	if (map_base != INVALID_ADDRESS_UINT32 && fdFPGAMemory != -1)
 	{
 		munmap(map_base, FPGA_REG_SIZE);
 		map_base = INVALID_ADDRESS_UINT32;
 	}
 
-	if (mem_fd != -1)
+	if (fdFPGAMemory != -1)
 	{
-		close(mem_fd);
-		mem_fd = INVALID_FILE_DESCRIPTOR;
+		close(fdFPGAMemory);
+		fdFPGAMemory = INVALID_FILE_DESCRIPTOR;
 	}
 }
 
@@ -68,20 +74,26 @@ bool FPGADevice::init()
 	bool result = false;
 
 	// Map FPGA addresses into application (Linux process) address space
-	if ((mem_fd = open("/dev/mem", O_RDWR | O_SYNC)) != -1)
+	if ((fdFPGAMemory = open("/dev/mem", O_RDWR | O_SYNC)) != -1)
 	{
-		map_base = (uint32_t *)mmap(nullptr, FPGA_REG_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, FPGA_REG_BASE);
+		map_base = (uint32_t *)mmap(nullptr, FPGA_REG_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fdFPGAMemory, FPGA_REG_BASE);
 		if (map_base != (uint32_t *)INVALID_ADDRESS)
 		{
+			isInitialized = true;
+
 			// Info logging
-			LOGINFO("FPGA address space mapped into the process successfully");
+			LOGINFO("FPGA address space mapped into the process successfully\n");
 		}
 		else
 		{
 			LOGERROR("Unable to mmap(/dev/mem)\n");
-			close(mem_fd);
-			mem_fd = -1;
+			close(fdFPGAMemory);
+			fdFPGAMemory = -1;
 		}
+	}
+	else
+	{
+		LOGERROR("Unable to access memory via /dev/mem. Probably program need to be started as 'sudo MiSTer'\n");
 	}
 
 	return result;

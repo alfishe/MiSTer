@@ -1,7 +1,7 @@
 #include "logger.h"
 
 #include <stdio.h>
-#include <cstdarg>
+#include <stdarg.h>
 #include <string.h>
 #include <errno.h>
 
@@ -21,52 +21,73 @@ void logger::log()
 	buffer[MAX_LOG_MESSAGE_LENGTH - 1] = '\x00';
 
 	fprintf(stdout, buffer);
+	fflush(stdout);
 }
 
 // Public methods
 void logger::info(const char* format, ...)
 {
 	va_list arguments;
+	va_start(arguments, format);
 
-	snprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
+	vsnprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
 
-	fprintf(stdout, buffer);
+	printf("I:%s", buffer);
+	fflush(stdout);
+
+	va_end(arguments);
 }
 
 void logger::warning(const char* format, ...)
 {
 	va_list arguments;
+	va_start(arguments, format);
 
-	snprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
+	vsnprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
 
-	fprintf(stderr, buffer);
+	printf("W:%s", buffer);
+	fflush(stdout);
+
+	va_end(arguments);
 }
 
 void logger::error(const char* format, ...)
 {
 	va_list arguments;
+	va_start(arguments, format);
 
-	snprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
+	vsnprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
 
-	fprintf(stderr, buffer);
+	printf("E:%s", buffer);
+	fflush(stdout);
+
+	va_end(arguments);
 }
 
 void logger::debug(const char* format, ...)
 {
 	va_list arguments;
+	va_start(arguments, format);
 
-	snprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
+	vsnprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
 
-	fprintf(stderr, buffer);
+	printf("D:%s\n", buffer);
+	fflush(stdout);
+
+	va_end(arguments);
 }
 
 void logger::trace(const char* format, ...)
 {
 	va_list arguments;
+	va_start(arguments, format);
 
-	snprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
+	vsnprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
 
-	fprintf(stderr, buffer);
+	printf("T:%s\n", buffer);
+	fflush(stdout);
+
+	va_end(arguments);
 }
 
 

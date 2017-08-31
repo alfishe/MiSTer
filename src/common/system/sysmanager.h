@@ -4,6 +4,7 @@
 class sysmanager
 {
 public:
+	static int getProcessID();
 	static char* getApplicationName();
 	static void restartApplication();
 

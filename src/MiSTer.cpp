@@ -1,4 +1,12 @@
 #include <iostream>
+#include <unistd.h>
+
+#include "common/logger/logger.h"
+
+#include "common/system/sysmanager.h"
+#include "fpga/fpgadevice.h"
+#include "fpga/fpgacommand.h"
+
 using namespace std;
 
 // Perform compile-time diagnostics to be sure that everything set up well.
@@ -13,6 +21,19 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-	cout << "!!!Hello World!!!" << endl; // prints !!!Hello World!!!
+	LOGINFO("MiSTer process started with PID:%d\n", sysmanager::getProcessID());
+
+	FPGADevice& fpga = FPGADevice::instance();
+	FPGACommand& command = *(fpga.command);
+
+	LOGINFO("Setting up FPGA...\n");
+
+
+	// TODO: Remove debug code
+	uint8_t coreID = command.getCoreID();
+
+
+	fflush(stdout);
+
 	return 0;
 }

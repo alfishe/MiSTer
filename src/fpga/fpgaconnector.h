@@ -19,12 +19,13 @@
  */
 class FPGAConnector
 {
-private:
-	// Fields
+public:
+	// Public Fields
 	FPGADevice *fpga;
 
 public:
 	FPGAConnector(FPGADevice *fpga);
+	FPGAConnector(const FPGAConnector& that) = delete; // Copy constructor is forbidden here (C++11 feature)
 	virtual ~FPGAConnector();
 
 	// Drive control flags methods
@@ -48,13 +49,13 @@ public:
 
 protected:
 	// Helper methods
-	inline void enableByMask(uint32_t mask) __attribute__((always_inline))
+	__inline void enableByMask(uint32_t mask) __attribute__((always_inline))
 	{
 		uint32_t gpo = fpga->gpo_read() | 0x80000000;
 		fpga->gpo_write(gpo | mask);
 	}
 
-	inline void disableByMask(uint32_t mask) __attribute__((always_inline))
+	__inline void disableByMask(uint32_t mask) __attribute__((always_inline))
 	{
 		uint32_t gpo = fpga->gpo_read() | 0x80000000;
 		fpga->gpo_write(gpo & ~mask);

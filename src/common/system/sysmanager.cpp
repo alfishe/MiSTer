@@ -3,11 +3,19 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
 #include <limits.h>
+#include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "../../fpga/fpgadevice.h"
+
+int sysmanager::getProcessID()
+{
+	int result = getpid();
+
+	return result;
+}
 
 /*
  * Get application executable name (from Linux processes list)

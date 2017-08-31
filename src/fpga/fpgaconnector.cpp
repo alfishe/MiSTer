@@ -6,11 +6,14 @@
 
 FPGAConnector::FPGAConnector(FPGADevice *fpga)
 {
+	TRACE("FPGAConnector(FPGADevice *fpga)");
+
 	this->fpga = fpga;
 }
 
 FPGAConnector::~FPGAConnector()
 {
+	TRACE("~FPGAConnector()");
 }
 
 void FPGAConnector::enableFPGA()

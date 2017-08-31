@@ -19,4 +19,7 @@
 // File descriptor constant
 #define INVALID_FILE_DESCRIPTOR -1
 
+// Magic number that identifies MiSTer system core (sent via gpi[31:8] when gpo[31] bit is not set, i.e. =0)
+#define MISTER_CORE_MAGIC_NUMBER 0x5CA623
+
 #endif /* COMMON_CONSTS_H_ */

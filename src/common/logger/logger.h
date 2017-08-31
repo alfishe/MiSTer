@@ -4,9 +4,22 @@
 #define MAX_LOG_MESSAGE_LENGTH 1024
 
 // Shortcuts
-#define LOGINFO(...) logger::info(__VA_ARGS__)
-#define LOGWARN(...) logger::warning(__VA_ARGS__)
-#define LOGERROR(...) logger::error(__VA_ARGS__)
+#define LOGINFO(format, ...) logger::info(format, ##__VA_ARGS__)
+#define LOGWARN(format, ...) logger::warning(format, ##__VA_ARGS__)
+#define LOGERROR(format, ...) logger::error(format, ##__VA_ARGS__)
+
+#ifdef _ENABLE_DEBUG
+#define DEBUG(format, ...) logger::debug(format, ##__VA_ARGS__)
+#else
+#define DEBUG(format, ...)
+#endif
+
+
+#ifdef _ENABLE_TRACE
+#define TRACE(format, ...) logger::trace(format, ##__VA_ARGS__)
+#else
+#define TRACE(format, ...)
+#endif
 
 class logger
 {
