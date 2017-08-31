@@ -5,6 +5,7 @@ class ICoreInterface
 {
 public:
 	ICoreInterface();
+	ICoreInterface(const ICoreInterface& that) = delete; // Copy constructor is forbidden here (C++11 feature)
 	virtual ~ICoreInterface();
 
 	// Core info methods
