@@ -11,7 +11,7 @@ ToDo:
 7. Transfer each core related functionality into separate modules (potentially can lead to plugin-based project structure)
 
 Technology stack:
-- Target system: Linux 32-bit
+- Target system: Yocto Linux 32-bit (Altera maintained [SocFPGA repository](https://github.com/altera-opensource/linux-socfpga))
 - Cross-compilation toolchain: Linaro 6.3.x based (official Linaro for Windows x64 and Linux, self-assembled for Mac OS X)
 - Toolchain prefix: arm-linux-gnueabihf (hard-float, neon-fp16)
 - LFS (Large Support) turned on
@@ -23,4 +23,4 @@ Doesn't really matter what host OS or IDE to use. Once you have cross-platform t
 Tried:
 - JetBrains CLion - CMake based and very immature as C/C++ IDE. But best syntax analyzer and refactoring (as every IDE from JetBrains)
 - Microsoft VS Code - Sublime Text on steroids. Good for text editing, bunch of messy plugins for everything else.
-- Visual Studio 2017 - it's from other world
+- Visual Studio 2017 - it's from other world, probably can work with plugins like VisualGDB, but out of the box not intended for Linux cross-platform development.
