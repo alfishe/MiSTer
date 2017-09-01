@@ -10,9 +10,10 @@ protected:
 	ICoreInterface* currentCore = nullptr;
 
 public:
-	CoreManager& instance();
+	static CoreManager& instance();
+	CoreManager(const CoreManager& that) = delete; // Copy constructor is forbidden here (C++11 feature)
 
-	bool loadCore(char* filename);
+	bool loadCore(const char* filename);
 
 private:
 	// Ensure class instance cannot be created directly

@@ -6,6 +6,7 @@
 #include "common/system/sysmanager.h"
 #include "fpga/fpgadevice.h"
 #include "fpga/fpgacommand.h"
+#include "cores/coremanager.h"
 
 using namespace std;
 
@@ -28,10 +29,9 @@ int main(int argc, char *argv[])
 
 	LOGINFO("Setting up FPGA...\n");
 
-
 	// TODO: Remove debug code
 	uint8_t coreID = command.getCoreID();
-
+	CoreManager::instance().loadCore("zxspectrum_trd504t.rbf");
 
 	fflush(stdout);
 

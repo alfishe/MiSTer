@@ -8,6 +8,12 @@
 #define LOGWARN(format, ...) logger::warning(format, ##__VA_ARGS__)
 #define LOGERROR(format, ...) logger::error(format, ##__VA_ARGS__)
 
+#define LOGINFOLN(format, ...) logger::info(format, ##__VA_ARGS__); logger::log("\n")
+#define LOGWARNLN(format, ...) logger::warning(format, ##__VA_ARGS__); logger::log("\n")
+#define LOGERRORLN(format, ...) logger::error(format, ##__VA_ARGS__); logger::log("\n")
+
+#define LOGSYSTEMERROR() logger::error("%s\n", logger::geterror())
+
 #ifdef _ENABLE_DEBUG
 #define DEBUG(format, ...) logger::debug(format, ##__VA_ARGS__)
 #else
@@ -30,6 +36,8 @@ private:
 	static void log();
 
 public:
+	static void log(const char* message);
+
 	static void info(const char* format, ...);
 	static void warning(const char* format, ...);
 	static void error(const char* format, ...);

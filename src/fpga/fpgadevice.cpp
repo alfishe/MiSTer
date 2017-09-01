@@ -77,7 +77,7 @@ bool FPGADevice::init()
 	if ((fdFPGAMemory = open("/dev/mem", O_RDWR | O_SYNC)) != -1)
 	{
 		map_base = (uint32_t *)mmap(nullptr, FPGA_REG_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fdFPGAMemory, FPGA_REG_BASE);
-		if (map_base != (uint32_t *)INVALID_ADDRESS)
+		if (map_base != (uint32_t *)MAP_FAILED)
 		{
 			isInitialized = true;
 
@@ -87,6 +87,8 @@ bool FPGADevice::init()
 		else
 		{
 			LOGERROR("Unable to mmap(/dev/mem)\n");
+			LOGSYSTEMERROR();
+
 			close(fdFPGAMemory);
 			fdFPGAMemory = -1;
 		}
@@ -149,37 +151,46 @@ bool FPGADevice::load_rbf(const char *name)
 	if (filemanager::isFileExist(filepath))
 	{
 		// Info logging
-		LOGINFO("Found");
+		LOGINFO("Found\n");
 
 		uint64_t filesize = filemanager::getFileSize(filepath);
 		if (filesize > 0)
 		{
 			// Info logging
-			LOGINFO("\nFPGA bitstream size: %llu bytes\n", filesize);
+			LOGINFO("FPGA bitstream size: %llu bytes\n", filesize);
 
 			void* buffer = malloc(filesize);
 			if (buffer != nullptr)
 			{
 				if (filemanager::readFileIntoMemory(filepath, (uint8_t *)buffer, filesize))
 				{
+					if (program(buffer, filesize))
+					{
+						result = true;
 
+						LOGINFO("FPGA successfully programmed with '%s' file\n", filepath);
+					}
+					else
+					{
+						LOGERROR("Unable to program FPGA with '%s' file\n", filepath);
+					}
 				}
 				else
 				{
-					LOGERROR("Unable to read FPGA bitstream file: %s", filepath);
+					LOGERROR("Unable to read FPGA bitstream file: %s\n", filepath);
 				}
 
 				free(buffer);
 			}
 			else
 			{
-				LOGERROR("Unable to allocate %llu bytes", filesize);
+				LOGERROR("Unable to allocate %llu bytes\n", filesize);
 			}
 		}
 		else
 		{
 			// Info logging
-			LOGINFO("\nFile has zero size");
+			LOGINFO("File has zero size\n");
 		}
 
 		// Trigger application restart to follow changes in FPGA
@@ -188,7 +199,7 @@ bool FPGADevice::load_rbf(const char *name)
 	else
 	{
 		// Info logging
-		LOGINFO("Not found");
+		LOGWARN("File '%s' not found\n", filepath);
 	}
 #endif
 
@@ -248,8 +259,29 @@ bool FPGADevice::program(const void* rbf_data, uint32_t rbf_size)
 			{
 				// Step 5: Verify FPGA returned back to user mode with new bitstream
 				result = fpgamgr_program_poll_usermode();
+
+				if (result)
+				{
+					LOGINFO("FPGA successfully loaded from bitstream file and configured\n");
+				}
+				else
+				{
+					LOGERROR("FPGA didn't enter USER mode\n");
+				}
+			}
+			else
+			{
+				LOGERROR("FPGA didn't enter INIT phase\n");
 			}
 		}
+		else
+		{
+			LOGERROR("FPGA didn't enter CONFIG DONE state\n");
+		}
+	}
+	else
+	{
+		LOGERROR("FPGA programming mode initialization failed\n");
 	}
 
 	return result;
@@ -517,7 +549,7 @@ void FPGADevice::fpgamanager_program_write(const void *rbf_data, uint32_t rbf_si
 	uint32_t src = (uint32_t)rbf_data;
 	uint32_t dst = (uint32_t)MAP_ADDR(SOCFPGA_FPGAMGRDATA_ADDRESS);
 
-	// Number of loops for 32-byte long copy operations
+	// Number of loops for 32-byte long copy operations (8 ARM registers involved)
 	uint32_t loops32 = rbf_size / 32;
 
 	// Number of loops for 4-byte long copy cycles + trailing bytes
@@ -526,11 +558,11 @@ void FPGADevice::fpgamanager_program_write(const void *rbf_data, uint32_t rbf_si
 	// Write .rbf data to FPGA Manager address block in two steps:
 	// First: fast copy using 32-byte blocks
 	// Second: 4-byte blocks copy for the rest of content
-	// Node, it's highly undesirable to use r7 in GCC embedded asm. that's why u-boot-derived code modified
+	// Node, it's highly undesirable to use r7 in GCC embedded asm. that's why u-boot-derived code modified to use r8
 	__asm volatile
 	(
-		"1:	ldmia %0!,{r0-r6}   \n" // Loop 1
-		"	stmia %1!,{r0-r6}   \n"
+		"1:	ldmia %0!,{r0-r6, r8}   \n" // Loop 1
+		"	stmia %1!,{r0-r6, r8}   \n"
 		"	sub	  %1, #32       \n"
 		"	subs  %2, #1        \n"
  		"	bne   1b            \n" // End of Loop 1
@@ -542,7 +574,7 @@ void FPGADevice::fpgamanager_program_write(const void *rbf_data, uint32_t rbf_si
 		"	bne   2b            \n" // End of Loop 2
 		"3:	nop                 \n"
 		: "+r"(src), "+r"(dst), "+r"(loops32), "+r"(loops4) :
-		: "r0", "r1", "r2", "r3", "r4", "r5", "r6", "cc"
+		: "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r8", "cc"
 	);
 }
 

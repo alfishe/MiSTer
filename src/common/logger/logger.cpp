@@ -24,6 +24,12 @@ void logger::log()
 	fflush(stdout);
 }
 
+void logger::log(const char* message)
+{
+	fprintf(stdout, message);
+	fflush(stdout);
+}
+
 // Public methods
 void logger::info(const char* format, ...)
 {

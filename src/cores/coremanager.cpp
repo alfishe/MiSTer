@@ -2,6 +2,9 @@
 
 #include "../common/logger/logger.h"
 
+#include <limits.h>
+#include <stdio.h>
+#include "../common/consts.h"
 #include "../fpga/fpgadevice.h"
 
 CoreManager& CoreManager::instance()
@@ -11,7 +14,7 @@ CoreManager& CoreManager::instance()
 	return instance;
 }
 
-bool CoreManager::loadCore(char* filename)
+bool CoreManager::loadCore(const char* filename)
 {
 	bool result = false;
 

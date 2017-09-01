@@ -79,8 +79,16 @@ public:
 	int get_buttons_state();
 
 protected:
+	// Address resolving
+	static __inline uint32_t mapFPGAAddress(uint32_t) __attribute__((always_inline))
+	{
+		uint32_t result = 0;
+
+		return result;
+	}
+
 	// Register access
-	static __inline void writel(uint32_t val, const void* reg) __attribute__((always_inline))
+ 	static __inline void writel(uint32_t val, const void* reg) __attribute__((always_inline))
 	{
 		/*
 			if (!IS_REG(reg))

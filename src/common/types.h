@@ -3,17 +3,18 @@
 
 #include <unistd.h>
 #include <limits.h>
+#include "consts.h"
 
 #define OFF 0
 #define ON 1
 
 typedef struct
 {
-	int       fd;
+	int       fd = INVALID_FILE_DESCRIPTOR;
 	int       mode;
 	__off64_t size;
 	__off64_t offset;
-	char      name[NAME_MAX + 1];
+	char      name[PATH_MAX + 1];
 
 	// New attributes
 	bool		cacheable;
