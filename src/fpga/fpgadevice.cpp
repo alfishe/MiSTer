@@ -194,7 +194,7 @@ bool FPGADevice::load_rbf(const char *name)
 		}
 
 		// Trigger application restart to follow changes in FPGA
-		sysmanager::restartApplication();
+		//sysmanager::restartApplication();
 	}
 	else
 	{

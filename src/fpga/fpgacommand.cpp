@@ -17,6 +17,10 @@ FPGACommand::~FPGACommand()
 {
 	TRACE("~FPGACommand()");
 
+	// Mutex should be unlocked prior to destroy
+	pthread_mutex_unlock(&mutex);
+	pthread_mutex_destroy(&mutex);
+
 	this->connector = nullptr;
 	this->fpga = nullptr;
 }
@@ -24,7 +28,7 @@ FPGACommand::~FPGACommand()
 /*
  * Requests FPGA core ID
  */
-uint8_t FPGACommand::getCoreID()
+uint8_t FPGACommand::getCoreType()
 {
 	uint8_t result = 0;
 
@@ -45,12 +49,141 @@ uint8_t FPGACommand::getCoreID()
 	{
 		result = (uint8_t)coretype;
 
-		LOGINFO("Core returned ID=0x%X\n", result);
+		LOGINFO("Core returned Type=0x%X\n", result);
 	}
 	else
 	{
 		LOGERROR("Loaded FPGA core is incompatible with MiSTer platform\n");
 	}
 
+	endExecution();
+
 	return result;
 }
+
+// OSD commands
+void FPGACommand::sendOSDCommand(uint8_t cmd)
+{
+	if (checkExecution())
+	{
+		connector->enableOSD();
+		sendCommand(cmd);
+		connector->disableOSD();
+
+		endExecution();
+	}
+}
+
+void FPGACommand::sendOSDCommand(uint8_t cmd, uint8_t param)
+{
+	if (checkExecution())
+	{
+		connector->enableOSD();
+		sendCommand(cmd, param);
+		connector->disableOSD();
+
+		endExecution();
+	}
+}
+
+void FPGACommand::sendOSDCommand(uint8_t cmd, uint16_t param)
+{
+	if (checkExecution())
+	{
+		connector->enableOSD();
+		sendCommand(cmd, param);
+		connector->disableOSD();
+
+		endExecution();
+	}
+}
+
+void FPGACommand::sendOSDCommand(uint8_t cmd, uint32_t param)
+{
+	if (checkExecution())
+	{
+		connector->enableOSD();
+		sendCommand(cmd, param);
+		connector->disableOSD();
+
+		endExecution();
+	}
+}
+
+// IO commands
+void FPGACommand::sendIOCommand(uint8_t cmd)
+{
+	if (checkExecution())
+	{
+		connector->enableIO();
+		sendCommand(cmd);
+		connector->disableIO();
+
+		endExecution();
+	}
+}
+
+void FPGACommand::sendIOCommand(uint8_t cmd, uint8_t param)
+{
+	if (checkExecution())
+	{
+		connector->enableIO();
+		sendCommand(cmd, param);
+		connector->disableIO();
+
+		endExecution();
+	}
+}
+
+void FPGACommand::sendIOCommand(uint8_t cmd, uint16_t param)
+{
+	if (checkExecution())
+	{
+		connector->enableIO();
+		sendCommand(cmd, param);
+		connector->disableIO();
+
+		endExecution();
+	}
+}
+
+void FPGACommand::sendIOCommand(uint8_t cmd, uint32_t param)
+{
+	if (checkExecution())
+	{
+		connector->enableIO();
+		sendCommand(cmd, param);
+		connector->disableIO();
+
+		endExecution();
+	}
+}
+
+// IO commands
+
+// Raw commands / parameter level methods
+void FPGACommand::sendCommand(uint8_t cmd)
+{
+	send8(cmd);
+}
+
+void FPGACommand::sendCommand(uint8_t cmd, uint8_t param)
+{
+	send8(cmd);
+	send8(param);
+}
+
+void FPGACommand::sendCommand(uint8_t cmd, uint16_t param)
+{
+	send8(cmd);
+	send16(param);
+}
+
+void FPGACommand::sendCommand(uint8_t cmd, uint32_t param)
+{
+	send8(cmd);
+	send32(param);
+}
+
+// Helper methods
+

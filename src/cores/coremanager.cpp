@@ -29,11 +29,11 @@ bool CoreManager::loadCore(const char* filename)
 
 		result = true;
 
-		LOGINFO("Core %s successfully loaded", filename);
+		LOGINFO("Core %s successfully loaded\n", filename);
 	}
 	else
 	{
-		LOGERROR("Unable to load core file: %s", filename);
+		LOGERROR("Unable to load core file: %s\n", filename);
 	}
 
 	return result;
