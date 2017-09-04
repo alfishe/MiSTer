@@ -30,8 +30,15 @@ int main(int argc, char *argv[])
 	LOGINFO("Setting up FPGA...\n");
 
 	// TODO: Remove debug code
-	uint8_t coreID = command.getCoreID();
-	CoreManager::instance().loadCore("zxspectrum_trd504t.rbf");
+	uint8_t coreType = command.getCoreType();
+	//CoreManager::instance().loadCore("memtest.rbf");
+	sleep(2);
+	coreType = command.getCoreType();
+
+	command.sendOSDCommand(0x41);
+	sleep(5);
+	command.sendOSDCommand(0x40);
+	// End of debug code
 
 	fflush(stdout);
 

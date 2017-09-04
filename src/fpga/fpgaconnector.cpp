@@ -130,18 +130,35 @@ uint16_t FPGAConnector::transferWord(uint16_t word)
 	// Step 2: set strobe bit (positive edge indicates data transfer start for FPGA)
 	fpga->gpo_write(gpo | SSPI_STROBE);
 
-	// Step 3: poll gpi until ACK bit set
+	// Step 3: Wait until FPGA resets ACK bit (that means FPGA ready to start receiving on next STROBE negative edge)
+	uint32_t gpi = 0;
 	do
 	{
-		result = fpga->gpi_read();
-		if (result < 0)
+		gpi = fpga->gpi_read();
+		if (gpi < 0)
 		{
 			LOGERROR("GPI[31]==1. FPGA is uninitialized?\n");
-			result = 0;
 			break;
 		}
 	}
-	while (!(result & SSPI_ACK));
+	while (!(gpi & SSPI_ACK));
+
+	// Step 4: Reset STROBE signal (FPGA will treat all other signals as data/flags)
+	fpga->gpo_write(gpo);
+
+	// Step 5: Until FPGA sets ACK
+	do
+	{
+		gpi = fpga->gpi_read();
+		if (gpi < 0)
+		{
+			LOGERROR("GPI[31]==1. FPGA is uninitialized?\n");
+			break;
+		}
+	}
+	while (gpi & SSPI_ACK);
+
+	result = (uint16_t)gpi;
 
 	return result;
 }
