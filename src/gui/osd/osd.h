@@ -11,10 +11,6 @@
 #define OSDCTRLRIGHT     0x10        /*OSD right control*/
 #define OSDCTRLLEFT      0x20        /*OSD left control*/
 
-// some constants
-#define OSDNLINE         8           // number of lines of OSD
-#define OSDLINELEN       256         // single line length in bytes
-
 // ---- old Minimig v1 constants -------
 #define MM1_OSDCMDREAD     0x00      // OSD read controller/key status
 #define MM1_OSDCMDWRITE    0x20      // OSD write video data command
@@ -71,8 +67,19 @@
 class osd
 {
 protected:
+	// Constants
+	static const uint8_t OSD_HEIGHT_LINES = 8;
+	static const uint8_t OSD_HEIGHT_PX = OSD_HEIGHT_LINES * 8;
+	static const uint16_t OSD_LINE_LENGTH_BYTES = 256;
+
 	// Fields
-	uint8_t framebuffer[16][256];
+	uint8_t titlebuffer[128];
+	uint8_t framebuffer[16][OSD_LINE_LENGTH_BYTES];
+
+	uint32_t scroll_offset = 0; // file/dir name scrolling position
+	uint32_t scroll_timer = 0;  // file/dir name scrolling timer
+
+	bool arrowDirection;
 
 public:
 	static osd& instance();
@@ -80,16 +87,21 @@ public:
 	virtual ~osd();
 
 	// High level logic methods
-	void clear();
 	void enable();
 	void disable();
 
+	void fill();
+	void clear();
+
 	// Content methods
-	void setTitle(char *title, int arrowDirection);
-	void printText(unsigned char line, char *text, unsigned int start, unsigned int width, unsigned int offset, bool invert);
+	void setTitle(const char *title, bool arrowDirection);
+	void printText(unsigned char line, const char *text, unsigned int start, unsigned int width, unsigned int offset, bool invert);
 
 protected:
-	// Transfer to FPGA methods
+	// Helper methods
+	void clearFramebuffer();
+	void rotateCharacter(uint8_t *in, uint8_t *out);
+	void transferFramebuffer();
 
 private:
 	osd() {}; // Prevent creation. Only singleton via instance() should be accessible

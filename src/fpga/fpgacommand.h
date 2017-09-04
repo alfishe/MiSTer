@@ -31,6 +31,8 @@ public:
 	uint8_t getCoreType();
 
 	// OSD commands
+	bool startOSD();
+	void endOSD();
 	void sendOSDCommand(uint8_t cmd);
 	void sendOSDCommand(uint8_t cmd, uint8_t param);
 	void sendOSDCommand(uint8_t cmd, uint16_t param);

@@ -62,6 +62,27 @@ uint8_t FPGACommand::getCoreType()
 }
 
 // OSD commands
+bool FPGACommand::startOSD()
+{
+	bool result = false;
+
+	if (checkExecution())
+	{
+		connector->enableOSD();
+
+		result = true;
+	}
+
+	return result;
+}
+
+void FPGACommand::endOSD()
+{
+	connector->disableOSD();
+
+	endExecution();
+}
+
 void FPGACommand::sendOSDCommand(uint8_t cmd)
 {
 	if (checkExecution())
