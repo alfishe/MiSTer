@@ -14,8 +14,8 @@
 // ---- old Minimig v1 constants -------
 #define MM1_OSDCMDREAD     0x00      // OSD read controller/key status
 #define MM1_OSDCMDWRITE    0x20      // OSD write video data command
-#define MM1_OSDCMDENABLE   0x41      // OSD enable command
 #define MM1_OSDCMDDISABLE  0x40      // OSD disable command
+#define MM1_OSDCMDENABLE   0x41      // OSD enable command
 #define MM1_OSDCMDRST      0x80      // OSD reset command
 #define MM1_OSDCMDAUTOFIRE 0x84      // OSD autofire command
 #define MM1_OSDCMDCFGSCL   0xA0      // OSD settings: scanlines effect
@@ -30,7 +30,7 @@
 #define OSD_CMD_READ      0x00
 #define OSD_CMD_RST       0x08
 #define OSD_CMD_CLK       0x18
-#define OSD_CMD_OSD       0x28		// OSD enable/disable command
+#define OSD_CMD_OSD       0x28		// OSD enable/disable command (high-res)
 #define OSD_CMD_CHIP      0x04
 #define OSD_CMD_CPU       0x14
 #define OSD_CMD_MEM       0x24
@@ -70,15 +70,18 @@ protected:
 	// Constants
 	static const uint8_t OSD_HEIGHT_LINES = 8;
 	static const uint8_t OSD_HEIGHT_PX = OSD_HEIGHT_LINES * 8;
+	static const uint8_t OSD_HIGHRES_HEIGHT_LINES = 16;
+	static const uint8_t OSD_HIGHRES_HEIGHT_PX = OSD_HIGHRES_HEIGHT_LINES * 8;
 	static const uint16_t OSD_LINE_LENGTH_BYTES = 256;
 
 	// Fields
-	uint8_t titlebuffer[128];
+	uint8_t titlebuffer[128]; // 16 symbols (8 * 16 = 128)
 	uint8_t framebuffer[16][OSD_LINE_LENGTH_BYTES];
 
 	uint32_t scroll_offset = 0; // file/dir name scrolling position
 	uint32_t scroll_timer = 0;  // file/dir name scrolling timer
 
+	bool highResolution = false;
 	bool arrowDirection;
 
 public:
@@ -86,16 +89,18 @@ public:
 	osd(osd &that) = delete; // Copy constructor is forbidden here (C++11 feature)
 	virtual ~osd();
 
-	// High level logic methods
-	void enable();
-	void disable();
-
-	void fill();
-	void clear();
+	// Show/hide logic methods
+	void show();
+	void showHighres();
+	void hide();
 
 	// Content methods
+	void fill();
+	void clear();
+	void compose();
 	void setTitle(const char *title, bool arrowDirection);
-	void printText(unsigned char line, const char *text, unsigned int start, unsigned int width, unsigned int offset, bool invert);
+	void printLine(uint8_t line, const char *text, bool invert = false);
+	void printText(uint8_t line, const char *text, uint8_t start, uint8_t width, uint8_t offset, bool invert);
 
 protected:
 	// Helper methods
