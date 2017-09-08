@@ -73,11 +73,19 @@ void osd::clear()
 void osd::compose()
 {
 	// Copy Title over framebuffer content
-	for (unsigned idx = 0; idx < sizeof(titlebuffer); idx++)
+	for (unsigned idx = 0; idx < sizeof(titlebuffer) / 2; idx++)
 	{
-		int i = idx / 8;
-		int j = idx % 8;
-		framebuffer[i][j] = titlebuffer[i];
+		framebuffer[0][idx] = titlebuffer[0][idx];
+		framebuffer[1][idx] = titlebuffer[1][idx];
+	}
+
+	// Rotate title strip counter-clockwise and copy over left two columns of framebuffer
+	for (unsigned y = 0; y < 2; y++)
+	{
+		for (unsigned x = 0; x < OSD_HIGHRES_TITLE_WIDTH_PX; x += 8)
+		{
+			//rotateCharacter(&titlebuffer[y][x], &framebuffer[OSD_HIGHRES_HEIGHT_PX - x][y]);
+		}
 	}
 
 	transferFramebuffer();
@@ -85,62 +93,69 @@ void osd::compose()
 
 void osd::setTitle(const char *title, bool arrowDirection)
 {
-	// Compose the title, condensing character gaps
-	this->arrowDirection = arrowDirection;
-	int zeros = 0;
-	int i = 0, j = 0;
-	int curOffset = 0;
+	uint8_t idx = 0;
+	uint8_t xOffset = 0;
 
-	while (1)
+	memset(titlebuffer, 0, sizeof(titlebuffer));
+
+	// Print 2x scaled symbols into title buffer, condensing extra empty columns
+	while (true)
 	{
-		uint8_t symbol = title[i++];
+		uint8_t symbol = title[idx++];
+		if (symbol == '\0')
+			break;
 
-		if (symbol != '\0' && (curOffset < OSD_HEIGHT_PX))
+		TRACE("Title symbol '%c'", symbol);
+
+		// Determine true symbol width (trimming empty columns on both sides)
+		uint8_t startOffset = 0;
+		uint8_t width = 8;
 		{
-			for (j = 0; j < 8; ++j)
+			// Process left and right 3 pixel columns (center 2 pixels shouldn't be compressed - Space symbol for example)
+			bool isContinuousLeft = charfont[symbol][0] == 0;
+			bool isContinuousRight = charfont[symbol][7] == 0;
+			for (int i = 0; i < 3; i++)
 			{
-				uint8_t fontByte = charfont[symbol][j];
+				uint8_t fontByte = charfont[symbol][i];
+				uint8_t fontByteRev = charfont[symbol][7 - i];
 
-				if (fontByte != 0)
+				// Process left half
+				if (fontByte == 0 && isContinuousLeft)
 				{
-					zeros = 0;
-					titlebuffer[curOffset++] = fontByte;
+					startOffset++;
+					width--;
 				}
-				else if (zeros == 0)
-				{
-					titlebuffer[curOffset++] = 0;
-					zeros = 1;
-				}
+				else
+					isContinuousLeft = false;
 
-				if (curOffset > 63)
-					break;
+				// Process right half
+				if (fontByteRev == 0 && isContinuousRight)
+				{
+					width--;
+				}
+				else
+					isContinuousRight = false;
 			}
 		}
-		else
-			break;
-	}
 
-	for (i = curOffset; i < OSD_HEIGHT_PX; i++)
-	{
-		titlebuffer[i] = 0;
-	}
-
-	// Now centre it:
-	int c = (OSD_HEIGHT_PX - 1 - curOffset) / 2;
-	memmove(titlebuffer + c, titlebuffer, curOffset);
-	for (i = 0; i < c; ++i)
-		titlebuffer[i] = 0;
-
-	// Finally rotate it.
-	uint8_t rotationBuffer[8];
-	for (i = 0; i< OSD_HEIGHT_PX; i += 8)
-	{
-		rotateCharacter(&titlebuffer[i], rotationBuffer);
-
-		for (c = 0; c < 8; c++)
+		// Print scaled symbol into title buffer
 		{
-			titlebuffer[i + c] = rotationBuffer[c];
+			for (int i = startOffset; i < startOffset + width; i++)
+			{
+				uint8_t fontByte = charfont[symbol][i];
+				uint16_t scaledWord = scale8Bits(fontByte);
+
+				titlebuffer[0][xOffset] = (uint8_t)scaledWord;
+				titlebuffer[0][xOffset + 1] = (uint8_t)scaledWord;
+				titlebuffer[1][xOffset] = (uint8_t)(scaledWord >> 8);
+				titlebuffer[1][xOffset + 1] = (uint8_t)(scaledWord >> 8);
+
+				xOffset += 2;
+			}
 		}
+
+		if (xOffset >= OSD_HIGHRES_HEIGHT_LINES * 8)
+			break;
 	}
 }
 
@@ -151,7 +166,7 @@ void osd::printLine(uint8_t line, const char *text, bool invert)
 		return;
 
 	int i = 0;
-	int curOffset = 2; // Make 2 symbol right shift (since will be overlapped with title anyway)
+	int curOffset = 16; // Make 2 symbols right shift (since will be overlapped with title anyway)
 
 	while (true)
 	{
@@ -175,96 +190,6 @@ void osd::printLine(uint8_t line, const char *text, bool invert)
 	}
 }
 
-void osd::printText(uint8_t line, const char *text, uint8_t start, uint8_t width, uint8_t offset, bool invert)
-{
-	// line : OSD line number (0-7)
-	// text : pointer to null-terminated string
-	// start : start position (in pixels)
-	// width : printed text length in pixels
-	// offset : scroll offset in pixels counting from the start of the string (0-7)
-	// invert : inversion flag
-
-	uint8_t *pTitleBuffer;
-	int i;
-	int j;
-
-	FPGADevice& fpga = FPGADevice::instance();
-	FPGAConnector& connector = *(fpga.connector);
-	FPGACommand& command = *(fpga.command);
-
-	command.startOSD();
-
-	// Select buffer and line to write to
-	command.sendCommand(MM1_OSDCMDWRITE | line);
-
-	if (invert)
-		invert = 0xff;
-
-	pTitleBuffer = &titlebuffer[(OSD_HEIGHT_LINES - 1 - line) * 8];
-	if (start > 2)
-	{
-		connector.transferWord(0xFFFF);
-		start -= 2;
-	}
-
-	i = start > 16 ? 16 : start;
-	for (j = 0; j < i / 2; ++j)
-	{
-		uint8_t value = 255 ^ *pTitleBuffer++;
-		connector.transferByte(value);
-		connector.transferByte(value);
-	}
-
-	if (i & 1)
-		connector.transferByte(255 ^ *pTitleBuffer);
-
-	start -= i;
-
-	if (start > 2)
-	{
-		connector.transferWord(0xffff);
-		start -= 2;
-	}
-
-	while (start--)
-		connector.transferByte(0x00);
-
-	if (offset)
-	{
-		width -= 8 - offset;
-
-		uint8_t lineIdx = *text++;
-		pTitleBuffer = &charfont[lineIdx][offset];
-		for (; offset < 8; offset++)
-			connector.transferByte(*pTitleBuffer++ ^ invert);
-	}
-
-	while (width > 8)
-	{
-		uint8_t b;
-		uint8_t lineIdx = *text++;
-		pTitleBuffer = &charfont[lineIdx][0];
-
-		for (b = 0; b < 8; b++)
-		{
-			connector.transferByte(*pTitleBuffer++ ^ invert);
-		}
-
-		width -= 8;
-	}
-
-	if (width)
-	{
-		uint8_t lineIdx = *text++;
-		pTitleBuffer = &charfont[lineIdx][0];
-
-		while (width--)
-			connector.transferByte(*pTitleBuffer++ ^ invert);
-	}
-
-	command.endOSD();
-}
-
 // Helper methods
 
 void osd::clearFramebuffer()
@@ -274,19 +199,62 @@ void osd::clearFramebuffer()
 
 void osd::rotateCharacter(uint8_t *in, uint8_t *out)
 {
-	int a;
+	uint8_t value;
 
-	for (int b = 0; b < 8; ++b)
+	for (int i = 0; i < 8; i++)
 	{
-		a = 0;
-		for (int c = 0; c < 8; ++c)
+		value = 0;
+		for (int j = 0; j < 8; j++)
 		{
-			a <<= 1;
-			a |= (in[c] >> b) & 1;
+			value <<= 1;
+			value |= (*(in + j) >> i) & 1;
 		}
 
-		out[b] = a;
+		*(out + i) = value;
 	}
+}
+
+uint8_t osd::scale4Bits(uint8_t byte)
+{
+	uint8_t result = 0;
+	uint8_t mask = 0b00000001;
+
+	uint8_t value = 0;
+	for (int i = 0; i < 4; i++)
+	{
+		value = byte << i;
+
+		result = (result & ~mask) | (value & mask);
+		value <<= 1;
+		mask <<= 1;
+		result = (result & ~mask) | (value & mask);
+
+		mask <<= 1;
+	}
+
+	return result;
+}
+
+uint16_t osd::scale8Bits(uint8_t byte)
+{
+	uint16_t result = 0;
+	uint16_t mask = 0b0000000000000001;
+
+	uint16_t expanded = byte;
+	uint16_t value = 0;
+	for (int i = 0; i < 8; i++)
+	{
+		value = expanded << i;
+
+		result = (result & ~mask) | (value & mask);
+		value <<= 1;
+		mask <<= 1;
+		result = (result & ~mask) | (value & mask);
+
+		mask <<= 1;
+	}
+
+	return result;
 }
 
 /*

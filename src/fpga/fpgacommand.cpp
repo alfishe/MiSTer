@@ -28,9 +28,9 @@ FPGACommand::~FPGACommand()
 /*
  * Requests FPGA core ID
  */
-uint8_t FPGACommand::getCoreType()
+CoreType FPGACommand::getCoreType()
 {
-	uint8_t result = 0;
+	CoreType result = CoreType::CORE_TYPE_UNKNOWN;
 
 	// Each command should have this check as a first call
 	if (!checkExecution())
@@ -47,7 +47,7 @@ uint8_t FPGACommand::getCoreType()
 
 	if ((coretype >> 8) == MISTER_CORE_MAGIC_NUMBER)
 	{
-		result = (uint8_t)coretype;
+		result = CoreType((uint8_t)coretype);
 
 		LOGINFO("Core returned Type=0x%X\n", result);
 	}
@@ -57,6 +57,15 @@ uint8_t FPGACommand::getCoreType()
 	}
 
 	endExecution();
+
+	return result;
+}
+
+char* FPGACommand::getCoreName()
+{
+	static char result[128 + 1];
+
+
 
 	return result;
 }

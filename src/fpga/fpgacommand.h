@@ -13,6 +13,19 @@
 class FPGAConnector;
 class FPGADevice;
 
+// Core type value should be unlikely to be returned by broken cores
+enum class CoreType: uint8_t
+{
+	CORE_TYPE_MENU = 0x00,
+	CORE_TYPE_UNKNOWN = 0x55,
+	CORE_TYPE_DUMB = 0xA0,		// core without any io controller interaction
+	CORE_TYPE_PACE = 0xA2,		// core from pacedev.net (joystick only)
+	CORE_TYPE_MIST = 0xA3,		// mist atari st core
+	CORE_TYPE_8BIT = 0xA4,		// atari 800/c64 like core
+	CORE_TYPE_MINIMIG2 = 0xA5,	// new Minimig with AGA
+	CORE_TYPE_ARCHIE = 0xA6		// Acorn Archimedes
+};
+
 class FPGACommand
 {
 protected:
@@ -28,7 +41,8 @@ public:
 	FPGACommand(const FPGACommand& that) = delete; // Copy constructor is forbidden here (C++11 feature)
 	virtual ~FPGACommand();
 
-	uint8_t getCoreType();
+	CoreType getCoreType();
+	char* getCoreName();
 
 	// OSD commands
 	bool startOSD();

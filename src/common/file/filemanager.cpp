@@ -2,8 +2,11 @@
 
 #include "../logger/logger.h"
 
+#include <libgen.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/vfs.h>
+#include "linux/magic.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -12,7 +15,7 @@
 #include "../consts.h"
 #include "../../3rdparty/openbsd/string.h"
 
-bool filemanager::isFolderExists(char *path)
+bool filemanager::isFolderExists(const char *path)
 {
 	bool result = false;
 
@@ -28,7 +31,57 @@ bool filemanager::isFolderExists(char *path)
 	return result;
 }
 
-bool filemanager::isFileExist(char *path)
+bool filemanager::isPathMounted(char *path)
+{
+	bool result = false;
+
+	struct stat file_stat;
+	struct stat parent_stat;
+
+	if (stat(path, &file_stat) != -1)
+	{
+		if (file_stat.st_mode & S_IFDIR)
+		{
+			if (stat(dirname(path), &parent_stat) != -1)
+			{
+				if (file_stat.st_dev != parent_stat.st_dev ||
+					(file_stat.st_dev == parent_stat.st_dev &&
+					file_stat.st_ino == parent_stat.st_ino)
+				)
+				{
+					LOGINFO("%s is a mountpoint.\n", path);
+
+					struct statfs fs_stat;
+					if (!statfs(path, &fs_stat))
+					{
+						LOGINFO("%s is FS: 0x%08X\n", path, fs_stat.f_type);
+						if (fs_stat.f_type != EXT4_SUPER_MAGIC)
+						{
+							LOGINFO("%s is not EXT2/3/4 (which is ok since FAT32 or ExFAT expected).\n", path);
+							result = true;
+						}
+					}
+				}
+			}
+			else
+			{
+				LOGERROR("failed to stat /media\n");
+			}
+		}
+		else
+		{
+			LOGERROR("%s is not a directory.\n", path);
+		}
+	}
+	else
+	{
+		LOGERROR("failed to stat %s\n", path);
+	}
+
+	return result;
+}
+
+bool filemanager::isFileExist(const char *path)
 {
 	bool result = false;
 
@@ -40,7 +93,7 @@ bool filemanager::isFileExist(char *path)
 	return result;
 }
 
-bool filemanager::isFileWritable(char *path)
+bool filemanager::isFileWritable(const char *path)
 {
 	bool result = false;
 
@@ -52,7 +105,7 @@ bool filemanager::isFileWritable(char *path)
 	return result;
 }
 
-uint64_t filemanager::getFileSize(char *path)
+uint64_t filemanager::getFileSize(const char *path)
 {
 	uint64_t result = 0;
 

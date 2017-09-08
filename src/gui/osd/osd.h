@@ -67,22 +67,27 @@
 class osd
 {
 protected:
+	// Low-res mode (32x8 symbols, 256x8 bytes)
+	// High-res mode (32x16 symbols, 256x16 bytes)
+
 	// Constants
 	static const uint8_t OSD_HEIGHT_LINES = 8;
 	static const uint8_t OSD_HEIGHT_PX = OSD_HEIGHT_LINES * 8;
+	static const uint16_t OSD_TITLE_WIDTH_PX = OSD_HEIGHT_PX;
 	static const uint8_t OSD_HIGHRES_HEIGHT_LINES = 16;
-	static const uint8_t OSD_HIGHRES_HEIGHT_PX = OSD_HIGHRES_HEIGHT_LINES * 8;
+	static const uint16_t OSD_HIGHRES_HEIGHT_PX = OSD_HIGHRES_HEIGHT_LINES * 8;
+	static const uint16_t OSD_HIGHRES_TITLE_WIDTH_PX = OSD_HIGHRES_HEIGHT_PX;
 	static const uint16_t OSD_LINE_LENGTH_BYTES = 256;
 
 	// Fields
-	uint8_t titlebuffer[128]; // 16 symbols (8 * 16 = 128)
-	uint8_t framebuffer[16][OSD_LINE_LENGTH_BYTES];
-
-	uint32_t scroll_offset = 0; // file/dir name scrolling position
-	uint32_t scroll_timer = 0;  // file/dir name scrolling timer
+	uint8_t titlebuffer[2][OSD_HIGHRES_HEIGHT_LINES * 8]; // Horizontal buffer for initial title rendering. After rotation - 16 symbols height in highres and 8 in lowres
+	uint8_t framebuffer[OSD_HIGHRES_HEIGHT_LINES][OSD_LINE_LENGTH_BYTES];
 
 	bool highResolution = false;
 	bool arrowDirection;
+
+	uint32_t scroll_offset = 0; // file/dir name scrolling position
+	uint32_t scroll_timer = 0;  // file/dir name scrolling timer
 
 public:
 	static osd& instance();
@@ -100,12 +105,13 @@ public:
 	void compose();
 	void setTitle(const char *title, bool arrowDirection);
 	void printLine(uint8_t line, const char *text, bool invert = false);
-	void printText(uint8_t line, const char *text, uint8_t start, uint8_t width, uint8_t offset, bool invert);
 
 protected:
 	// Helper methods
 	void clearFramebuffer();
 	void rotateCharacter(uint8_t *in, uint8_t *out);
+	uint8_t scale4Bits(uint8_t byte);
+	uint16_t scale8Bits(uint8_t byte);
 	void transferFramebuffer();
 
 private:
