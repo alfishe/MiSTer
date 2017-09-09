@@ -91,7 +91,7 @@ void osd::compose()
 	transferFramebuffer();
 }
 
-void osd::setTitle(const char *title, bool arrowDirection)
+void osd::setTitle(const char *title, uint8_t arrows)
 {
 	uint8_t idx = 0;
 	uint8_t xOffset = 0;

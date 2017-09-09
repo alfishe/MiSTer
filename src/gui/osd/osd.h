@@ -103,7 +103,7 @@ public:
 	void fill();
 	void clear();
 	void compose();
-	void setTitle(const char *title, bool arrowDirection);
+	void setTitle(const char *title, uint8_t arrows = 0);
 	void printLine(uint8_t line, const char *text, bool invert = false);
 
 protected:
