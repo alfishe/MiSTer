@@ -258,7 +258,7 @@ bool FPGADevice::program(const void* rbf_data, uint32_t rbf_size)
 			if (result)
 			{
 				// Step 5: Verify FPGA returned back to user mode with new bitstream
-				result = fpgamgr_program_poll_usermode();
+				result = fpgamanager_program_poll_usermode();
 
 				if (result)
 				{
@@ -659,7 +659,7 @@ bool FPGADevice::fpgamanager_program_poll_initphase()
 /*
  * Ensure the FPGA entered user mode
  */
-bool FPGADevice::fpgamgr_program_poll_usermode()
+bool FPGADevice::fpgamanager_program_poll_usermode()
 {
 	bool result;
 
