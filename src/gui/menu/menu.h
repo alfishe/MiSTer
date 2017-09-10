@@ -155,9 +155,74 @@ protected:
 	// Helper methods
 	void menuNone1();
 	void menuNone2();
+
 	void menuArchieMain1();
 	void menuArchieMain2();
 	void menuArchieMainFileSelected();
+
+	void menu8bitMain1();
+	void menu8bitMain2();
+	void menu8bitMainFileSelected();
+	void menu8bitMainImageSelected();
+	void menu8bitSystem1();
+	void menu8bitSystem2();
+	void menu8bitAbout1();
+	void menu8bitAbout2();
+
+	void menuMistMain1();
+	void menuMistMain2();
+	void menuMistMainFileSelected();
+	void menuMistStorage1();
+	void menuMistStorage2();
+	void menuMistStorageFileSelected();
+	void menuMistSystem1();
+	void menuMistSystem2();
+	void menuMistSystemFileSelected();
+	void menuMistVideo1();
+	void menuMistVideo2();
+	void menuMistVideoAdjust1();
+	void menuMistVideoAdjust2();
+
+	void menuMain1();
+	void menuMain2();
+	void menuFileSelected();
+	void menuLoadConfig1();
+	void menuLoadConfig2();
+	void menuFileSelect1();
+	void menuFileSelect2();
+	void menuReset1();
+	void menuReset2();
+	void menuSaveConfig1();
+	void menuSaveConfig2();
+	void menuSettingsChipset1();
+	void menuSettingsChipset2();
+	void menuSettingsMemory1();
+	void menuSettingsMemory2();
+	void menuSettingsHardfile1();
+	void menuSettingsHardfile2();
+	void menuHardfileSelected();
+	void menuHardfileExit();
+	void menuHardfileChanged1();
+	void menuHardfileChanged2();
+	void menuSynthRDB1();
+	void menuSynthRDB2_1();
+	void menuSynthRDB2();
+	void menuSettingsVideo1();
+	void menuSettingsVideo2();
+	void menuRomfileSelected();
+	void menuRomfileSelected1();
+	void menuRomfileSelected2();
+	void menuFirmware1();
+	void menuFirmware2();
+	void menuFirmwareCoreFileSelected();
+	void menuStorage();
+
+	void menuKbdmap();
+	void menuKbdmap1();
+	void menuJoydigmap();
+	void menuJoydigmap1();
+	void menuError();
+	void menuInfo();
 
 	bool changeCurrentFolder(const char *folderpath);
 };
