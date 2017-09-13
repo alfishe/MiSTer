@@ -17,8 +17,9 @@
 #include "../common/addresses.h"
 #include "socfpga_reset_manager.h"
 #include "socfpga_fpga_manager.h"
-#include "socfpga_nic301.h"
+#include "socfpga_sdram_controller.h"
 #include "socfpga_system_manager.h"
+#include "socfpga_nic301.h"
 #include "../common/file/filemanager.h"
 #include "../common/system/sysmanager.h"
 
@@ -119,7 +120,7 @@ void FPGADevice::reboot(bool cold)
 
 void FPGADevice::core_reset(bool reset)
 {
-	// Read state for bits 30 and 31 (buttons
+	// Read state for bits 30 and 31 (button and FPGA ready signal)
 	uint32_t gpo = gpo_read() & ~0xC0000000;
 
 	// Set bit 30 if reset is requested, and bit 31 if not
@@ -144,7 +145,7 @@ bool FPGADevice::load_rbf(const char *name)
 
 #ifdef REBOOT_ON_RBF_LOAD
 	// TODO: re-check whether it's still needed
-	do_bridge(0);
+	enableHPSFPGABridges(0);
 	result = save_core_name(name);
 #else
 	// Do loading .RBF file
@@ -164,8 +165,14 @@ bool FPGADevice::load_rbf(const char *name)
 			{
 				if (filemanager::readFileIntoMemory(filepath, (uint8_t *)buffer, filesize))
 				{
+					// Disable all HPS<->FPGA bridges before reconfiguring FPGA
+					disableHPSFPGABridges();
+
 					if (program(buffer, filesize))
 					{
+						// Enable HPS<->FPGA bridges back, once FPGA successfully reconfigured
+						enableHPSFPGABridges();
+
 						result = true;
 
 						LOGINFO("FPGA successfully programmed with '%s' file\n", filepath);
@@ -287,21 +294,19 @@ bool FPGADevice::program(const void* rbf_data, uint32_t rbf_size)
 	return result;
 }
 
-void FPGADevice::do_bridge(bool enable)
+void FPGADevice::disableHPSFPGABridges()
 {
-	if (enable)
-	{
-		writel(0x00003FFF, (void*)(SOCFPGA_SDR_ADDRESS + 0x5080));
-		writel(0x00000000, &reset_regs->brg_mod_reset);
-		writel(0x00000019, &nic301_regs->remap);
-	}
-	else
-	{
-		writel(0, &sysmgr_regs->fpgaintfgrp_module);
-		writel(0, (void*)(SOCFPGA_SDR_ADDRESS + 0x5080));
-		writel(7, &reset_regs->brg_mod_reset);
-		writel(1, &nic301_regs->remap);
-	}
+	writel(0, &sysmgr_regs->fpgaintfgrp_module);
+	writel(0, &sdram_regs->fpgaportrst);
+	writel(7, &reset_regs->brg_mod_reset);
+	writel(1, &nic301_regs->remap);
+}
+
+void FPGADevice::enableHPSFPGABridges()
+{
+	writel(0x00003FFF, &sdram_regs->fpgaportrst);
+	writel(0x00000000, &reset_regs->brg_mod_reset);
+	writel(0x00000019, &nic301_regs->remap);
 }
 
 
@@ -558,7 +563,7 @@ void FPGADevice::fpgamanager_program_write(const void *rbf_data, uint32_t rbf_si
 	// Write .rbf data to FPGA Manager address block in two steps:
 	// First: fast copy using 32-byte blocks
 	// Second: 4-byte blocks copy for the rest of content
-	// Node, it's highly undesirable to use r7 in GCC embedded asm. that's why u-boot-derived code modified to use r8
+	// Note: it's highly undesirable to use r7 in GCC embedded asm. that's why u-boot-derived code modified to use r8
 	__asm volatile
 	(
 		"1:	ldmia %0!,{r0-r6, r8}   \n" // Loop 1

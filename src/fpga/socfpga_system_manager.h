@@ -39,13 +39,15 @@ struct socfpga_system_manager
 	/* Preloader (initial software) Group */
 	uint32_t	iswgrp_handoff[8];		/* 0x80 */
 	uint32_t	_pad_0xa0_0xbf[8];		/* 0xa0 */
-										/* Boot ROM Code Register Group */
+
+	/* Boot ROM Code Register Group */
 	uint32_t	romcodegrp_ctrl;		/* 0xc0 */
 	uint32_t	romcodegrp_cpu1startaddr;
 	uint32_t	romcodegrp_initswstate;
 	uint32_t	romcodegrp_initswlastld;
 	uint32_t	romcodegrp_bootromswstate;	/* 0xd0 */
 	uint32_t	__pad_0xd4_0xdf[3];
+
 	/* Warm Boot from On-Chip RAM Group */
 	uint32_t	romcodegrp_warmramgrp_enable;	/* 0xe0 */
 	uint32_t	romcodegrp_warmramgrp_datastart;
@@ -53,6 +55,7 @@ struct socfpga_system_manager
 	uint32_t	romcodegrp_warmramgrp_execution;
 	uint32_t	romcodegrp_warmramgrp_crc;	/* 0xf0 */
 	uint32_t	__pad_0xf4_0xff[3];
+
 	/* Boot ROM Hardware Register Group */
 	uint32_t	romhwgrp_ctrl;			/* 0x100 */
 	uint32_t	_pad_0x104_0x107;

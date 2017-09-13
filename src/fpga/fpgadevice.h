@@ -33,9 +33,12 @@ protected:
 	uint32_t *map_base = INVALID_ADDRESS_UINT32;
 
 	// Map SocFPGA standard address regions to readable structures
+	// Note: for now absolute addresses in physical address space used. Might be needed to adjust, based on map_base address
+	//       obtained from mmap() call
 	struct socfpga_reset_manager  *reset_regs = (socfpga_reset_manager *)((void *)SOCFPGA_RSTMGR_ADDRESS);
 	struct socfpga_fpga_manager   *fpgamgr_regs = (socfpga_fpga_manager *)((void *)SOCFPGA_FPGAMGRREGS_ADDRESS);
 	struct socfpga_system_manager *sysmgr_regs = (socfpga_system_manager *)((void *)SOCFPGA_SYSMGR_ADDRESS);
+	struct socfpga_sdram_controller *sdram_regs = (socfpga_sdram_controller *)((void *)SOCFPGA_SDR_ADDRESS);
 	struct nic301_registers       *nic301_regs = (nic301_registers *)((void *)SOCFPGA_L3REGS_ADDRESS);
 
 	// Cached "shadow" copy of FPGA gpo register
@@ -62,17 +65,18 @@ public:
 	bool init();
 	void reboot(bool cold);
 	void core_reset();
+	void core_reset(bool reset);
 
 	// Info methods
 	bool is_fpga_ready(int quick);
 	int get_fpga_mode();
-	void core_reset(bool reset);
+
 
 	// FPGA load methods
 	bool load_rbf(const char *name);
 	bool program(const void* rbf_data, uint32_t rbf_size);
-
-	void do_bridge(bool enable);
+	void disableHPSFPGABridges();
+	void enableHPSFPGABridges();
 
 	// Indicators
 	void set_led(bool on);

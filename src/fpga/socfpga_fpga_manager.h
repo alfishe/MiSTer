@@ -11,7 +11,7 @@
 #include <stdint.h>
 
 // Module instance: fpgamgrregs
-// Base address: 0xFF706000
+// Base address: 0xFF706000 (SOCFPGA_FPGAMGRREGS_ADDRESS)
 struct socfpga_fpga_manager
 {
 	// FPGA Manager Module Registers
