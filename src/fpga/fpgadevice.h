@@ -150,7 +150,7 @@ protected:
 	void fpgamanager_program_write(const void *rbf_data, uint32_t rbf_size);
 	bool fpgamanager_program_poll_cd();
 	bool fpgamanager_program_poll_initphase();
-	bool fpgamgr_program_poll_usermode();
+	bool fpgamanager_program_poll_usermode();
 	uint32_t fpgamanager_get_mode();
 	void fpgamanager_set_cd_ratio(uint32_t ratio);
 	bool fpgamanager_dclkcnt_set(uint32_t cnt);
