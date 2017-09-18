@@ -16,7 +16,7 @@ class FPGADevice;
 // Core type value should be unlikely to be returned by broken cores
 enum class CoreType: uint8_t
 {
-	CORE_TYPE_MENU = 0x00,
+	CORE_TYPE_MENU = 0x00,		// Introduced separate type of core specifically for menu
 	CORE_TYPE_UNKNOWN = 0x55,
 	CORE_TYPE_DUMB = 0xA0,		// core without any io controller interaction
 	CORE_TYPE_PACE = 0xA2,		// core from pacedev.net (joystick only)
