@@ -65,7 +65,34 @@ char* FPGACommand::getCoreName()
 {
 	static char result[128 + 1];
 
+	startIO();
 
+	sendCommand(UIO_GET_STRING);
+	uint8_t byte = connector->transferByte(0);
+
+	// The first char returned will be 0xFF if the core doesn't support
+	// config strings. atari 800 returns 0xa4 which is the status byte
+	if (!(byte == 0xff || byte == 0xA4))
+	{
+		unsigned idx = 0;
+		result[idx++] = byte;
+
+		while (byte != 0x00 && byte != 0xFF && idx < sizeof(result))
+		{
+			byte = connector->transferByte(0);
+
+			// Configuration parameters will go next. We don't need them for the name
+			if (byte == ';')
+			{
+				result[idx] = '\0';
+				break;
+			}
+
+			result[idx++] = byte;
+		}
+	}
+
+	endIO();
 
 	return result;
 }
@@ -141,6 +168,27 @@ void FPGACommand::sendOSDCommand(uint8_t cmd, uint32_t param)
 }
 
 // IO commands
+bool FPGACommand::startIO()
+{
+	bool result = false;
+
+	if (checkExecution())
+	{
+		connector->enableIO();
+
+		result = true;
+	}
+
+	return result;
+}
+
+void FPGACommand::endIO()
+{
+	connector->disableIO();
+
+	endExecution();
+}
+
 void FPGACommand::sendIOCommand(uint8_t cmd)
 {
 	if (checkExecution())

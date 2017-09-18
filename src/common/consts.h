@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+#define DATA_ROOT "/media/fat"
+#define CONFIG_DIR "config"
+
 // Data volume mount point (path)
 #define DATA_VOLUME_MOUNT_POINT "/media/fat"
 

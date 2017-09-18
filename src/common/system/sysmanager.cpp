@@ -5,8 +5,10 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <dirent.h>
 
 #include "../../fpga/fpgadevice.h"
 
@@ -56,5 +58,22 @@ void sysmanager::restartApplication()
 
 const char* sysmanager::getDataRootDir()
 {
-	return "/media/fat";
+	return DATA_ROOT;
+}
+
+void sysmanager::ensureConfigFolderExists()
+{
+	char fullPath[PATH_MAX];
+
+	snprintf(fullPath, PATH_MAX, "%s/%s", getDataRootDir(), CONFIG_DIR);
+
+	DIR* dir = opendir(fullPath);
+	if (!dir)
+	{
+		mkdir(fullPath, S_IRWXU | S_IRWXG | S_IRWXO);
+	}
+	else
+	{
+		closedir(dir);
+	}
 }

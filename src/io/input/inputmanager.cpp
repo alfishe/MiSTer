@@ -1,8 +1,8 @@
 #include "inputmanager.h"
 
-InputManager::InputManager()
-{
-}
+#include <sys/inotify.h>
+#include <sys/poll.h>
+#include <sys/sysinfo.h>
 
 InputManager::~InputManager()
 {
