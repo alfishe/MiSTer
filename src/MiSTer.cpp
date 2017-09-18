@@ -1,3 +1,5 @@
+#include "MiSTer.h"
+
 #include "common/logger/logger.h"
 
 #include <iostream>
@@ -105,6 +107,8 @@ int main(int argc, char *argv[])
 
 	LOGINFO("MiSTer process started with PID:%d\n", sysmanager::getProcessID());
 
+	init();
+
 	FPGADevice& fpga = FPGADevice::instance();
 	FPGACommand& command = *(fpga.command);
 
@@ -112,6 +116,8 @@ int main(int argc, char *argv[])
 
 	// TODO: Remove debug code
 	CoreType coreType = command.getCoreType();
+
+	LOGINFO("%s", command.getCoreName());
 	//CoreManager::instance().loadCore("memtest.rbf");
 	//sleep(2);
 	//coreType = command.getCoreType();
@@ -123,4 +129,10 @@ int main(int argc, char *argv[])
 	fflush(stdout);
 
 	return 0;
+}
+
+void init()
+{
+	// Ensure that /config folder exists on data disk
+	sysmanager::ensureConfigFolderExists();
 }

@@ -9,6 +9,7 @@ public:
 	static void restartApplication();
 
 	static const char* getDataRootDir();
+	static void ensureConfigFolderExists();
 
 private:
 	sysmanager() {};
