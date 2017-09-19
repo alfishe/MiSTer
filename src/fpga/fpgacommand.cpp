@@ -65,8 +65,11 @@ char* FPGACommand::getCoreName()
 {
 	static char result[128 + 1];
 
-	startIO();
+	// If parallel FPGA data transfer transaction executed - just exit
+	if (!startIO())
+		return nullptr;
 
+	// Request Identification / Config string from the FPGA core
 	sendCommand(UIO_GET_STRING);
 	uint8_t byte = connector->transferByte(0);
 
@@ -77,7 +80,7 @@ char* FPGACommand::getCoreName()
 		unsigned idx = 0;
 		result[idx++] = byte;
 
-		while (byte != 0x00 && byte != 0xFF && idx < sizeof(result))
+		while (byte != 0x00 && byte != 0xFF && idx < sizeof(result - 1))
 		{
 			byte = connector->transferByte(0);
 
@@ -90,6 +93,55 @@ char* FPGACommand::getCoreName()
 
 			result[idx++] = byte;
 		}
+
+		// Ensure string is NULL-terminated
+		if (result[idx] != '\0')
+			result[idx] = '\0';
+	}
+
+	endIO();
+
+	return result;
+}
+
+char* FPGACommand::getCoreConfig()
+{
+	static char result[128 + 1];
+
+	// If parallel FPGA data transfer transaction executed - just exit
+	if (!startIO())
+		return nullptr;
+
+	// Request Identification / Config string from the FPGA core
+	sendCommand(UIO_GET_STRING);
+	uint8_t byte = connector->transferByte(0);
+
+	// The first char returned will be 0xFF if the core doesn't support
+	// config strings. atari 800 returns 0xa4 which is the status byte
+	if (!(byte == 0xff || byte == 0xA4))
+	{
+		unsigned idx = 0;
+
+		// Skip core name and start extraction from parameters
+		while (byte != 0x00 && byte != 0xFF)
+		{
+			if (byte == ';')
+				break;
+
+			byte = connector->transferByte(0);
+		}
+
+		// Extract config string
+		while (byte != 0x00 && byte != 0xFF && idx < sizeof(result - 1))
+		{
+			byte = connector->transferByte(0);
+
+			result[idx++] = byte;
+		}
+
+		// Ensure string is NULL-terminated
+		if (result[idx] != '\0')
+			result[idx] = '\0';
 	}
 
 	endIO();
@@ -98,6 +150,10 @@ char* FPGACommand::getCoreName()
 }
 
 // OSD commands
+
+/*
+ * Starts OSD transaction. No other commands (any type) can be executed to interact with FPGA until transaction finished.
+ */
 bool FPGACommand::startOSD()
 {
 	bool result = false;
@@ -112,6 +168,9 @@ bool FPGACommand::startOSD()
 	return result;
 }
 
+/*
+ * Ends OSD transaction and unblocks communication with FPGA
+ */
 void FPGACommand::endOSD()
 {
 	connector->disableOSD();
@@ -168,6 +227,10 @@ void FPGACommand::sendOSDCommand(uint8_t cmd, uint32_t param)
 }
 
 // IO commands
+
+/*
+ * Starts IO transaction. No other commands (any type) can be executed to interact with FPGA until transaction finished.
+ */
 bool FPGACommand::startIO()
 {
 	bool result = false;
@@ -182,6 +245,9 @@ bool FPGACommand::startIO()
 	return result;
 }
 
+/*
+ * Ends IO transaction and unblocks communication with FPGA
+ */
 void FPGACommand::endIO()
 {
 	connector->disableIO();

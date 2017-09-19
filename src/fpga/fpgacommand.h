@@ -43,6 +43,7 @@ public:
 
 	CoreType getCoreType();
 	char* getCoreName();
+	char* getCoreConfig();
 
 	// OSD commands
 	bool startOSD();

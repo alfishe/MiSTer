@@ -117,7 +117,9 @@ int main(int argc, char *argv[])
 	// TODO: Remove debug code
 	CoreType coreType = command.getCoreType();
 
-	LOGINFO("%s", command.getCoreName());
+	LOGINFO("Core name: %s\n", command.getCoreName());
+	LOGINFO("Core config: %s\n", command.getCoreConfig());
+
 	//CoreManager::instance().loadCore("memtest.rbf");
 	//sleep(2);
 	//coreType = command.getCoreType();

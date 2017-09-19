@@ -8,3 +8,7 @@ InputManager::~InputManager()
 {
 }
 
+void InputManager::detectDevices()
+{
+
+}
