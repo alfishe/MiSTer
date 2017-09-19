@@ -80,7 +80,7 @@ char* FPGACommand::getCoreName()
 		unsigned idx = 0;
 		result[idx++] = byte;
 
-		while (byte != 0x00 && byte != 0xFF && idx < sizeof(result - 1))
+		while (byte != 0x00 && byte != 0xFF && idx < sizeof(result) - 1)
 		{
 			byte = connector->transferByte(0);
 
@@ -132,7 +132,7 @@ char* FPGACommand::getCoreConfig()
 		}
 
 		// Extract config string
-		while (byte != 0x00 && byte != 0xFF && idx < sizeof(result - 1))
+		while (byte != 0x00 && byte != 0xFF && idx < sizeof(result) - 1)
 		{
 			byte = connector->transferByte(0);
 
