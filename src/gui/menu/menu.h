@@ -2,6 +2,7 @@
 #define GUI_MENU_MENU_H_
 
 #include <stdint.h>
+#include "../../common/file/directorymanager.h"
 #include "../../common/file/filemanager.h"
 
 /*
@@ -141,7 +142,6 @@ protected:
 
 	char fileExtension[13] = "xxx";
 	int fileExtensionLen;
-	ScanningOptions options;
 
 public:
 	menu();
@@ -149,7 +149,7 @@ public:
 
 	void handleUI();
 
-	bool selectFile(const char* extension, ScanningOptions options, bool changeDir);
+	bool selectFile(const char* extension);
 
 protected:
 	// Helper methods

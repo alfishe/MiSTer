@@ -9,6 +9,8 @@
 
 #include "3rdparty/backward/backward.hpp"
 #include "common/system/sysmanager.h"
+#include "common/file/directorymanager.h"
+#include "common/file/filemanager.h"
 #include "fpga/fpgadevice.h"
 #include "fpga/fpgacommand.h"
 #include "cores/coremanager.h"
@@ -25,6 +27,47 @@ using namespace backward;
 #ifndef _FILE_OFFSET_BITS
 #pragma GCC error "ERROR _FILE_OFFSET_BITS is not set. Required for LFS. Please ass -D_FILE_OFFSET_BITS=64 as a compilation parameter"
 #endif
+
+void testFilesystem()
+{
+	string value = filemanager::getExtension("/media/fat/menu.rbf");
+	LOGINFO("Ext: %s\n", value.c_str());
+
+	value = filemanager::getExtension("menu.bin");
+	LOGINFO("Ext: %s\n", value.c_str());
+
+	value = filemanager::getExtension("test.file.with.multiple.extensions.txt");
+	LOGINFO("Ext: %s\n", value.c_str());
+
+	value = filemanager::getExtension("file_with_no_extensions");
+	LOGINFO("Ext: %s\n", value.c_str());
+}
+
+void testDirectories()
+{
+	DirectoryManager& dirManager = DirectoryManager::instance();
+
+	auto res = dirManager.scanDirectory("", nullptr, true);
+	auto& files = *res.get();
+	LOGINFO("/media/fat has %d files\n", files.size());
+	for (auto it = files.begin(); it != files.end(); it++)
+	{
+		DirectoryEntry* item = (*it).get();
+		LOGINFO("%s\n", item->name);
+	}
+
+	StringSet extensions;
+	extensions.insert("rbf");
+	extensions.insert("bin");
+	auto res1 = dirManager.scanDirectory("", &extensions, false);
+	auto& files1 = *res1.get();
+	LOGINFO("/media/fat has %d files filtered by extension\n", files1.size());
+	for (auto it = files1.begin(); it != files1.end(); it++)
+	{
+		DirectoryEntry* item = (*it).get();
+		LOGINFO("%s - %s\n", item->name, item->displayname);
+	}
+}
 
 void testOSD()
 {
@@ -124,8 +167,12 @@ int main(int argc, char *argv[])
 	//sleep(2);
 	//coreType = command.getCoreType();
 
-	//for (int i = 0; i < 5; i++)
+	//for (int i = 0; i < 1000; i++)
+	{
+		//testFilesystem();
+		testDirectories();
 		testOSD();
+	}
 	// End of debug code
 
 	fflush(stdout);

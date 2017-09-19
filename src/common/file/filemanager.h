@@ -1,26 +1,13 @@
 #ifndef COMMON_FILE_FILEMANAGER_H_
 #define COMMON_FILE_FILEMANAGER_H_
 
+#include <string>
 #include <stdint.h>
 #include <inttypes.h>
 #include "../../common/consts.h"
 #include "../../common/types.h"
 
-enum class ScanningMode: uint8_t
-{
-	SCAN_INIT = 0, 	// start search from beginning of directory
-	SCAN_NEXT,		// find next file in directory
-	SCAN_PREV,		// find previous file in directory
-	SCAN_NEXT_PAGE,	// find next 8 files in directory
-	SCAN_PREV_PAGE, // find previous 8 files in directory
-	SCAN_SET_ITEM	// find exact item
-};
-
-enum class ScanningOptions: uint8_t
-{
-	SCAN_DIR = (1 << 0),
-	SCAN_UMOUNT = (1 << 1)
-};
+using namespace std;
 
 class filemanager
 {
@@ -38,9 +25,6 @@ public:
 	static void flush();
 	static int openFileReadOnly(char *filepath);
 	static bool fileSeek(int fd, __off64_t offset, int origin);
-
-	// Complex stateful methods to refactor
-	bool scanDirectory(const char* folderpath, ScanningMode mode, const char *extension, int options);
 
 	// Higher level fileDescriptor oriented file methods
 	static FileDescriptor getFileInfo(char *path);
@@ -64,6 +48,10 @@ public:
 	// Complex file operations using plugins
 	static bool lockFileForCore(char *path, char *core);
 	static bool unlockFileForCore(char *path, char* *core);
+
+	// Path helpers
+	static string getExtension(const string& filename);
+	static string getName(const string& filename);
 
 
 private:

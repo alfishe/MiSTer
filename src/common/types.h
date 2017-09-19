@@ -21,6 +21,11 @@ typedef struct
 	bool		readonly;
 }  FileDescriptor;
 
+typedef struct
+{
+	char name[NAME_MAX + 1]; // Full filename
+	char displayname[60];	// Trimmed version to fit OSD screen
+} DirectoryEntry;
 
 
 #endif /* COMMON_TYPES_H_ */

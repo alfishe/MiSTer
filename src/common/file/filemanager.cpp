@@ -14,6 +14,7 @@
 #include <sys/statvfs.h>
 #include "../consts.h"
 #include "../../3rdparty/openbsd/string.h"
+#include "../helpers/stringhelper.h"
 
 bool filemanager::isFolderExists(const char *path)
 {
@@ -333,6 +334,8 @@ bool filemanager::readFileIntoMemory(char *filepath, uint8_t* buffer, uint32_t b
 	// Initial validation
 	if (filepath == nullptr || buffer == nullptr || bufferSize == 0)
 	{
+		LOGWARN("%s: invalid parameters", __PRETTY_FUNCTION__);
+
 		return result;
 	}
 
@@ -354,4 +357,33 @@ bool filemanager::readFileIntoMemory(char *filepath, uint8_t* buffer, uint32_t b
 	return result;
 }
 
+// Path helpers
+string filemanager::getExtension(const string& filename)
+{
+	string result;
 
+	StringVector parts;
+	StringHelper::split(filename, '.', &parts);
+
+	if (parts.size() > 1)
+	{
+		result = parts.back();
+	}
+
+	return result;
+}
+
+string filemanager::getName(const string& filename)
+{
+	string result;
+
+	StringVector parts;
+	StringHelper::split(filename, '.', &parts);
+
+	if (parts.size() > 0)
+	{
+		result = parts.front();
+	}
+
+	return result;
+}

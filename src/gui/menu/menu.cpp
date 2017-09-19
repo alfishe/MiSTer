@@ -264,7 +264,7 @@ void menu::handleUI()
 /*
  * Displays file selection menu
  */
-bool menu::selectFile(const char* extension, ScanningOptions options, bool changeDir)
+bool menu::selectFile(const char* extension)
 {
 	bool result = false;
 
