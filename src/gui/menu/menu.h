@@ -143,6 +143,10 @@ protected:
 	char fileExtension[13] = "xxx";
 	int fileExtensionLen;
 
+	// State fields
+	string currentFolder;
+	int currentMenuItemOffset = 0;
+
 public:
 	menu();
 	virtual ~menu();
@@ -224,6 +228,7 @@ protected:
 	void menuError();
 	void menuInfo();
 
+	void printFolder();
 	bool changeCurrentFolder(const char *folderpath);
 };
 

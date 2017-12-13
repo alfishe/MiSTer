@@ -43,8 +43,18 @@ DirectoryManager::~DirectoryManager()
 // Public methods
 
 DirectoryListPtr DirectoryManager::scanDirectory(
+		string& folderPath,
+		StringSet* supportedExtensions,
+		bool includeFolders,
+		bool withExtensions)
+{
+	return scanDirectory(folderPath.c_str(), supportedExtensions, includeFolders, withExtensions);
+}
+
+DirectoryListPtr DirectoryManager::scanDirectory(
 		const char* folderPath,
 		StringSet* supportedExtensions,
+		bool includeFolders,
 		bool withExtensions)
 {
 	static char fullPath[PATH_MAX + 1];
@@ -68,6 +78,22 @@ DirectoryListPtr DirectoryManager::scanDirectory(
 			switch (de->d_type)
 			{
 				case DT_DIR:		// Current entry is folder
+					if (strcmp(de->d_name, ".") == 0)
+						continue;
+					if (strcmp(de->d_name, "..") == 0)
+						continue;
+
+					if (includeFolders)
+					{
+						DirectoryEntry* item = new DirectoryEntry();
+						item->isFolder = true;
+						strlcpy(item->name, de->d_name, sizeof(item->name));
+						strlcpy(item->displayname, de->d_name, sizeof(item->displayname));
+
+						list->emplace_back(item);
+					}
+
+					/*
 					if (!strcmp(de->d_name, "."))
 						continue;
 					if (!strcmp(de->d_name, ".."))
@@ -75,6 +101,7 @@ DirectoryListPtr DirectoryManager::scanDirectory(
 						if (!strlen(folderPath))
 							continue;
 					}
+					*/
 					break;
 				case DT_REG:		// Current entry is regular file
 					if (isFileAllowed(de->d_name))
@@ -115,6 +142,13 @@ DirectoryListPtr DirectoryManager::scanDirectory(
 }
 
 // Helper methods
+
+bool DirectoryManager::isFileAllowed(const string& filename)
+{
+	bool result = isFileAllowed(filename.c_str());
+
+	return result;
+}
 
 bool DirectoryManager::isFileAllowed(const char *filename)
 {

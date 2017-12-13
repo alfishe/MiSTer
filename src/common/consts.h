@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#define LINUX_MEMORY_DEVICE "/dev/mem"
 #define DATA_ROOT "/media/fat"
 #define CONFIG_DIR "config"
 
@@ -24,5 +25,9 @@
 
 // Magic number that identifies MiSTer system core (sent via gpi[31:8] when gpo[31] bit is not set, i.e. =0)
 #define MISTER_CORE_MAGIC_NUMBER 0x5CA623
+
+// Signature prefix for U-Boot extended env settings that might be passed during warm reset.
+// Usually such buffer contains name of FPGA core to load after reboot.
+#define UBOOT_EXTRA_ENV_SIGNATURE 0x87654321
 
 #endif /* COMMON_CONSTS_H_ */

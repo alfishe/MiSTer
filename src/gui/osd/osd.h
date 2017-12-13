@@ -66,7 +66,7 @@
 
 class osd
 {
-protected:
+public:
 	// Low-res mode (32x8 symbols, 256x8 bytes)
 	// High-res mode (32x16 symbols, 256x16 bytes)
 
@@ -79,6 +79,7 @@ protected:
 	static const uint16_t OSD_HIGHRES_TITLE_WIDTH_PX = OSD_HIGHRES_HEIGHT_PX;
 	static const uint16_t OSD_LINE_LENGTH_BYTES = 256;
 
+protected:
 	// Fields
 	uint8_t titlebuffer[2][OSD_HIGHRES_HEIGHT_LINES * 8]; // Horizontal buffer for initial title rendering. After rotation - 16 symbols height in highres and 8 in lowres
 	uint8_t framebuffer[OSD_HIGHRES_HEIGHT_LINES][OSD_LINE_LENGTH_BYTES];

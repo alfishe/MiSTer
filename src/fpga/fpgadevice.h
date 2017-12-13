@@ -78,6 +78,10 @@ public:
 	void disableHPSFPGABridges();
 	void enableHPSFPGABridges();
 
+#ifdef REBOOT_ON_RBF_LOAD
+	void saveCoreNameForUboot(const char *name);
+#endif
+
 	// Indicators
 	void set_led(bool on);
 	int get_buttons_state();

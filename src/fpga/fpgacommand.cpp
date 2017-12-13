@@ -75,7 +75,7 @@ char* FPGACommand::getCoreName()
 
 	// The first char returned will be 0xFF if the core doesn't support
 	// config strings. atari 800 returns 0xa4 which is the status byte
-	if (!(byte == 0xff || byte == 0xA4))
+	if (!(byte == 0xFF || byte == 0xA4))
 	{
 		unsigned idx = 0;
 		result[idx++] = byte;
@@ -118,7 +118,7 @@ char* FPGACommand::getCoreConfig()
 
 	// The first char returned will be 0xFF if the core doesn't support
 	// config strings. atari 800 returns 0xa4 which is the status byte
-	if (!(byte == 0xff || byte == 0xA4))
+	if (!(byte == 0xFF || byte == 0xA4))
 	{
 		unsigned idx = 0;
 

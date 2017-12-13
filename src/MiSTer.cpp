@@ -47,13 +47,13 @@ void testDirectories()
 {
 	DirectoryManager& dirManager = DirectoryManager::instance();
 
-	auto res = dirManager.scanDirectory("", nullptr, true);
+	auto res = dirManager.scanDirectory("", nullptr, true, true);
 	auto& files = *res.get();
 	LOGINFO("/media/fat has %d files\n", files.size());
 	for (auto it = files.begin(); it != files.end(); it++)
 	{
 		DirectoryEntry* item = (*it).get();
-		LOGINFO("%s\n", item->name);
+		LOGINFO("%s %s\n", item->name, item->isFolder ? "<DIR>" : "");
 	}
 
 	StringSet extensions;

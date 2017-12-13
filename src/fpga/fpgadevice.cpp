@@ -15,6 +15,7 @@
 #include "fpgacommand.h"
 #include "../common/consts.h"
 #include "../common/addresses.h"
+#include "../3rdparty/tinyformat/tinyformat.h"
 #include "socfpga_reset_manager.h"
 #include "socfpga_fpga_manager.h"
 #include "socfpga_sdram_controller.h"
@@ -75,7 +76,7 @@ bool FPGADevice::init()
 	bool result = false;
 
 	// Map FPGA addresses into application (Linux process) address space
-	if ((fdFPGAMemory = open("/dev/mem", O_RDWR | O_SYNC)) != -1)
+	if ((fdFPGAMemory = open(LINUX_MEMORY_DEVICE, O_RDWR | O_SYNC)) != -1)
 	{
 		map_base = (uint32_t *)mmap(nullptr, FPGA_REG_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fdFPGAMemory, FPGA_REG_BASE);
 		if (map_base != (uint32_t *)MAP_FAILED)
@@ -146,7 +147,7 @@ bool FPGADevice::load_rbf(const char *name)
 #ifdef REBOOT_ON_RBF_LOAD
 	// TODO: re-check whether it's still needed
 	enableHPSFPGABridges(0);
-	result = save_core_name(name);
+	result = saveCoreNameForUboot(name);
 #else
 	// Do loading .RBF file
 	if (filemanager::isFileExist(filepath))
@@ -168,6 +169,7 @@ bool FPGADevice::load_rbf(const char *name)
 					// Disable all HPS<->FPGA bridges before reconfiguring FPGA
 					disableHPSFPGABridges();
 
+					// Programm FPGA with new core
 					if (program(buffer, filesize))
 					{
 						// Enable HPS<->FPGA bridges back, once FPGA successfully reconfigured
@@ -208,7 +210,7 @@ bool FPGADevice::load_rbf(const char *name)
 		// Info logging
 		LOGWARN("File '%s' not found\n", filepath);
 	}
-#endif
+#endif // REBOOT_ON_RBF_LOAD
 
 	// Info logging
 	if (result)
@@ -293,6 +295,31 @@ bool FPGADevice::program(const void* rbf_data, uint32_t rbf_size)
 
 	return result;
 }
+
+#ifdef REBOOT_ON_RBF_LOAD
+void FPGADevice::saveCoreNameForUboot(const char *name)
+{
+	int fd;
+
+	if ((fd = open("/dev/mem", O_RDWR | O_SYNC)) != -1)
+	{
+		uint8_t* buffer = (uint8_t *)mmap(nullptr, UBOOT_EXTRA_ENV_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, UBOOT_EXTRA_ENV_BASE);
+		if (buffer != (uint8_t *)MAP_FAILED)
+		{
+			// 4 bytes of signature 0x87654321
+			*((uint32_t*)buffer) = UBOOT_EXTRA_ENV_SIGNATURE;
+
+			// Extra env settings in U-Boot script syntax
+			// 'core="<name>"\0\0\0\0'
+			string ubootEnv = tfm::format("core=\"%s\"\0\0\0\0", name);
+			memcpy(buffer + 4, ubootEnv.c_str(), ubootEnv.length());
+
+			// Unmap address buffer
+			munmap(buffer, UBOOT_EXTRA_ENV_SIZE);
+		}
+	}
+}
+#endif // REBOOT_ON_RBF_LOAD
 
 void FPGADevice::disableHPSFPGABridges()
 {

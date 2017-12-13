@@ -6,6 +6,7 @@
 #include <list>
 #include <memory>
 #include <set>
+#include <string>
 
 #include "../types.h"
 
@@ -44,16 +45,24 @@ public:
 	static DirectoryManager& instance();
 	virtual ~DirectoryManager();
 
-	// Complex stateful methods to refactor
+
+	DirectoryListPtr scanDirectory(
+			string& folderPath,
+			StringSet* supportedExtensions,
+			bool includeFolders = false,
+			bool withExtensions = true);
+
 	DirectoryListPtr scanDirectory(
 			const char* folderPath,
 			StringSet* supportedExtensions,
+			bool includeFolders = false,
 			bool withExtensions = true);
 
 private:
 	// Static class, disallow objects creation
 	DirectoryManager();
 
+	static bool isFileAllowed(const string& filename);
 	static bool isFileAllowed(const char *filename);
 	static bool isFileMatchExtension(const char *filename, StringSet* extensions);
 };

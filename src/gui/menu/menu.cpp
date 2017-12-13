@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../../3rdparty/openbsd/string.h"
+#include "../../common/file/directorymanager.h"
 #include "../../fpga/fpgadevice.h"
 #include "../../fpga/fpgacommand.h"
 #include "../osd/osd.h"
@@ -1757,7 +1758,7 @@ void menu::menuFileSelect1()
 	helptext = helptexts[HELPTEXT_NONE];
 	osd.setTitle("Select");
 
-	//PrintDirectory();
+	printFolder();
 	menustate = MENU_FILE_SELECT2;
 }
 
@@ -3032,6 +3033,42 @@ void menu::menuInfo()
 	else if (CheckTimer(menu_timer))
 		menustate = MENU_NONE1;
 	*/
+}
+
+void menu::printFolder()
+{
+	osd& osd = osd::instance();
+
+	StringSet extensions;
+	extensions.insert("rbf");
+	auto fileList = DirectoryManager::instance().scanDirectory(currentFolder, &extensions, false, false);
+
+	if (fileList != nullptr && fileList->size() > 0)
+	{
+		// Show folder contents
+
+		auto it = fileList->begin();
+		for (uint16_t i = 0; i < fileList->size() && i < osd.OSD_HEIGHT_LINES; i++)
+		{
+			auto& item = *((*it++).get());
+
+			string filename;
+			if (strlen(item.displayname) > 0)
+			{
+				filename = item.displayname;
+			}
+			else
+			{
+				filename = item.name;
+			}
+
+			osd.printLine(i, filename.c_str());
+		}
+	}
+	else
+	{
+		// No files available
+	}
 }
 
 bool menu::changeCurrentFolder(const char *folderpath)

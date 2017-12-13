@@ -258,7 +258,7 @@ uint16_t osd::scale8Bits(uint8_t byte)
 }
 
 /*
- * Transfer the whole OSD framebuffer (4096) bytes to the FPGA side
+ * Transfer the whole OSD framebuffer (4096 bytes) to the FPGA side
  * Usually takes ~6.1ms to accomplish
  * Not VBlank synchronized, so don't try to make heavy animations
  */
