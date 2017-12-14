@@ -1,6 +1,8 @@
 #ifndef COMMON_ADDRESSES_H_
 #define COMMON_ADDRESSES_H_
 
+// See more on Cyclone V HPS Memory Map documentation page: https://www.altera.com/hps/cyclone-v/hps.html
+
 /*
  * Base address in HPS address space for FPGA registers
  */

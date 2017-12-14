@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+// See more on Cyclone V HPS Memory Map documentation page: https://www.altera.com/hps/cyclone-v/hps.html
+
 // Module instance: sdr
 // Base address: 0xFFC20000 (SOCFPGA_SDR_ADDRESS)
 // End address:  0xFFC3FFFF
