@@ -323,17 +323,29 @@ void FPGADevice::saveCoreNameForUboot(const char *name)
 
 void FPGADevice::disableHPSFPGABridges()
 {
-	writel(0, &sysmgr_regs->fpgaintfgrp_module);
-	writel(0, &sdram_regs->fpgaportrst);
-	writel(7, &reset_regs->brg_mod_reset);
-	writel(1, &nic301_regs->remap);
+	// 1. Disable signals from FPGA fabric to EMAC0 and EMAC1 modules
+	// 2. Put SDRAM port into reset state
+	// 3. Reset all bridges (HPS2FPGA, Lightweight HPS2FPGA, FPGA2HPS)
+	// 4. Maps the On-chip RAM to address 0x0 for the MPU L3 master.
+	//    Turn off HPS2FPGA and Lightweight HPS2FPGA bridge visibility to L3 Masters
+
+	writel(0, &sysmgr_regs->fpgaintf_module);				// 1.
+	writel(0, &sdram_regs->fpgaportrst);						// 2.
+	writel(RSTMGR_BRGMODRST_ALL, &reset_regs->brgmodrst);		// 3.
+	writel(L3REGS_REMAP_MPUZERO, &nic301_regs->remap);		// 4.
 }
 
 void FPGADevice::enableHPSFPGABridges()
 {
-	writel(0x00003FFF, &sdram_regs->fpgaportrst);
-	writel(0x00000000, &reset_regs->brg_mod_reset);
-	writel(0x00000019, &nic301_regs->remap);
+	// 1. Write all 1 to bits [13:0] (0x3FFF) of FPGAPORTRST (0xFFC25080), to enable all SDRAM controller ports exit reset
+	// 2. Deassert reset signals from all bridges (HPS2FPGA, Lightweight HPS2FPGA, FPGA2HPS)
+	// 3. Maps the On-chip RAM to address 0x0 for the MPU L3 master
+	//    Enable HPS2FPGA AXI bridge visibility for L3 masters
+	//    Enable Lightweight HPS2FPGA AXI bridge visibility for L3 masters
+
+	writel(SDR_FPGAPORTRST_PORTRSTN_MASK, &sdram_regs->fpgaportrst);										// 1.
+	writel(0x00000000, &reset_regs->brgmodrst);															// 2.
+	writel(L3REGS_REMAP_MPUZERO | L3REGS_REMAP_HPS2FPGA | L3REGS_REMAP_LWHPS2FPGA, &nic301_regs->remap);	// 3.
 }
 
 

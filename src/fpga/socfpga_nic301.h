@@ -303,4 +303,12 @@ struct nic301_registers
 	uint32_t		usb1_fn_mod;				// Offset: 0x4C108 - RW - Issuing functionality modification register
 };
 
+// remap (0x0000) Fields and masks
+// Details: https://www.altera.com/hps/cyclone-v/index.html#topic/sfo1410068186638.html
+#define L3REGS_REMAP_MPUZERO		(1 << 0)		// (0x01) Controls whether address 0x0 for the MPU L3 master is mapped to the Boot ROM or On-chip RAM
+#define L3REGS_REMAP_NONMPUZERO	(1 << 1)		// (0x02) Controls the mapping of address 0x0 for L3 masters other than the MPU
+#define L3REGS_REMAP_HPS2FPGA	(1 << 3)		// (0x08) Controls whether the HPS2FPGA AXI Bridge is visible to L3 masters or not
+#define L3REGS_REMAP_LWHPS2FPGA	(1 << 4)		// (0x10) Controls whether the Lightweight HPS2FPGA AXI Bridge is visible to L3 masters or not
+
+
 #endif /* FPGA_SOCFPGA_NIC301_H_ */
