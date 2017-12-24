@@ -35,4 +35,9 @@
 // Usually such buffer contains name of FPGA core to load after reboot.
 #define UBOOT_EXTRA_ENV_SIGNATURE 0x87654321
 
+// Limit max number of input devices supported
+// This limit includes total number of keyboards / mouses / joysticks that
+// can be connected to MiSTer board simultaneously
+#define MAX_INPUT_DEVICES 16
+
 #endif /* COMMON_CONSTS_H_ */

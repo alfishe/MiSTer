@@ -64,6 +64,7 @@ private:
 
 	static bool isFileAllowed(const string& filename);
 	static bool isFileAllowed(const char *filename);
+	static bool isFileMatchExtension(const string&, StringSet* extensions);
 	static bool isFileMatchExtension(const char *filename, StringSet* extensions);
 };
 

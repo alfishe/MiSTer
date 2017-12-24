@@ -17,6 +17,7 @@
 #include "cores/coremanager.h"
 #include "gui/osd/osd.h"
 #include "io/input/baseinputdevice.h"
+#include "common/file/scandir/scandir.h"
 
 using namespace std;
 using namespace backward;
@@ -43,6 +44,13 @@ void testFilesystem()
 
 	value = filemanager::getExtension("file_with_no_extensions");
 	LOGINFO("Ext: %s\n", value.c_str());
+}
+
+void testScanDir()
+{
+	ScanDir instance;
+	instance.scanFolder(string("/dev/input"), ScanDir::getInputDevicesFilter(), ScanDir::getAlphaSort());
+	instance.dispose();
 }
 
 void testDirectories()
@@ -185,6 +193,7 @@ int main(int argc, char *argv[])
 
 	//for (int i = 0; i < 1000; i++)
 	{
+		testScanDir();
 		testInputDevices();
 		//testFilesystem();
 		testDirectories();

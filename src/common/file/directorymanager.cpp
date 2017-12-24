@@ -179,6 +179,13 @@ bool DirectoryManager::isFileAllowed(const char *filename)
 	return result;
 }
 
+bool DirectoryManager::isFileMatchExtension(const string& filename, StringSet* extensions)
+{
+	bool result = isFileMatchExtension(filename.c_str(), extensions);
+
+	return result;
+}
+
 bool DirectoryManager::isFileMatchExtension(const char *filename, StringSet* extensions)
 {
 	bool result = false;
