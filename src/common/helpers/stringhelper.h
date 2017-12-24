@@ -5,10 +5,9 @@
 #include <sstream>
 #include <vector>
 #include <iterator>
+#include "../types.h"
 
 using namespace std;
-
-typedef vector<string> StringVector;
 
 class StringHelper
 {

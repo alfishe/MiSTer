@@ -12,7 +12,7 @@
 #include "../file/filemanager.h"
 #include "../system/sysmanager.h"
 
-StringSet* DirectoryManager::fileExclusions = new StringSet();
+CharStringSet* DirectoryManager::fileExclusions = new CharStringSet();
 
 // Constructors / destructors
 
@@ -48,7 +48,7 @@ DirectoryManager::~DirectoryManager()
 
 DirectoryListPtr DirectoryManager::scanDirectory(
 		string& folderPath,
-		StringSet* supportedExtensions,
+		CharStringSet* supportedExtensions,
 		bool includeFolders,
 		bool withExtensions)
 {
@@ -57,7 +57,7 @@ DirectoryListPtr DirectoryManager::scanDirectory(
 
 DirectoryListPtr DirectoryManager::scanDirectory(
 		const char* folderPath,
-		StringSet* supportedExtensions,
+		CharStringSet* supportedExtensions,
 		bool includeFolders,
 		bool withExtensions)
 {
@@ -89,7 +89,7 @@ DirectoryListPtr DirectoryManager::scanDirectory(
 
 					if (includeFolders && isFileAllowed(de->d_name))
 					{
-						DirectoryEntry* item = new DirectoryEntry();
+						DirectoryEntryChar* item = new DirectoryEntryChar();
 						item->isFolder = true;
 						strlcpy(item->name, de->d_name, sizeof(item->name));
 						strlcpy(item->displayname, de->d_name, sizeof(item->displayname));
@@ -102,7 +102,7 @@ DirectoryListPtr DirectoryManager::scanDirectory(
 					{
 						if (isFileMatchExtension(de->d_name, supportedExtensions))
 						{
-							DirectoryEntry* item = new DirectoryEntry();
+							DirectoryEntryChar* item = new DirectoryEntryChar();
 							strlcpy(item->name, de->d_name, sizeof(item->name));
 
 							if (withExtensions)
@@ -179,14 +179,14 @@ bool DirectoryManager::isFileAllowed(const char *filename)
 	return result;
 }
 
-bool DirectoryManager::isFileMatchExtension(const string& filename, StringSet* extensions)
+bool DirectoryManager::isFileMatchExtension(const string& filename, CharStringSet* extensions)
 {
 	bool result = isFileMatchExtension(filename.c_str(), extensions);
 
 	return result;
 }
 
-bool DirectoryManager::isFileMatchExtension(const char *filename, StringSet* extensions)
+bool DirectoryManager::isFileMatchExtension(const char *filename, CharStringSet* extensions)
 {
 	bool result = false;
 

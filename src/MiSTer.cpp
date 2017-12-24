@@ -2,6 +2,7 @@
 
 #include "common/logger/logger.h"
 
+#include <algorithm>
 #include <iostream>
 #include <unistd.h>
 #include <execinfo.h>
@@ -50,7 +51,18 @@ void testScanDir()
 {
 	ScanDir instance;
 	instance.scanFolder(string("/dev/input"), ScanDir::getInputDevicesFilter(), ScanDir::getAlphaSort());
+	auto results = instance.getScanResults();
 	instance.dispose();
+
+	LOGINFO("ScanDir returned %d entries\n", results.size());
+	for_each(results.begin(), results.end(),
+			[] (DirectoryEntry ent)
+			{
+				if (ent.isFolder)
+					LOGINFO("<DIR>");
+				LOGINFO("%s\n", ent.name.c_str());
+			}
+			);
 }
 
 void testDirectories()
@@ -62,11 +74,11 @@ void testDirectories()
 	LOGINFO("/media/fat has %d files\n", files.size());
 	for (auto it = files.begin(); it != files.end(); it++)
 	{
-		DirectoryEntry* item = (*it).get();
+		DirectoryEntryChar* item = (*it).get();
 		LOGINFO("%s %s\n", item->name, item->isFolder ? "<DIR>" : "");
 	}
 
-	StringSet extensions;
+	CharStringSet extensions;
 	extensions.insert("rbf");
 	extensions.insert("bin");
 	auto res1 = dirManager.scanDirectory("", &extensions, false);
@@ -74,7 +86,7 @@ void testDirectories()
 	LOGINFO("/media/fat has %d files filtered by extension\n", files1.size());
 	for (auto it = files1.begin(); it != files1.end(); it++)
 	{
-		DirectoryEntry* item = (*it).get();
+		DirectoryEntryChar* item = (*it).get();
 		LOGINFO("%s - %s\n", item->name, item->displayname);
 	}
 }
@@ -190,6 +202,9 @@ int main(int argc, char *argv[])
 	//CoreManager::instance().loadCore("memtest.rbf");
 	//sleep(2);
 	//coreType = command.getCoreType();
+
+	for (int i = 0; i < 10000000; i++)
+		testScanDir();
 
 	//for (int i = 0; i < 1000; i++)
 	{

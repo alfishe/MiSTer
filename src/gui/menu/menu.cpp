@@ -3039,7 +3039,7 @@ void menu::printFolder()
 {
 	osd& osd = osd::instance();
 
-	StringSet extensions;
+	CharStringSet extensions;
 	extensions.insert("rbf");
 	auto fileList = DirectoryManager::instance().scanDirectory(currentFolder, &extensions, false, false);
 

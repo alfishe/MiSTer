@@ -29,9 +29,8 @@ enum class ScanningOptions: uint8_t
 	SCAN_UMOUNT = (1 << 1)
 };
 */
-
-typedef set<const char *> StringSet;
-typedef unique_ptr<DirectoryEntry> DirectoryEntryPtr;
+typedef set<const char*> CharStringSet;
+typedef unique_ptr<DirectoryEntryChar> DirectoryEntryPtr;
 typedef list<DirectoryEntryPtr> DirectoryList;
 typedef unique_ptr<DirectoryList> DirectoryListPtr;
 
@@ -39,7 +38,7 @@ class DirectoryManager
 {
 protected:
 	// Fields
-	static StringSet* fileExclusions;
+	static CharStringSet* fileExclusions;
 
 public:
 	static DirectoryManager& instance();
@@ -48,13 +47,13 @@ public:
 
 	DirectoryListPtr scanDirectory(
 			string& folderPath,
-			StringSet* supportedExtensions,
+			CharStringSet* supportedExtensions,
 			bool includeFolders = false,
 			bool withExtensions = true);
 
 	DirectoryListPtr scanDirectory(
 			const char* folderPath,
-			StringSet* supportedExtensions,
+			CharStringSet* supportedExtensions,
 			bool includeFolders = false,
 			bool withExtensions = true);
 
@@ -64,8 +63,8 @@ private:
 
 	static bool isFileAllowed(const string& filename);
 	static bool isFileAllowed(const char *filename);
-	static bool isFileMatchExtension(const string&, StringSet* extensions);
-	static bool isFileMatchExtension(const char *filename, StringSet* extensions);
+	static bool isFileMatchExtension(const string&, CharStringSet* extensions);
+	static bool isFileMatchExtension(const char *filename, CharStringSet* extensions);
 };
 
 #endif /* COMMON_FILE_DIRECTORYMANAGER_H_ */

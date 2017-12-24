@@ -5,6 +5,7 @@
 #include <string>
 #include <dirent.h>
 #include <fnmatch.h>
+#include "../../types.h"
 
 using namespace std;
 
@@ -35,6 +36,8 @@ public:
 		compar_func = nullptr);
 
 	void dispose();
+
+	DirectoryEntryVector getScanResults();
 
 	//============= Default filters =====================
 	// Unfortunately, it is not possible to pass lambdas with captured variables to scandir as callbacks

@@ -50,3 +50,34 @@ void ScanDir::dispose()
 		_entryList = nullptr;
 	}
 }
+
+DirectoryEntryVector ScanDir::getScanResults()
+{
+	DirectoryEntryVector result;
+
+	if (_nEntries > 0 && _entryList != nullptr)
+	{
+		struct dirent* entry;
+
+		for (int i = 0; i < _nEntries; i++)
+		{
+			entry = _entryList[i];
+
+			if (entry != nullptr)
+			{
+				DirectoryEntry dirEntry;
+				dirEntry.name = entry->d_name;
+				dirEntry.displayname = dirEntry.name.substr(0, DirectoryEntry::DISPLAY_NAME_SIZE);
+				dirEntry.isFolder = entry->d_type == DT_DIR;
+
+				result.push_back(dirEntry);
+			}
+		}
+
+		_nEntries = 0;
+		_entryList = nullptr;
+	}
+
+	return result;
+}
+
