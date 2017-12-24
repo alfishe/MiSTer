@@ -16,6 +16,8 @@ public:
 	static StringVector split(const string &s, char delimiter);
 	static StringVector split(const string &s, char delimiter, StringVector* out);
 
+	static const string cleanup(const string &s);
+
 private:
 	StringHelper(); // Disable direct object creation from class
 };

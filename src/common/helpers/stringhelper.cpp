@@ -27,3 +27,26 @@ StringVector StringHelper::split(const string &s, char delimiter, StringVector* 
 
 	return *out;
 }
+
+/// Discards all non-printable characters from the string
+/// Return new clean string
+const string StringHelper::cleanup(const string &s)
+{
+	string result;
+	result.resize(s.size());
+
+	int idx = 0;
+	for (const char& c : s)
+	{
+	    if (isprint(c))
+	    {
+	    		result[idx] = c;
+
+	    		idx++;
+	    }
+	}
+
+	result.resize(idx);
+
+	return result;
+}

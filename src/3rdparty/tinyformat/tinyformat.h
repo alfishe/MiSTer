@@ -133,11 +133,16 @@ namespace tfm = tinyformat;
 //------------------------------------------------------------------------------
 // Implementation details.
 #include <algorithm>
-#include <cassert>
 #include <iostream>
 #include <sstream>
 
+#ifndef TINYFORMAT_ASSERT
+#   include <cassert>
+#   define TINYFORMAT_ASSERT(cond) assert(cond)
+#endif
+
 #ifndef TINYFORMAT_ERROR
+#   include <cassert>
 #   define TINYFORMAT_ERROR(reason) assert(0 && reason)
 #endif
 
@@ -210,7 +215,7 @@ template<int n> struct is_wchar<wchar_t[n]> {};
 template<typename T, typename fmtT, bool convertible = is_convertible<T, fmtT>::value>
 struct formatValueAsType
 {
-    static void invoke(std::ostream& /*out*/, const T& /*value*/) { assert(0); }
+    static void invoke(std::ostream& /*out*/, const T& /*value*/) { TINYFORMAT_ASSERT(0); }
 };
 // Specialized version for types that can actually be converted to fmtT, as
 // indicated by the "convertible" template parameter.
@@ -503,15 +508,15 @@ class FormatArg
         void format(std::ostream& out, const char* fmtBegin,
                     const char* fmtEnd, int ntrunc) const
         {
-            assert(m_value);
-            assert(m_formatImpl);
+            TINYFORMAT_ASSERT(m_value);
+            TINYFORMAT_ASSERT(m_formatImpl);
             m_formatImpl(out, fmtBegin, fmtEnd, ntrunc, m_value);
         }
 
         int toInt() const
         {
-            assert(m_value);
-            assert(m_toIntImpl);
+            TINYFORMAT_ASSERT(m_value);
+            TINYFORMAT_ASSERT(m_toIntImpl);
             return m_toIntImpl(m_value);
         }
 
@@ -877,18 +882,18 @@ class FormatListN : public FormatList
         { static_assert(sizeof...(args) == N, "Number of args must be N"); }
 #else // C++98 version
         void init(int) {}
-#       define TINYFORMAT_MAKE_FORMATLIST_CONSTRUCTOR(n)       \
-                                                               \
-        template<TINYFORMAT_ARGTYPES(n)>                       \
-        FormatListN(TINYFORMAT_VARARGS(n))                     \
-            : FormatList(&m_formatterStore[0], n)              \
-        { assert(n == N); init(0, TINYFORMAT_PASSARGS(n)); }   \
-                                                               \
-        template<TINYFORMAT_ARGTYPES(n)>                       \
-        void init(int i, TINYFORMAT_VARARGS(n))                \
-        {                                                      \
-            m_formatterStore[i] = FormatArg(v1);               \
-            init(i+1 TINYFORMAT_PASSARGS_TAIL(n));             \
+#       define TINYFORMAT_MAKE_FORMATLIST_CONSTRUCTOR(n)                \
+                                                                        \
+        template<TINYFORMAT_ARGTYPES(n)>                                \
+        FormatListN(TINYFORMAT_VARARGS(n))                              \
+            : FormatList(&m_formatterStore[0], n)                       \
+        { TINYFORMAT_ASSERT(n == N); init(0, TINYFORMAT_PASSARGS(n)); } \
+                                                                        \
+        template<TINYFORMAT_ARGTYPES(n)>                                \
+        void init(int i, TINYFORMAT_VARARGS(n))                         \
+        {                                                               \
+            m_formatterStore[i] = FormatArg(v1);                        \
+            init(i+1 TINYFORMAT_PASSARGS_TAIL(n));                      \
         }
 
         TINYFORMAT_FOREACH_ARGNUM(TINYFORMAT_MAKE_FORMATLIST_CONSTRUCTOR)
@@ -968,6 +973,16 @@ std::string format(const char* fmt, const Args&... args)
 {
     std::ostringstream oss;
     format(oss, fmt, args...);
+    return oss.str();
+}
+
+/// Format list of arguments according to the given format in a string object and return
+/// the result as a string.
+template<typename... Args>
+std::string format(const std::string& fmt, const Args&... args)
+{
+    std::ostringstream oss;
+    format(oss, fmt.c_str(), args...);
     return oss.str();
 }
 

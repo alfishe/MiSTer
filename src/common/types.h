@@ -1,6 +1,7 @@
 #ifndef COMMON_TYPES_H_
 #define COMMON_TYPES_H_
 
+#include <stdint.h>
 #include <unistd.h>
 #include <limits.h>
 #include "consts.h"
@@ -28,6 +29,12 @@ typedef struct
 
 	bool isFolder = false;
 } DirectoryEntry;
+
+typedef struct
+{
+	uint16_t vid;
+	uint16_t pid;
+} VIDPID;
 
 
 #endif /* COMMON_TYPES_H_ */

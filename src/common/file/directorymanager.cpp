@@ -28,6 +28,10 @@ DirectoryManager::DirectoryManager()
 	// Fill out file exclusions list (files that cannot be selected for load)
 	fileExclusions->insert("menu.rbf");
 	fileExclusions->insert("boot.rom");
+	fileExclusions->insert("MiSTer");
+
+	// Windows service folders
+	fileExclusions->insert("System Volume Information");
 }
 
 DirectoryManager::~DirectoryManager()
@@ -83,7 +87,7 @@ DirectoryListPtr DirectoryManager::scanDirectory(
 					if (strcmp(de->d_name, "..") == 0)
 						continue;
 
-					if (includeFolders)
+					if (includeFolders && isFileAllowed(de->d_name))
 					{
 						DirectoryEntry* item = new DirectoryEntry();
 						item->isFolder = true;
@@ -92,16 +96,6 @@ DirectoryListPtr DirectoryManager::scanDirectory(
 
 						list->emplace_back(item);
 					}
-
-					/*
-					if (!strcmp(de->d_name, "."))
-						continue;
-					if (!strcmp(de->d_name, ".."))
-					{
-						if (!strlen(folderPath))
-							continue;
-					}
-					*/
 					break;
 				case DT_REG:		// Current entry is regular file
 					if (isFileAllowed(de->d_name))
@@ -159,6 +153,10 @@ bool DirectoryManager::isFileAllowed(const char *filename)
 		result = false;
 	}
 	else if (strlen(filename) == 0) // filename cannot be empty
+	{
+		result = false;
+	}
+	else if (filename[0] == '.') // Mask hidden folders and files
 	{
 		result = false;
 	}

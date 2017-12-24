@@ -7,6 +7,11 @@
 #define DATA_ROOT "/media/fat"
 #define CONFIG_DIR "config"
 
+#define LINUX_INPUT_DEVICE "/sys/class/input/event%d/device/"
+#define LINUX_INPUT_DEVICE_ID "/sys/class/input/event%d/device/id/"
+#define LINUX_INPUT_DEVICE_VID "/sys/class/input/event%d/device/id/vendor"
+#define LINUX_INPUT_DEVICE_PID "/sys/class/input/event%d/device/id/product"
+
 // Data volume mount point (path)
 #define DATA_VOLUME_MOUNT_POINT "/media/fat"
 

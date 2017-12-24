@@ -8,6 +8,7 @@
 #include <signal.h>
 
 #include "3rdparty/backward/backward.hpp"
+#include "3rdparty/tinyformat/tinyformat.h"
 #include "common/system/sysmanager.h"
 #include "common/file/directorymanager.h"
 #include "common/file/filemanager.h"
@@ -15,6 +16,7 @@
 #include "fpga/fpgacommand.h"
 #include "cores/coremanager.h"
 #include "gui/osd/osd.h"
+#include "io/input/baseinputdevice.h"
 
 using namespace std;
 using namespace backward;
@@ -126,12 +128,26 @@ void testOSD()
 	osd.hide();
 }
 
+void testInputDevices()
+{
+	VIDPID device0 = BaseInputDevice::getInputDeviceVIDPID(0);
+	VIDPID device1 = BaseInputDevice::getInputDeviceVIDPID(1);
+
+	string device0name = BaseInputDevice::getInputDeviceName(0);
+	string device1name = BaseInputDevice::getInputDeviceName(1);
+
+	LOGINFO("Device0 name: %s\n", device0name.c_str());
+	LOGINFO("Device1 name: %s\n", device1name.c_str());
+}
+
+// ==========================================================================================
+
 void handler(int sig)
 {
 	StackTrace st;
 
-	st.load_here(20); //Limit the number of trace depth to 99
-	st.skip_n_firsts(3);	//This will skip some backward internal function from the trace
+	st.load_here(20); 	// Limit the number of trace depth to 20
+	st.skip_n_firsts(3);	// This will skip some backward internal function from the trace
 
 	Printer p;
 	p.snippet = true;
@@ -169,6 +185,7 @@ int main(int argc, char *argv[])
 
 	//for (int i = 0; i < 1000; i++)
 	{
+		testInputDevices();
 		//testFilesystem();
 		testDirectories();
 		testOSD();
