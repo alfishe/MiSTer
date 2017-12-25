@@ -1,6 +1,8 @@
 #ifndef COMMON_FILE_SCANDIR_SCANDIR_H_
 #define COMMON_FILE_SCANDIR_SCANDIR_H_
 
+#include "../../logger/logger.h"
+
 #include <functional>
 #include <string>
 #include <dirent.h>
@@ -16,12 +18,18 @@ typedef int (*compar_func)(const struct dirent **, const struct dirent **);
 class ScanDir
 {
 protected:
-	struct dirent **_entryList = nullptr;
+	struct dirent** _entryList = nullptr;
 	int _nEntries = 0;
 
 public:
+	ScanDir()
+	{
+		TRACE("ScanDir()");
+	}
 	virtual ~ScanDir()
 	{
+		TRACE("~ScanDir()");
+
 		dispose();
 	}
 

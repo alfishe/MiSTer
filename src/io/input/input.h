@@ -1,6 +1,52 @@
 #ifndef IO_INPUT_INPUT_H_
 #define IO_INPUT_INPUT_H_
 
+#include <string>
+#include <vector>
+#include "../../3rdparty/betterenums/enum.h"
+
+using namespace std;
+
+// Declare enum using Better-enums macro (allows to operate with enum names, indexes and size in runtime)
+BETTER_ENUM(InputDeviceTypeEnum, uint8_t,
+	Unknown = 0,
+	Keyboard,
+	Mouse,
+	Joystick
+)
+
+/*
+enum InputDeviceType
+{
+	Unknown = 0,
+	Keyboard,
+	Mouse,
+	Joystick
+};
+*/
+
+struct InputDevice
+{
+	// Better-enums workaround (declare proxy enum within struct/class)
+	typedef InputDeviceTypeEnum InputDeviceType;
+
+	int fd = 0;
+	uint32_t eventBits;
+
+	string path;
+	InputDeviceType type = InputDeviceType::Unknown;
+	string name;
+};
+
+typedef vector<InputDevice> InputDeviceVector;
+
+// Linux device paths related to input
+#define LINUX_DEVICE_INPUT "/dev/input"
+#define LINUX_INPUT_DEVICE "/sys/class/input/event%d/device/"
+#define LINUX_INPUT_DEVICE_ID "/sys/class/input/event%d/device/id/"
+#define LINUX_INPUT_DEVICE_VID "/sys/class/input/event%d/device/id/vendor"
+#define LINUX_INPUT_DEVICE_PID "/sys/class/input/event%d/device/id/product"
+
 #define HID_LED_NUM_LOCK    1
 #define HID_LED_CAPS_LOCK   2
 #define HID_LED_SCROLL_LOCK 4

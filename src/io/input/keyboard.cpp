@@ -22,18 +22,19 @@ keyboard::~keyboard()
  * Retrieves device name from the device itself
  * Reference: http://www.linuxjournal.com/files/linuxjournal.com/linuxjournal/articles/064/6429/6429l4.html
  */
-const char * keyboard::getDeviceName()
+const string keyboard::getDeviceName()
 {
-	char *result = nullptr;
+	static const int deviceNameBufferSize = 256;
 
-	char buffer[255];
+	string result;
+	result.resize(deviceNameBufferSize);
 
 	if (fd != INVALID_FILE_DESCRIPTOR)
 	{
-		if (ioctl(fd, EVIOCGNAME(sizeof(buffer)), buffer) != -1)
+		int res = ioctl(fd, EVIOCGNAME(deviceNameBufferSize), result.c_str());
+		if (res != -1)
 		{
-			strlcpy(deviceName, buffer, sizeof(buffer));
-			result = deviceName;
+			result.resize(res);
 		}
 		else
 		{

@@ -2,19 +2,23 @@
 #define IO_INPUT_KEYBOARD_H_
 
 #include <stdint.h>
+#include <string>
 #include "../../common/consts.h"
+
+using namespace std;
 
 class keyboard
 {
 protected:
 	int fd = INVALID_FILE_DESCRIPTOR;
-	char deviceName[256];
+	string deviceName;
+	uint16_t supportedLEDMask;
 
 public:
 	keyboard(int fd);
 	virtual ~keyboard();
 
-	const char * getDeviceName();
+	const string getDeviceName();
 	bool hasLED();
 	void getLEDState();
 	void setLEDState(uint8_t state);

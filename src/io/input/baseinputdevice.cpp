@@ -3,36 +3,58 @@
 #include "../../common/logger/logger.h"
 
 #include <iostream>
+#include <fcntl.h>
 #include <fstream>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <linux/input.h>
 #include "../../3rdparty/tinyformat/tinyformat.h"
+#include "../../common/helpers/displayhelper.h"
 #include "../../common/helpers/stringhelper.h"
 
+#define IS_BIT_SET(var, pos) ((var) & (1 << (pos)))
 
 // Check if correspondent <bit> set in a bitset
 #define test_bit(bit, bitset) (bitset [bit / 8] & (1 << (bit % 8)))
-
-#define BITS_PER_LONG (sizeof(long) * 8)
-#define NBITS(x) ((((x)-1)/BITS_PER_LONG)+1)
+#define NBITS(x) ((((x) - 1) / LONG_BIT) + 1)
 
 // Initialize static field arrays
 
 vector<string> BaseInputDevice::eventNames =
 {
-	"EV_SYN",
-	"EV_KEY",
-	"EV_REL",
-	"EV_ABS",
-	"EV_MSC",
-	"EV_SW",
-	"EV_LED",
-	"EV_SND",
-	"EV_REP",
-	"EV_FF",
-	"EV_PWR",
-	"EV_FF_STATUS"
+	"EV_SYN",		// 0x00
+	"EV_KEY",		// 0x01
+	"EV_REL",		// 0x02
+	"EV_ABS",		// 0x03
+	"EV_MSC",		// 0x04
+	"EV_SW",			// 0x05
+	"UNKNOWN 0x06",	// 0x06
+	"UNKNOWN 0x07",	// 0x07
+	"UNKNOWN 0x08",	// 0x08
+	"UNKNOWN 0x09",	// 0x09
+	"UNKNOWN 0x0A",	// 0x0A
+	"UNKNOWN 0x0B",	// 0x0B
+	"UNKNOWN 0x0C",	// 0x0C
+	"UNKNOWN 0x0D",	// 0x0D
+	"UNKNOWN 0x0E",	// 0x0E
+	"UNKNOWN 0x0F",	// 0x0F
+	"UNKNOWN 0x10",	// 0x10
+	"EV_LED",		// 0x11
+	"EV_SND",		// 0x12
+	"UNKNOWN 0x13",	// 0x13
+	"EV_REP",		// 0x14
+	"EV_FF",			// 0x15
+	"EV_PWR",		// 0x16
+	"EV_FF_STATUS",	// 0x17
+	"UNKNOWN 0x18",	// 0x18
+	"UNKNOWN 0x19",	// 0x19
+	"UNKNOWN 0x1A",	// 0x1A
+	"UNKNOWN 0x1B",	// 0x1B
+	"UNKNOWN 0x1C",	// 0x1C
+	"UNKNOWN 0x1D",	// 0x1D
+	"UNKNOWN 0x1E",	// 0x1E
+	"UNKNOWN 0x1F"	// 0x1F
 };
 
 vector<string> BaseInputDevice::ledNames =
@@ -57,9 +79,100 @@ vector<string> BaseInputDevice::ledNames =
 
 // -Initialize static field arrays
 
-string BaseInputDevice::getDeviceName(int fd)
+int BaseInputDevice::openDevice(const string& path)
+{
+	int result = open(path.c_str(), O_RDONLY);
+
+	return result;
+}
+
+void BaseInputDevice::closeDevice(int fd)
+{
+	close(fd);
+}
+
+string BaseInputDevice::getDeviceName(const string& path)
 {
 	string result;
+
+	int fd = open(path.c_str(), O_RDONLY);
+	if (fd >= 0)
+	{
+		result = getDeviceName(fd);
+
+		close(fd);
+	}
+
+	return result;
+}
+
+string BaseInputDevice::getDeviceName(int fd)
+{
+	static const int EVENT_BUFFER_SIZE = 256;
+
+	string result;
+	result.resize(EVENT_BUFFER_SIZE);
+
+	int res = ioctl(fd, EVIOCGNAME(EVENT_BUFFER_SIZE), result.c_str());
+	if (res >= 0 && res <= EVENT_BUFFER_SIZE)
+	{
+		result.resize(res);
+	}
+
+	return result;
+}
+
+InputDeviceTypeEnum BaseInputDevice::getDeviceType(const string& path)
+{
+	InputDeviceTypeEnum result = InputDeviceTypeEnum::Unknown;
+
+	int fd = open(path.c_str(), O_RDONLY);
+	if (fd >= 0)
+	{
+		result = getDeviceType(fd);
+
+		close(fd);
+	}
+
+	return result;
+}
+
+InputDeviceTypeEnum BaseInputDevice::getDeviceType(int fd)
+{
+	InputDeviceTypeEnum result = InputDeviceTypeEnum::Unknown;
+
+	uint32_t bits = getDeviceEventBits(fd);
+
+	// Detect Mouse device
+	if (result == +InputDeviceTypeEnum::Unknown)
+	{
+		if (IS_BIT_SET(bits, EV_REL))
+		{
+			result = InputDeviceTypeEnum::Mouse;
+		}
+	}
+
+	// Detect Joystick device
+	if (result == +InputDeviceTypeEnum::Unknown)
+	{
+		if (IS_BIT_SET(bits, EV_ABS))
+		{
+			result = InputDeviceTypeEnum::Joystick;
+		}
+	}
+
+	// Detect Keyboard
+	if (result == +InputDeviceTypeEnum::Unknown)
+	{
+		if (IS_BIT_SET(bits, EV_KEY))
+		{
+			uint16_t ledBits = getDeviceLEDBits(fd);
+			if (ledBits > 0)
+			{
+				result = InputDeviceTypeEnum::Keyboard;
+			}
+		}
+	}
 
 	return result;
 }
@@ -70,7 +183,9 @@ uint32_t BaseInputDevice::getDeviceEventBits(int fd)
 
 	if (ioctl(fd, EVIOCGBIT(0, EV_MAX), &result) >= 0)
 	{
-
+		TRACE("Device event bits: 0x%08x | %s", result, DisplayHelper::formatBits(result).c_str());
+		TRACE("Event bits: %s", dumpEventBits(result).c_str());
+		TRACE("");
 	}
 	else
 	{
@@ -80,21 +195,19 @@ uint32_t BaseInputDevice::getDeviceEventBits(int fd)
 	return result;
 }
 
-uint16_t BaseInputDevice::getDeviceLEDs(int fd)
+uint16_t BaseInputDevice::getDeviceLEDBits(int fd)
 {
 	uint16_t result = 0x0000;
 
-	// Reserve buffer for packed bit array storing LED flags
-	uint8_t led_b[(LED_MAX + 7) / 8];
-	memset(&led_b, 0, sizeof(led_b));
-
-	if (ioctl(fd, EVIOCGLED(sizeof(led_b)), led_b) >= 0)
+	if (ioctl(fd, EVIOCGBIT(EV_LED, LED_MAX), &result) >= 0)
 	{
-
+		TRACE("Device LED bits: 0x%04x | %s", result, DisplayHelper::formatBits(result).c_str());
+		TRACE("LED bits: %s", dumpLEDBits(result).c_str());
+		TRACE("");
 	}
 	else
 	{
-
+		LOGERROR("Unable to retrieve LED bits for device");
 	}
 
 	return result;
@@ -304,6 +417,116 @@ const string BaseInputDevice::getDeviceVendorQuery()
 const string BaseInputDevice::getDeviceProductQuery()
 {
 	string result = tfm::format("%s%s", LINUX_INPUT_DEVICE_ID, "product");
+
+	return result;
+}
+
+// ======================= Debug methods ============================
+
+string BaseInputDevice::dumpEventBits(uint32_t value)
+{
+	static const char* bitNames[] =
+	{
+		"EV_SYN",		// 0x00
+		"EV_KEY",		// 0x01
+		"EV_REL",		// 0x02
+		"EV_ABS",		// 0x03
+		"EV_MSC",		// 0x04
+		"EV_SW",			// 0x05
+		"UNKNOWN 0x06",	// 0x06
+		"UNKNOWN 0x07",	// 0x07
+		"UNKNOWN 0x08",	// 0x08
+		"UNKNOWN 0x09",	// 0x09
+		"UNKNOWN 0x0A",	// 0x0A
+		"UNKNOWN 0x0B",	// 0x0B
+		"UNKNOWN 0x0C",	// 0x0C
+		"UNKNOWN 0x0D",	// 0x0D
+		"UNKNOWN 0x0E",	// 0x0E
+		"UNKNOWN 0x0F",	// 0x0F
+		"UNKNOWN 0x10",	// 0x10
+		"EV_LED",		// 0x11
+		"EV_SND",		// 0x12
+		"UNKNOWN 0x13",	// 0x13
+		"EV_REP",		// 0x14
+		"EV_FF",			// 0x15
+		"EV_PWR",		// 0x16
+		"EV_FF_STATUS",	// 0x17
+		"UNKNOWN 0x18",	// 0x18
+		"UNKNOWN 0x19",	// 0x19
+		"UNKNOWN 0x1A",	// 0x1A
+		"UNKNOWN 0x1B",	// 0x1B
+		"UNKNOWN 0x1C",	// 0x1C
+		"UNKNOWN 0x1D",	// 0x1D
+		"UNKNOWN 0x1E",	// 0x1E
+		"UNKNOWN 0x1F"	// 0x1F
+	};
+
+	string result;
+
+	uint8_t idx = 0x1F;
+	for (uint32_t i = 1 << 0x1F; i > 0; i >>= 1)
+	{
+		if ((value & i) && idx < sizeof(bitNames) / sizeof(char*))
+		{
+			if (result.size() > 0)
+				result += ", ";
+
+			result += bitNames[idx];
+		}
+
+		idx--;
+	}
+
+	if (result.size() == 0)
+	{
+		result = "None";
+	}
+
+	return result;
+}
+
+string BaseInputDevice::dumpLEDBits(uint16_t value)
+{
+	static const char* bitNames[] =
+	{
+		"LED_NUML",			// 0x00
+		"LED_CAPSL",			// 0x01
+		"LED_SCROLLL",		// 0x02
+		"LED_COMPOSE",		// 0x03
+		"LED_KANA",			// 0x04
+		"LED_SLEEP",			// 0x05
+		"LED_SUSPEND",		// 0x06
+		"LED_MUTE",			// 0x07
+		"LED_MISC",			// 0x08
+		"LED_MAIL",			// 0x09
+		"LED_CHARGING",		// 0x0A
+		"UNDEFINED 0x0B",	// 0x0B
+		"UNDEFINED 0x0C",	// 0x0C
+		"UNDEFINED 0x0D",	// 0x0D
+		"UNDEFINED 0x0E",	// 0x0E
+		"UNDEFINED 0x0F"		// 0x0F
+	};
+
+	string result;
+
+	uint8_t idx = 0x0F;
+	for (uint32_t i = 1 << 0x0F; i > 0; i >>= 1)
+	{
+		if ((value & i) && idx < sizeof(bitNames) / sizeof(char*))
+		{
+			if (result.size() > 0)
+				result += ", ";
+
+			result += bitNames[idx];
+		}
+
+		idx--;
+	}
+
+	if (result.size() == 0)
+	{
+		result = "None";
+	}
 
 	return result;
 }

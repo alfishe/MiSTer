@@ -17,6 +17,7 @@
 #include "fpga/fpgacommand.h"
 #include "cores/coremanager.h"
 #include "gui/osd/osd.h"
+#include "io/input/inputmanager.h"
 #include "io/input/baseinputdevice.h"
 #include "common/file/scandir/scandir.h"
 
@@ -150,6 +151,9 @@ void testOSD()
 
 void testInputDevices()
 {
+	InputManager& inputmgr = InputManager::instance();
+	inputmgr.detectDevices();
+
 	VIDPID device0 = BaseInputDevice::getInputDeviceVIDPID(0);
 	VIDPID device1 = BaseInputDevice::getInputDeviceVIDPID(1);
 
@@ -203,8 +207,8 @@ int main(int argc, char *argv[])
 	//sleep(2);
 	//coreType = command.getCoreType();
 
-	for (int i = 0; i < 10000000; i++)
-		testScanDir();
+	//for (int i = 0; i < 10000000; i++)
+	//	testScanDir();
 
 	//for (int i = 0; i < 1000; i++)
 	{

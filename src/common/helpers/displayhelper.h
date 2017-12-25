@@ -2,14 +2,23 @@
 #define COMMON_HELPERS_DISPLAYHELPER_H_
 
 #include <inttypes.h>
+#include <string>
+#include "../../3rdparty/tinyformat/tinyformat.h"
 
-class displayhelper
+using namespace std;
+
+class DisplayHelper
 {
 public:
-	static char* formatSize(uint64_t size, bool si = false);
+	static string formatSize(uint64_t size, bool si = false);
+
+	static string formatBits(uint8_t value);
+	static string formatBits(uint16_t value);
+	static string formatBits(uint32_t value);
+
 
 private:
-	displayhelper() {};
+	DisplayHelper() {};
 };
 
 #endif /* COMMON_HELPERS_DISPLAYHELPER_H_ */
