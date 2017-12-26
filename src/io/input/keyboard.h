@@ -16,7 +16,7 @@ protected:
 	uint16_t supportedLEDBits = 0x0000;
 
 public:
-	keyboard(int fd);
+	keyboard(const string& path);
 	virtual ~keyboard();
 
 	const string getDeviceName();

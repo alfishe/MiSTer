@@ -8,7 +8,6 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
-#include <linux/input.h>
 #include "../../3rdparty/tinyformat/tinyformat.h"
 #include "../../common/helpers/displayhelper.h"
 #include "../../common/helpers/stringhelper.h"
@@ -18,13 +17,6 @@
 // Check if correspondent <bit> set in a bitset
 #define test_bit(bit, bitset) (bitset [bit / 8] & (1 << (bit % 8)))
 #define NBITS(x) ((((x) - 1) / LONG_BIT) + 1)
-
-/*
- * Macros for reading ioctl bit fields.
- */
-#define BITFIELD_BITS_PER_LONG      (sizeof(unsigned long) * 8)
-#define BITFIELD_LONGS_PER_ARRAY(x) ((((x) - 1) / BITFIELD_BITS_PER_LONG) + 1)
-#define BITFIELD_TEST(bit, array)   ((array[((bit) / BITFIELD_BITS_PER_LONG)] >> ((bit) % BITFIELD_BITS_PER_LONG)) & 0x1)
 
 // Initialize static field arrays
 
@@ -86,34 +78,53 @@ vector<string> BaseInputDevice::ledNames =
 
 // -Initialize static field arrays
 
-int BaseInputDevice::openDevice(const string& path)
+BaseInputDevice::BaseInputDevice(const string& path)
 {
-	int result = open(path.c_str(), O_RDONLY);
+	this->path = path;
 
-	return result;
+
 }
 
-void BaseInputDevice::closeDevice(int fd)
+int BaseInputDevice::openDevice()
 {
-	close(fd);
-}
-
-string BaseInputDevice::getDeviceName(const string& path)
-{
-	string result;
-
-	int fd = open(path.c_str(), O_RDONLY);
-	if (fd >= 0)
+	if (fd != INVALID_FILE_DESCRIPTOR)
 	{
-		result = getDeviceName(fd);
-
-		close(fd);
+		closeDevice();
 	}
 
+	fd = open(path.c_str(), O_RDONLY);
+
+	return fd;
+}
+
+void BaseInputDevice::closeDevice()
+{
+	if (fd != INVALID_FILE_DESCRIPTOR)
+	{
+		close(fd);
+
+		fd = INVALID_FILE_DESCRIPTOR;
+	}
+}
+
+bool BaseInputDevice::init()
+{
+	bool result = false;
+
+	openDevice();
+
+	// 1. Retrieve device name
+	name = getDeviceName();
+
+	// 2. Get device type
+	type = getDeviceType();
+
+	closeDevice();
+
 	return result;
 }
 
-string BaseInputDevice::getDeviceName(int fd)
+const string BaseInputDevice::getDeviceName()
 {
 	static const int EVENT_BUFFER_SIZE = 256;
 
@@ -129,31 +140,20 @@ string BaseInputDevice::getDeviceName(int fd)
 	return result;
 }
 
-InputDeviceTypeEnum BaseInputDevice::getDeviceType(const string& path)
+InputDeviceTypeEnum BaseInputDevice::getDeviceType()
 {
 	InputDeviceTypeEnum result = InputDeviceTypeEnum::Unknown;
 
-	int fd = open(path.c_str(), O_RDONLY);
-	if (fd >= 0)
-	{
-		result = getDeviceType(fd);
-
-		close(fd);
-	}
-
-	return result;
-}
-
-InputDeviceTypeEnum BaseInputDevice::getDeviceType(int fd)
-{
-	InputDeviceTypeEnum result = InputDeviceTypeEnum::Unknown;
-
-	uint32_t bits = getDeviceEventBits(fd);
+	uint32_t bits = getDeviceEventBits();
+	getDeviceKeyBits();
 
 	// Detect Mouse device
 	if (result == +InputDeviceTypeEnum::Unknown)
 	{
-		if (IS_BIT_SET(bits, EV_REL))
+		// If device supports relative coordinates and supports at least left button - most likely it's a mouse
+		if (hasEventType(bit_ev, EV_REL) &&
+			hasEventType(bit_ev, EV_KEY) && hasEventCode(bit_key, BTN_LEFT)
+			)
 		{
 			result = InputDeviceTypeEnum::Mouse;
 		}
@@ -162,7 +162,11 @@ InputDeviceTypeEnum BaseInputDevice::getDeviceType(int fd)
 	// Detect Joystick device
 	if (result == +InputDeviceTypeEnum::Unknown)
 	{
-		if (IS_BIT_SET(bits, EV_ABS))
+		// If device supports absolute coordinates and has gamepad button or joystick button - most likely it's a joystick
+		if (hasEventType(bit_ev, EV_ABS) &&
+			hasEventType(bit_ev, EV_KEY) &&
+			(hasEventCode(bit_key, BTN_GAMEPAD) || hasEventCode(bit_key, BTN_JOYSTICK))
+			)
 		{
 			result = InputDeviceTypeEnum::Joystick;
 		}
@@ -171,9 +175,14 @@ InputDeviceTypeEnum BaseInputDevice::getDeviceType(int fd)
 	// Detect Keyboard
 	if (result == +InputDeviceTypeEnum::Unknown)
 	{
-		if (IS_BIT_SET(bits, EV_KEY))
+		// Keyboard needs to have at least few letter buttons
+		// TODO: Numpads detection (keyboard HID but have only numeric keys)
+		if (hasEventType(bit_ev, EV_KEY) &&
+			hasEventCode(bit_key, KEY_A) &&
+			hasEventCode(bit_key, KEY_Z)
+			)
 		{
-			uint16_t ledBits = getDeviceLEDBits(fd);
+			uint16_t ledBits = getDeviceLEDBits();
 			if (ledBits > 0)
 			{
 				result = InputDeviceTypeEnum::Keyboard;
@@ -184,12 +193,11 @@ InputDeviceTypeEnum BaseInputDevice::getDeviceType(int fd)
 	return result;
 }
 
-uint32_t BaseInputDevice::getDeviceEventBits(int fd)
+uint32_t BaseInputDevice::getDeviceEventBits()
 {
 	uint32_t result = 0x00000000;
-	unsigned long bit_ev[BITFIELD_LONGS_PER_ARRAY(EV_MAX)];
 
-	if (ioctl(fd, EVIOCGBIT(0, EV_MAX), &bit_ev) >= 0)
+	if (ioctl(fd, EVIOCGBIT(0, sizeof(bit_ev)), &bit_ev) >= 0)
 	{
 		result = (uint32_t)bit_ev[0];
 
@@ -205,12 +213,11 @@ uint32_t BaseInputDevice::getDeviceEventBits(int fd)
 	return result;
 }
 
-uint16_t BaseInputDevice::getDeviceLEDBits(int fd)
+uint16_t BaseInputDevice::getDeviceLEDBits()
 {
 	uint16_t result = 0x0000;
-	unsigned long bit_led[BITFIELD_LONGS_PER_ARRAY(LED_MAX)];
 
-	if (ioctl(fd, EVIOCGBIT(EV_LED, LED_MAX), &bit_led) >= 0)
+	if (ioctl(fd, EVIOCGBIT(EV_LED, sizeof(bit_led)), &bit_led) >= 0)
 	{
 		result = (uint16_t)bit_led[0];
 
@@ -224,6 +231,19 @@ uint16_t BaseInputDevice::getDeviceLEDBits(int fd)
 	}
 
 	return result;
+}
+
+const BitType* BaseInputDevice::getDeviceKeyBits()
+{
+	if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(bit_key)), &bit_key) >= 0)
+	{
+	}
+	else
+	{
+		LOGERROR("Unable to retrieve Key bits for device");
+	}
+
+	return bit_key;
 }
 
 string BaseInputDevice::printDeviceInfo(int fd)

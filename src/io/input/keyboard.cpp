@@ -9,14 +9,13 @@
 #include "../../3rdparty/openbsd/string.h"
 #include "../../common/consts.h"
 
-keyboard::keyboard(int fd)
+keyboard::keyboard(const string& path) : BaseInputDevice(path)
 {
-	this->fd = fd;
-	this->supportedLEDBits = getDeviceLEDBits(fd);
 }
 
 keyboard::~keyboard()
 {
+	closeDevice();
 }
 
 /*

@@ -12,19 +12,25 @@ protected:
 	// Fields
 	InputDeviceVector inputDevices;
 
-	list<int> keyboards;
-	list<int> mouses;
-	list<int> joysticks;
+	InputDeviceVector keyboards;
+	InputDeviceVector mouses;
+	InputDeviceVector joysticks;
 
 public:
 	// Singleton instance
 	static InputManager& instance();
 
 	InputManager(const InputManager& that) = delete; // Copy constructor is forbidden here (C++11 feature)
-	virtual ~InputManager() {};
+	virtual ~InputManager();
 
-	InputDeviceVector detectDevices();
+	void reset();
+	InputDeviceVector& detectDevices();
+	bool isDeviceTypeAllowed(InputDeviceTypeEnum type);
 
+protected:
+	void addInputDevice(InputDevice& device);
+
+public:
 	// Debug methods
 	static string dump(InputDeviceVector& inputDevices);
 

@@ -21,15 +21,30 @@ InputManager& InputManager::instance()
 	return instance;
 }
 
-InputDeviceVector InputManager::detectDevices()
+InputManager::~InputManager()
 {
-	InputDeviceVector result;
+	TRACE("~InputManager()");
 
+	reset();
+}
+
+/// Clear all internal information about devices
+///
+void InputManager::reset()
+{
+	keyboards.clear();
+	mouses.clear();
+	joysticks.clear();
+	inputDevices.clear();
+}
+
+InputDeviceVector& InputManager::detectDevices()
+{
 	// Scan for available input device using path pattern:  /dev/input/event<N>
 	ScanDir scan;
 	scan.scanFolder(LINUX_DEVICE_INPUT, ScanDir::getInputDevicesFilter(), ScanDir::getAlphaSort());
-	auto devices = scan.getScanResults();
 
+	auto devices = scan.getScanResults();
 	if (devices.size() > 0)
 	{
 		for_each(devices.begin(), devices.end(),
@@ -37,24 +52,33 @@ InputDeviceVector InputManager::detectDevices()
 			{
 				string path = Path::combine(LINUX_DEVICE_INPUT, entry.name).toString();
 
-				int fd = BaseInputDevice::openDevice(path);
-				string name = BaseInputDevice::getDeviceName(fd);
-				uint32_t eventBits = BaseInputDevice::getDeviceEventBits(fd);
-				InputDeviceTypeEnum type = BaseInputDevice::getDeviceType(fd);
-				BaseInputDevice::closeDevice(fd);
+				BaseInputDevice device(path);
+				int fd = device.openDevice();
+				string name = device.getDeviceName();
+				uint32_t eventBits = device.getDeviceEventBits();
+				InputDeviceTypeEnum type = device.getDeviceType();
+				device.closeDevice();
 
-				InputDevice inputDevice;
-				inputDevice.path = path;
-				inputDevice.name = name;
-				inputDevice.eventBits = eventBits;
-				inputDevice.type = type;
+				if (isDeviceTypeAllowed(type))
+				{
+					InputDevice inputDevice;
+					inputDevice.path = path;
+					inputDevice.name = name;
+					inputDevice.eventBits = eventBits;
+					inputDevice.type = type;
 
-				result.push_back(inputDevice);
+					// Register device in correspondent collections
+					addInputDevice(inputDevice);
+				}
+				else
+				{
+					LOGWARN("Unknown device with name '%s' detected on path '%s'", name.c_str(), path.c_str());
+				}
 			}
 		);
 
 		// Info logging
-		LOGINFO(dump(result).c_str());
+		LOGINFO(dump(this->inputDevices).c_str());
 		// -Info logging
 	}
 	else
@@ -62,14 +86,49 @@ InputDeviceVector InputManager::detectDevices()
 		LOGINFO("No input devices availablee\n");
 	}
 
-	// Store result in a field
-	this->inputDevices = result;
-
 	// Free up ScanDir buffers
 	scan.dispose();
 
+	return this->inputDevices;
+}
+
+bool InputManager::isDeviceTypeAllowed(InputDeviceTypeEnum type)
+{
+	bool result = false;
+
+	// Allow Mouse, Joystick, Keyboard types to be detected
+	if (type != +InputDeviceTypeEnum::Unknown)
+	{
+		result = true;
+	}
+
 	return result;
 }
+
+// ======================= Protected methods =================================
+void InputManager::addInputDevice(InputDevice& device)
+{
+	// Register in device-type specific collection
+	switch (device.type)
+	{
+		case InputDeviceTypeEnum::Mouse:
+			mouses.push_back(device);
+			break;
+		case InputDeviceTypeEnum::Joystick:
+			joysticks.push_back(device);
+			break;
+		case InputDeviceTypeEnum::Keyboard:
+			keyboards.push_back(device);
+			break;
+		default:
+			break;
+	}
+
+	// Register in global collection
+	inputDevices.push_back(device);
+}
+
+// ======================= Debug methods =====================================
 
 string InputManager::dump(InputDeviceVector& inputDevices)
 {
@@ -93,9 +152,11 @@ string InputManager::dump(InputDeviceVector& inputDevices)
 					break;
 				case InputDeviceTypeEnum::Keyboard:
 					{
-						int fd = BaseInputDevice::openDevice(inputDevice.path);
-						uint16_t ledBits = BaseInputDevice::getDeviceLEDBits(fd);
-						BaseInputDevice::closeDevice(fd);
+						BaseInputDevice device(inputDevice.path);
+
+						int fd = device.openDevice();
+						uint16_t ledBits = device.getDeviceLEDBits();
+						device.closeDevice();
 
 						result += tfm::format("LED bits: 0x%04x | %s", ledBits, BaseInputDevice::dumpLEDBits(ledBits).c_str());
 						result += "\n";
