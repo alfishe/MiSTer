@@ -13,9 +13,11 @@ public:
 
 	Path(const string &p);
 	string toString() const;
-	Path combine(const string& rhs);
+	Path& combine(const string& rhs);
+	Path& simplify();
 
 	static Path combine(const string& lhs, const string& rhs);
+	static Path simplify(string path);
 };
 
 Path operator/(const Path& lhs, const Path& rhs);
