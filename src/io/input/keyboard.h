@@ -4,24 +4,24 @@
 #include <stdint.h>
 #include <string>
 #include "../../common/consts.h"
+#include "baseinputdevice.h"
 
 using namespace std;
 
-class keyboard
+class keyboard : public BaseInputDevice
 {
 protected:
 	int fd = INVALID_FILE_DESCRIPTOR;
 	string deviceName;
-	uint16_t supportedLEDMask;
+	uint16_t supportedLEDBits = 0x0000;
 
 public:
 	keyboard(int fd);
 	virtual ~keyboard();
 
 	const string getDeviceName();
-	bool hasLED();
 	void getLEDState();
-	void setLEDState(uint8_t state);
+	void setLEDState(uint16_t state);
 
 private:
 	static inline int isBitSet(int bit, const uint8_t *array) __attribute__((always_inline))

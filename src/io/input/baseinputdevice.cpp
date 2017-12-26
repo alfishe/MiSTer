@@ -19,6 +19,13 @@
 #define test_bit(bit, bitset) (bitset [bit / 8] & (1 << (bit % 8)))
 #define NBITS(x) ((((x) - 1) / LONG_BIT) + 1)
 
+/*
+ * Macros for reading ioctl bit fields.
+ */
+#define BITFIELD_BITS_PER_LONG      (sizeof(unsigned long) * 8)
+#define BITFIELD_LONGS_PER_ARRAY(x) ((((x) - 1) / BITFIELD_BITS_PER_LONG) + 1)
+#define BITFIELD_TEST(bit, array)   ((array[((bit) / BITFIELD_BITS_PER_LONG)] >> ((bit) % BITFIELD_BITS_PER_LONG)) & 0x1)
+
 // Initialize static field arrays
 
 vector<string> BaseInputDevice::eventNames =
@@ -180,12 +187,15 @@ InputDeviceTypeEnum BaseInputDevice::getDeviceType(int fd)
 uint32_t BaseInputDevice::getDeviceEventBits(int fd)
 {
 	uint32_t result = 0x00000000;
+	unsigned long bit_ev[BITFIELD_LONGS_PER_ARRAY(EV_MAX)];
 
-	if (ioctl(fd, EVIOCGBIT(0, EV_MAX), &result) >= 0)
+	if (ioctl(fd, EVIOCGBIT(0, EV_MAX), &bit_ev) >= 0)
 	{
-		TRACE("Device event bits: 0x%08x | %s", result, DisplayHelper::formatBits(result).c_str());
-		TRACE("Event bits: %s", dumpEventBits(result).c_str());
-		TRACE("");
+		result = (uint32_t)bit_ev[0];
+
+		//TRACE("Device event bits: 0x%08x | %s", result, DisplayHelper::formatBits(result).c_str());
+		//TRACE("Event bits: %s", dumpEventBits(result).c_str());
+		//TRACE("");
 	}
 	else
 	{
@@ -198,12 +208,15 @@ uint32_t BaseInputDevice::getDeviceEventBits(int fd)
 uint16_t BaseInputDevice::getDeviceLEDBits(int fd)
 {
 	uint16_t result = 0x0000;
+	unsigned long bit_led[BITFIELD_LONGS_PER_ARRAY(LED_MAX)];
 
-	if (ioctl(fd, EVIOCGBIT(EV_LED, LED_MAX), &result) >= 0)
+	if (ioctl(fd, EVIOCGBIT(EV_LED, LED_MAX), &bit_led) >= 0)
 	{
-		TRACE("Device LED bits: 0x%04x | %s", result, DisplayHelper::formatBits(result).c_str());
-		TRACE("LED bits: %s", dumpLEDBits(result).c_str());
-		TRACE("");
+		result = (uint16_t)bit_led[0];
+
+		//TRACE("Device LED bits: 0x%04x | %s", result, DisplayHelper::formatBits(result).c_str());
+		//TRACE("LED bits: %s", dumpLEDBits(result).c_str());
+		//TRACE("");
 	}
 	else
 	{

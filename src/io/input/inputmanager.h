@@ -26,7 +26,7 @@ public:
 	InputDeviceVector detectDevices();
 
 	// Debug methods
-	static void dump(InputDeviceVector& inputDevices);
+	static string dump(InputDeviceVector& inputDevices);
 
 private:
 	InputManager() {}; // Disallow direct instances creation

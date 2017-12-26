@@ -12,75 +12,11 @@
 keyboard::keyboard(int fd)
 {
 	this->fd = fd;
+	this->supportedLEDBits = getDeviceLEDBits(fd);
 }
 
 keyboard::~keyboard()
 {
-}
-
-/*
- * Retrieves device name from the device itself
- * Reference: http://www.linuxjournal.com/files/linuxjournal.com/linuxjournal/articles/064/6429/6429l4.html
- */
-const string keyboard::getDeviceName()
-{
-	static const int deviceNameBufferSize = 256;
-
-	string result;
-	result.resize(deviceNameBufferSize);
-
-	if (fd != INVALID_FILE_DESCRIPTOR)
-	{
-		int res = ioctl(fd, EVIOCGNAME(deviceNameBufferSize), result.c_str());
-		if (res != -1)
-		{
-			result.resize(res);
-		}
-		else
-		{
-			LOGERROR("%s: unable to get device name\n%s", __PRETTY_FUNCTION__, logger::geterror());
-		}
-	}
-	else
-	{
-		LOGERROR("%s: Device descriptor is not valid\n", __PRETTY_FUNCTION__);
-	}
-
-	return result;
-}
-
-/*
- * Checks if keyboard has LEDs
- */
-bool keyboard::hasLED()
-{
-	bool result = false;
-
-	uint8_t evtype_b[(EV_MAX + 7) / 8];
-
-	if (fd != INVALID_FILE_DESCRIPTOR)
-	{
-		memset(&evtype_b, 0, sizeof(evtype_b));
-
-		if (ioctl(fd, EVIOCGBIT(0, sizeof(evtype_b)), evtype_b) != -1)
-		{
-			if (isBitSet(EV_LED, evtype_b))
-			{
-				LOGINFO("has LEDs");
-				result = true;
-			}
-		}
-		else
-		{
-			LOGERROR("%s: unable to get input device capabilities\n%s", __PRETTY_FUNCTION__, logger::geterror());
-		}
-	}
-	else
-	{
-		LOGERROR("%s: Device descriptor is not valid\n", __PRETTY_FUNCTION__);
-	}
-
-	return result;
 }
 
 /*
@@ -146,7 +82,7 @@ void keyboard::getLEDState()
 */
 }
 
-void keyboard::setLEDState(uint8_t state)
+void keyboard::setLEDState(uint16_t state)
 {
 	input_event event;
 	event.type = EV_LED;

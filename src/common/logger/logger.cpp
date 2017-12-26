@@ -38,7 +38,7 @@ void logger::info(const char* format, ...)
 
 	vsnprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
 
-	printf("I:%s", buffer);
+	printf("I:%s\n", buffer);
 	fflush(stdout);
 
 	va_end(arguments);
@@ -51,7 +51,7 @@ void logger::warning(const char* format, ...)
 
 	vsnprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
 
-	printf("W:%s", buffer);
+	printf("W:%s\n", buffer);
 	fflush(stdout);
 
 	va_end(arguments);
@@ -64,7 +64,7 @@ void logger::error(const char* format, ...)
 
 	vsnprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
 
-	printf("E:%s", buffer);
+	printf("E:%s\n", buffer);
 	fflush(stdout);
 
 	va_end(arguments);

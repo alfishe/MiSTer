@@ -84,7 +84,7 @@ bool FPGADevice::init()
 			isInitialized = true;
 
 			// Info logging
-			LOGINFO("FPGA address space mapped into the process successfully\n");
+			LOGINFO("FPGA address space mapped into the process successfully");
 		}
 		else
 		{
@@ -97,7 +97,7 @@ bool FPGADevice::init()
 	}
 	else
 	{
-		LOGERROR("Unable to access memory via /dev/mem. Probably program need to be started as 'sudo MiSTer'\n");
+		LOGERROR("Unable to access memory via /dev/mem. Probably program need to be started as 'sudo MiSTer'");
 	}
 
 	return result;
@@ -153,13 +153,13 @@ bool FPGADevice::load_rbf(const char *name)
 	if (filemanager::isFileExist(filepath))
 	{
 		// Info logging
-		LOGINFO("Found\n");
+		LOGINFO("Found");
 
 		uint64_t filesize = filemanager::getFileSize(filepath);
 		if (filesize > 0)
 		{
 			// Info logging
-			LOGINFO("FPGA bitstream size: %llu bytes\n", filesize);
+			LOGINFO("FPGA bitstream size: %llu bytes", filesize);
 
 			void* buffer = malloc(filesize);
 			if (buffer != nullptr)
@@ -177,29 +177,29 @@ bool FPGADevice::load_rbf(const char *name)
 
 						result = true;
 
-						LOGINFO("FPGA successfully programmed with '%s' file\n", filepath);
+						LOGINFO("FPGA successfully programmed with '%s' file", filepath);
 					}
 					else
 					{
-						LOGERROR("Unable to program FPGA with '%s' file\n", filepath);
+						LOGERROR("Unable to program FPGA with '%s' file", filepath);
 					}
 				}
 				else
 				{
-					LOGERROR("Unable to read FPGA bitstream file: %s\n", filepath);
+					LOGERROR("Unable to read FPGA bitstream file: %s", filepath);
 				}
 
 				free(buffer);
 			}
 			else
 			{
-				LOGERROR("Unable to allocate %llu bytes\n", filesize);
+				LOGERROR("Unable to allocate %llu bytes", filesize);
 			}
 		}
 		else
 		{
 			// Info logging
-			LOGINFO("File has zero size\n");
+			LOGINFO("File has zero size");
 		}
 
 		// Trigger application restart to follow changes in FPGA
@@ -208,7 +208,7 @@ bool FPGADevice::load_rbf(const char *name)
 	else
 	{
 		// Info logging
-		LOGWARN("File '%s' not found\n", filepath);
+		LOGWARN("File '%s' not found", filepath);
 	}
 #endif // REBOOT_ON_RBF_LOAD
 
@@ -271,26 +271,26 @@ bool FPGADevice::program(const void* rbf_data, uint32_t rbf_size)
 
 				if (result)
 				{
-					LOGINFO("FPGA successfully loaded from bitstream file and configured\n");
+					LOGINFO("FPGA successfully loaded from bitstream file and configured");
 				}
 				else
 				{
-					LOGERROR("FPGA didn't enter USER mode\n");
+					LOGERROR("FPGA didn't enter USER mode");
 				}
 			}
 			else
 			{
-				LOGERROR("FPGA didn't enter INIT phase\n");
+				LOGERROR("FPGA didn't enter INIT phase");
 			}
 		}
 		else
 		{
-			LOGERROR("FPGA didn't enter CONFIG DONE state\n");
+			LOGERROR("FPGA didn't enter CONFIG DONE state");
 		}
 	}
 	else
 	{
-		LOGERROR("FPGA programming mode initialization failed\n");
+		LOGERROR("FPGA programming mode initialization failed");
 	}
 
 	return result;

@@ -36,16 +36,16 @@ using namespace backward;
 void testFilesystem()
 {
 	string value = filemanager::getExtension("/media/fat/menu.rbf");
-	LOGINFO("Ext: %s\n", value.c_str());
+	LOGINFO("Ext: %s", value.c_str());
 
 	value = filemanager::getExtension("menu.bin");
-	LOGINFO("Ext: %s\n", value.c_str());
+	LOGINFO("Ext: %s", value.c_str());
 
 	value = filemanager::getExtension("test.file.with.multiple.extensions.txt");
-	LOGINFO("Ext: %s\n", value.c_str());
+	LOGINFO("Ext: %s", value.c_str());
 
 	value = filemanager::getExtension("file_with_no_extensions");
-	LOGINFO("Ext: %s\n", value.c_str());
+	LOGINFO("Ext: %s", value.c_str());
 }
 
 void testScanDir()
@@ -55,13 +55,13 @@ void testScanDir()
 	auto results = instance.getScanResults();
 	instance.dispose();
 
-	LOGINFO("ScanDir returned %d entries\n", results.size());
+	LOGINFO("ScanDir returned %d entries", results.size());
 	for_each(results.begin(), results.end(),
 			[] (DirectoryEntry ent)
 			{
 				if (ent.isFolder)
 					LOGINFO("<DIR>");
-				LOGINFO("%s\n", ent.name.c_str());
+				LOGINFO("%", ent.name.c_str());
 			}
 			);
 }
@@ -72,11 +72,11 @@ void testDirectories()
 
 	auto res = dirManager.scanDirectory("", nullptr, true, true);
 	auto& files = *res.get();
-	LOGINFO("/media/fat has %d files\n", files.size());
+	LOGINFO("/media/fat has %d files", files.size());
 	for (auto it = files.begin(); it != files.end(); it++)
 	{
 		DirectoryEntryChar* item = (*it).get();
-		LOGINFO("%s %s\n", item->name, item->isFolder ? "<DIR>" : "");
+		LOGINFO("%s %s", item->name, item->isFolder ? "<DIR>" : "");
 	}
 
 	CharStringSet extensions;
@@ -84,11 +84,11 @@ void testDirectories()
 	extensions.insert("bin");
 	auto res1 = dirManager.scanDirectory("", &extensions, false);
 	auto& files1 = *res1.get();
-	LOGINFO("/media/fat has %d files filtered by extension\n", files1.size());
+	LOGINFO("/media/fat has %d files filtered by extension", files1.size());
 	for (auto it = files1.begin(); it != files1.end(); it++)
 	{
 		DirectoryEntryChar* item = (*it).get();
-		LOGINFO("%s - %s\n", item->name, item->displayname);
+		LOGINFO("%s - %s", item->name, item->displayname);
 	}
 }
 
@@ -160,8 +160,8 @@ void testInputDevices()
 	string device0name = BaseInputDevice::getInputDeviceName(0);
 	string device1name = BaseInputDevice::getInputDeviceName(1);
 
-	LOGINFO("Device0 name: %s\n", device0name.c_str());
-	LOGINFO("Device1 name: %s\n", device1name.c_str());
+	LOGINFO("Device0 name: %s", device0name.c_str());
+	LOGINFO("Device1 name: %s", device1name.c_str());
 }
 
 // ==========================================================================================
@@ -188,20 +188,20 @@ int main(int argc, char *argv[])
 	// Register handler for error/exceptional cases
 	signal(SIGSEGV, handler);
 
-	LOGINFO("MiSTer process started with PID:%d\n", sysmanager::getProcessID());
+	LOGINFO("MiSTer process started with PID:%d", sysmanager::getProcessID());
 
 	init();
 
 	FPGADevice& fpga = FPGADevice::instance();
 	FPGACommand& command = *(fpga.command);
 
-	LOGINFO("Setting up FPGA...\n");
+	LOGINFO("Setting up FPGA...");
 
 	// TODO: Remove debug code
 	CoreType coreType = command.getCoreType();
 
-	LOGINFO("Core name: %s\n", command.getCoreName());
-	LOGINFO("Core config: %s\n", command.getCoreConfig());
+	LOGINFO("Core name: %s", command.getCoreName());
+	LOGINFO("Core config: %s", command.getCoreConfig());
 
 	//CoreManager::instance().loadCore("memtest.rbf");
 	//sleep(2);

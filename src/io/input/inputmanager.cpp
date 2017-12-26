@@ -54,7 +54,7 @@ InputDeviceVector InputManager::detectDevices()
 		);
 
 		// Info logging
-		dump(result);
+		LOGINFO(dump(result).c_str());
 		// -Info logging
 	}
 	else
@@ -71,17 +71,43 @@ InputDeviceVector InputManager::detectDevices()
 	return result;
 }
 
-void InputManager::dump(InputDeviceVector& inputDevices)
+string InputManager::dump(InputDeviceVector& inputDevices)
 {
-	LOGINFO("Available input devices:  %d\n\n", inputDevices.size());
+	string result = tfm::format("Available input devices:  %d\n", inputDevices.size());
 
 	for_each(inputDevices.begin(), inputDevices.end(),
-		[](InputDevice& inputDevice)
+		[&](InputDevice& inputDevice)
 		{
-			LOGINFO("path: '%s'\n", inputDevice.path.c_str());
-			LOGINFO("name: '%s'\n", inputDevice.name.c_str());
-			LOGINFO("type: 0x%x ('%s')\n", inputDevice.type._to_integral(), inputDevice.type._to_string());
-			LOGINFO("\n");
+			result += tfm::format("path: '%s'", inputDevice.path.c_str());
+			result += "\n";
+			result += tfm::format("name: '%s'", inputDevice.name.c_str());
+			result += "\n";
+			result += tfm::format("type: 0x%x ('%s')", inputDevice.type._to_integral(), inputDevice.type._to_string());
+			result += "\n";
+
+			switch (inputDevice.type)
+			{
+				case InputDeviceTypeEnum::Mouse:
+					break;
+				case InputDeviceTypeEnum::Joystick:
+					break;
+				case InputDeviceTypeEnum::Keyboard:
+					{
+						int fd = BaseInputDevice::openDevice(inputDevice.path);
+						uint16_t ledBits = BaseInputDevice::getDeviceLEDBits(fd);
+						BaseInputDevice::closeDevice(fd);
+
+						result += tfm::format("LED bits: 0x%04x | %s", ledBits, BaseInputDevice::dumpLEDBits(ledBits).c_str());
+						result += "\n";
+					}
+					break;
+				default:
+					break;
+			}
+
+			result += "\n";
 		}
 	);
+
+	return result;
 }

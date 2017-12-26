@@ -50,15 +50,15 @@ bool filemanager::isPathMounted(char *path)
 					file_stat.st_ino == parent_stat.st_ino)
 				)
 				{
-					LOGINFO("%s is a mountpoint.\n", path);
+					LOGINFO("%s is a mountpoint.", path);
 
 					struct statfs fs_stat;
 					if (!statfs(path, &fs_stat))
 					{
-						LOGINFO("%s is FS: 0x%08X\n", path, fs_stat.f_type);
+						LOGINFO("%s is FS: 0x%08X", path, fs_stat.f_type);
 						if (fs_stat.f_type != EXT4_SUPER_MAGIC)
 						{
-							LOGINFO("%s is not EXT2/3/4 (which is ok since FAT32 or ExFAT expected).\n", path);
+							LOGINFO("%s is not EXT2/3/4 (which is ok since FAT32 or ExFAT expected).", path);
 							result = true;
 						}
 					}

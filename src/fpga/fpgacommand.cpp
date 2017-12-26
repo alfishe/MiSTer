@@ -49,11 +49,11 @@ CoreType FPGACommand::getCoreType()
 	{
 		result = CoreType((uint8_t)coretype);
 
-		LOGINFO("Core returned Type=0x%X\n", result);
+		LOGINFO("Core returned Type=0x%X", result);
 	}
 	else
 	{
-		LOGERROR("Loaded FPGA core is incompatible with MiSTer platform\n");
+		LOGERROR("Loaded FPGA core is incompatible with MiSTer platform");
 	}
 
 	endExecution();
