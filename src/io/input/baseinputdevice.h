@@ -43,8 +43,10 @@ public:
 
 public:
 	BaseInputDevice(const string& path);
+	virtual ~BaseInputDevice();
 
 	int openDevice();
+	int openDeviceWrite();
 	void closeDevice();
 
 	bool init();
@@ -75,10 +77,10 @@ protected:
 	static const string getDeviceVendorQuery();
 	static const string getDeviceProductQuery();
 
-private:
+protected:
 	static inline bool isBitSet(const BitType* bits, unsigned bit) __attribute__((always_inline))
 	{
-		bool result = bool(bits[bit/INPUT_BITCOUNT] & (1ul << (bit % INPUT_BITCOUNT)));
+		bool result = bool(bits[bit / INPUT_BITCOUNT] & (1ul << (bit % INPUT_BITCOUNT)));
 
 		return result;
 	}

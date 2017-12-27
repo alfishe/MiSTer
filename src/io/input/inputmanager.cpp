@@ -9,10 +9,13 @@
 
 #include "input.h"
 #include "baseinputdevice.h"
+#include "mouse.h"
+#include "joystick.h"
 #include "../../3rdparty/tinyformat/tinyformat.h"
 #include "../../common/consts.h"
 #include "../../common/file/path/path.h"
 #include "../../common/file/scandir/scandir.h"
+#include "Keyboard.h"
 
 InputManager& InputManager::instance()
 {
@@ -53,7 +56,7 @@ InputDeviceVector& InputManager::detectDevices()
 				string path = Path::combine(LINUX_DEVICE_INPUT, entry.name).toString();
 
 				BaseInputDevice device(path);
-				int fd = device.openDevice();
+				device.openDevice();
 				string name = device.getDeviceName();
 				uint32_t eventBits = device.getDeviceEventBits();
 				InputDeviceTypeEnum type = device.getDeviceType();
@@ -152,9 +155,9 @@ string InputManager::dump(InputDeviceVector& inputDevices)
 					break;
 				case InputDeviceTypeEnum::Keyboard:
 					{
-						BaseInputDevice device(inputDevice.path);
+						Keyboard device(inputDevice.path);
 
-						int fd = device.openDevice();
+						device.openDevice();
 						uint16_t ledBits = device.getDeviceLEDBits();
 						device.closeDevice();
 

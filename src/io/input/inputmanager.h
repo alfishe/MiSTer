@@ -8,7 +8,7 @@ using namespace std;
 
 class InputManager
 {
-protected:
+public:
 	// Fields
 	InputDeviceVector inputDevices;
 

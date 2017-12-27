@@ -3,6 +3,7 @@
 #include "common/logger/logger.h"
 
 #include <algorithm>
+#include <exception>
 #include <iostream>
 #include <unistd.h>
 #include <execinfo.h>
@@ -19,6 +20,7 @@
 #include "gui/osd/osd.h"
 #include "io/input/inputmanager.h"
 #include "io/input/baseinputdevice.h"
+#include "io/input/keyboard.h"
 #include "common/file/scandir/scandir.h"
 
 using namespace std;
@@ -154,6 +156,45 @@ void testInputDevices()
 	InputManager& inputmgr = InputManager::instance();
 	inputmgr.detectDevices();
 
+	for_each(inputmgr.keyboards.begin(), inputmgr.keyboards.end(),
+		[](InputDevice& device)
+		{
+			Keyboard keyboard(device.path);
+
+			keyboard.openDeviceWrite();
+			uint16_t ledBits = keyboard.getDeviceLEDBits();
+
+			for (int i = 0; i < 100000000; i++)
+			{
+				uint16_t state = 0x0000;
+
+				switch (i % 3)
+				{
+					case 0:
+						state = LED_NUML;
+						break;
+					case 1:
+						state = LED_SCROLLL;
+						break;
+					case 2:
+						state = LED_CAPSL;
+						break;
+				}
+
+
+				keyboard.setLEDState(state, true);
+
+				usleep(1000 * 1000);
+				ledBits = keyboard.getLEDState();
+				LOGINFO("LEDS: %s", Keyboard::dumpLEDBits(ledBits).c_str());
+
+				keyboard.setLEDState(state, false);
+			}
+
+			keyboard.closeDevice();
+		}
+	);
+
 	VIDPID device0 = BaseInputDevice::getInputDeviceVIDPID(0);
 	VIDPID device1 = BaseInputDevice::getInputDeviceVIDPID(1);
 
@@ -183,10 +224,20 @@ void handler(int sig)
 	exit(1);
 }
 
+/*
+void cxx_hander()
+{
+
+}
+*/
+
 int main(int argc, char *argv[])
 {
-	// Register handler for error/exceptional cases
+	// Register handler for system error/exceptional cases
 	signal(SIGSEGV, handler);
+
+	// Register handled for C++ unhandled exceptions
+	//set_terminate(cxx_hander);
 
 	LOGINFO("MiSTer process started with PID:%d", sysmanager::getProcessID());
 

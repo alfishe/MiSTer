@@ -8,28 +8,21 @@
 
 using namespace std;
 
-class keyboard : public BaseInputDevice
+class Keyboard : public BaseInputDevice
 {
 protected:
-	int fd = INVALID_FILE_DESCRIPTOR;
-	string deviceName;
+	unsigned long bit_led[BITFIELD_LONGS_PER_ARRAY(LED_MAX)];
 	uint16_t supportedLEDBits = 0x0000;
 
 public:
-	keyboard(const string& path);
-	virtual ~keyboard();
+	Keyboard(const string& path);
+	virtual ~Keyboard();
 
-	const string getDeviceName();
-	void getLEDState();
-	void setLEDState(uint16_t state);
+	uint16_t getLEDState();
+	void setLEDState(uint16_t ledMask, bool on);
 
-private:
-	static inline int isBitSet(int bit, const uint8_t *array) __attribute__((always_inline))
-	{
-	    int result = array [bit / 8] & (1 << (bit % 8));
-
-	    return result;
-	}
+protected:
+	void makeLEDEvent(struct input_event* event, uint16_t ledMask, bool on);
 };
 
 #endif /* IO_INPUT_KEYBOARD_H_ */

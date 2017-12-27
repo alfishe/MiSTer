@@ -80,9 +80,16 @@ vector<string> BaseInputDevice::ledNames =
 
 BaseInputDevice::BaseInputDevice(const string& path)
 {
+	TRACE("BaseInputDevice()");
+
 	this->path = path;
+}
 
+BaseInputDevice::~BaseInputDevice()
+{
+	TRACE("~BaseInputDevice()");
 
+	closeDevice();
 }
 
 int BaseInputDevice::openDevice()
@@ -92,7 +99,19 @@ int BaseInputDevice::openDevice()
 		closeDevice();
 	}
 
-	fd = open(path.c_str(), O_RDONLY);
+	fd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
+
+	return fd;
+}
+
+int BaseInputDevice::openDeviceWrite()
+{
+	if (fd != INVALID_FILE_DESCRIPTOR)
+	{
+		closeDevice();
+	}
+
+	fd = open(path.c_str(), O_RDWR | O_NONBLOCK);
 
 	return fd;
 }
@@ -109,7 +128,7 @@ void BaseInputDevice::closeDevice()
 
 bool BaseInputDevice::init()
 {
-	bool result = false;
+	bool result = true;
 
 	openDevice();
 
@@ -144,7 +163,7 @@ InputDeviceTypeEnum BaseInputDevice::getDeviceType()
 {
 	InputDeviceTypeEnum result = InputDeviceTypeEnum::Unknown;
 
-	uint32_t bits = getDeviceEventBits();
+	getDeviceEventBits();
 	getDeviceKeyBits();
 
 	// Detect Mouse device
