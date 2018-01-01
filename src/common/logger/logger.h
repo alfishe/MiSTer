@@ -1,7 +1,7 @@
 #ifndef COMMON_LOGGER_LOGGER_H_
 #define COMMON_LOGGER_LOGGER_H_
 
-#define MAX_LOG_MESSAGE_LENGTH 1024
+#define MAX_LOG_MESSAGE_LENGTH 4096
 
 // Shortcuts
 #define LOGINFO(format, ...) logger::info(format, ##__VA_ARGS__)
