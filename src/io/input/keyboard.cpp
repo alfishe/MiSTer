@@ -1,4 +1,4 @@
-#include "Keyboard.h"
+#include "keyboard.h"
 
 #include "../../common/logger/logger.h"
 
@@ -8,6 +8,7 @@
 #include <linux/input.h>
 #include "../../3rdparty/openbsd/string.h"
 #include "../../common/consts.h"
+#include "../../common/exception/misterexception.h"
 
 Keyboard::Keyboard(const string& path) : BaseInputDevice(path)
 {
@@ -22,7 +23,7 @@ uint16_t Keyboard::getLEDState()
 {
 	uint16_t result = 0x0000;
 
-	throw new logic_error("Not implemented");
+	throw MiSTerException("Not implemented");
 
 	return result;
 }
@@ -59,10 +60,10 @@ void Keyboard::makeLEDEvent(struct input_event* event, uint16_t ledMask, bool on
 
 	if (on)
 	{
-		event->value = MSC_PULSELED;
+		event->value = 1;
 	}
 	else
 	{
-		event->value = !MSC_PULSELED;
+		event->value = 0;
 	}
 }

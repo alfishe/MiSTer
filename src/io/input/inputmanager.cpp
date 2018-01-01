@@ -11,11 +11,11 @@
 #include "baseinputdevice.h"
 #include "mouse.h"
 #include "joystick.h"
+#include "keyboard.h"
 #include "../../3rdparty/tinyformat/tinyformat.h"
 #include "../../common/consts.h"
 #include "../../common/file/path/path.h"
 #include "../../common/file/scandir/scandir.h"
-#include "Keyboard.h"
 
 InputManager& InputManager::instance()
 {

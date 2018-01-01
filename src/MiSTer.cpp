@@ -1,9 +1,11 @@
 #include "MiSTer.h"
 
 #include "common/logger/logger.h"
+#include <cxxabi.h>
 
 #include <algorithm>
 #include <exception>
+#include <stdexcept>
 #include <iostream>
 #include <unistd.h>
 #include <execinfo.h>
@@ -12,6 +14,7 @@
 #include "3rdparty/backward/backward.hpp"
 #include "3rdparty/tinyformat/tinyformat.h"
 #include "common/system/sysmanager.h"
+#include "common/exception/misterexception.h"
 #include "common/file/directorymanager.h"
 #include "common/file/filemanager.h"
 #include "fpga/fpgadevice.h"
@@ -20,8 +23,8 @@
 #include "gui/osd/osd.h"
 #include "io/input/inputmanager.h"
 #include "io/input/baseinputdevice.h"
-#include "io/input/keyboard.h"
 #include "common/file/scandir/scandir.h"
+#include "io/input/keyboard.h"
 
 using namespace std;
 using namespace backward;
@@ -164,7 +167,7 @@ void testInputDevices()
 			keyboard.openDeviceWrite();
 			uint16_t ledBits = keyboard.getDeviceLEDBits();
 
-			for (int i = 0; i < 100000000; i++)
+			for (int i = 0; i < 100; i++)
 			{
 				uint16_t state = 0x0000;
 
@@ -184,8 +187,8 @@ void testInputDevices()
 
 				keyboard.setLEDState(state, true);
 
-				usleep(1000 * 1000);
-				ledBits = keyboard.getLEDState();
+				usleep(100 * 1000);
+				//ledBits = keyboard.getLEDState();
 				LOGINFO("LEDS: %s", Keyboard::dumpLEDBits(ledBits).c_str());
 
 				keyboard.setLEDState(state, false);
@@ -211,8 +214,8 @@ void handler(int sig)
 {
 	StackTrace st;
 
-	st.load_here(20); 	// Limit the number of trace depth to 20
-	st.skip_n_firsts(3);	// This will skip some backward internal function from the trace
+	st.load_here(99); 	// Limit the number of trace depth to 20
+	//st.skip_n_firsts(3);	// This will skip some backward internal function from the trace
 
 	Printer p;
 	p.snippet = true;
@@ -239,39 +242,71 @@ int main(int argc, char *argv[])
 	// Register handled for C++ unhandled exceptions
 	//set_terminate(cxx_hander);
 
-	LOGINFO("MiSTer process started with PID:%d", sysmanager::getProcessID());
-
-	init();
-
-	FPGADevice& fpga = FPGADevice::instance();
-	FPGACommand& command = *(fpga.command);
-
-	LOGINFO("Setting up FPGA...");
-
-	// TODO: Remove debug code
-	CoreType coreType = command.getCoreType();
-
-	LOGINFO("Core name: %s", command.getCoreName());
-	LOGINFO("Core config: %s", command.getCoreConfig());
-
-	//CoreManager::instance().loadCore("memtest.rbf");
-	//sleep(2);
-	//coreType = command.getCoreType();
-
-	//for (int i = 0; i < 10000000; i++)
-	//	testScanDir();
-
-	//for (int i = 0; i < 1000; i++)
+	try
 	{
-		testScanDir();
-		testInputDevices();
-		//testFilesystem();
-		testDirectories();
-		testOSD();
-	}
-	// End of debug code
+		LOGINFO("MiSTer process started with PID:%d", sysmanager::getProcessID());
 
-	fflush(stdout);
+		init();
+
+		FPGADevice& fpga = FPGADevice::instance();
+		FPGACommand& command = *(fpga.command);
+
+		LOGINFO("Setting up FPGA...");
+
+		// TODO: Remove debug code
+		CoreType coreType = command.getCoreType();
+
+		LOGINFO("Core name: %s", command.getCoreName());
+		LOGINFO("Core config: %s", command.getCoreConfig());
+
+		//CoreManager::instance().loadCore("memtest.rbf");
+		//sleep(2);
+		//coreType = command.getCoreType();
+
+		//for (int i = 0; i < 10000000; i++)
+		//	testScanDir();
+
+		//for (int i = 0; i < 1000; i++)
+		{
+			testScanDir();
+			testInputDevices();
+			//testFilesystem();
+			testDirectories();
+			testOSD();
+		}
+		// End of debug code
+
+		fflush(stdout);
+	}
+	catch (MiSTerException const& e)
+	{
+		int status;
+		string type = abi::__cxa_demangle(abi::__cxa_current_exception_type()->name(), 0, 0, &status);
+		istringstream stream(e.what());
+
+		// Extract original exception reason (first line)
+		string originalReason;
+		getline(stream, originalReason, '\n');
+
+		// Extract the rest as stacktrace information
+		istreambuf_iterator<char> begin(stream), end;
+		string stacktrace(begin, end);
+
+		LOGERROR("Uncaught exception: %s(\"%s\")", type.c_str(), originalReason.c_str());
+		LOGERROR("%s", stacktrace.c_str());
+	}
+	catch (exception const& e)
+	{
+		int status;
+		string type = abi::__cxa_demangle(abi::__cxa_current_exception_type()->name(), 0, 0, &status);
+
+		LOGERROR("Uncaught exception: %s(\"%s\")", type.c_str(), e.what());
+
+		StackTrace st;
+		st.load_here(32);
+		Printer p;
+		p.print(st);
+	}
 
 	return 0;
 }
