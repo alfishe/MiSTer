@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 #include "../../3rdparty/betterenums/enum.h"
+#include "../../common/consts.h"
+#include "../../common/types.h"
 
 using namespace std;
 
@@ -30,10 +32,12 @@ struct InputDevice
 	// Better-enums workaround (declare proxy enum within struct/class)
 	typedef InputDeviceTypeEnum InputDeviceType;
 
-	int fd = 0;
+	int fd = INVALID_FILE_DESCRIPTOR;
 	uint32_t eventBits;
 
+	int index = -1;
 	string path;
+	VIDPID deviceID;
 	InputDeviceType type = InputDeviceType::Unknown;
 	string name;
 };
@@ -46,6 +50,8 @@ typedef vector<InputDevice> InputDeviceVector;
 #define LINUX_INPUT_DEVICE_ID "/sys/class/input/event%d/device/id/"
 #define LINUX_INPUT_DEVICE_VID "/sys/class/input/event%d/device/id/vendor"
 #define LINUX_INPUT_DEVICE_PID "/sys/class/input/event%d/device/id/product"
+
+#define REGEX_INPUT_DEVICE_INDEX "event(\\d+)"
 
 #define HID_LED_NUM_LOCK    1
 #define HID_LED_CAPS_LOCK   2

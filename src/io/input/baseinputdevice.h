@@ -8,6 +8,7 @@
 
 #include "../../common/consts.h"
 #include "../../common/types.h"
+#include "../../common/helpers/stringhelper.h"
 #include "input.h"
 
 using namespace std;
@@ -35,11 +36,7 @@ protected:
 	unsigned long bit_led[BITFIELD_LONGS_PER_ARRAY(LED_MAX)];
 
 public:
-	string path;
-	int fd = INVALID_FILE_DESCRIPTOR;
-
-	string name;
-	InputDeviceTypeEnum type = InputDeviceTypeEnum::Unknown;
+	// Input device fields are located in a base InputDevice class
 
 public:
 	BaseInputDevice(const string& path);
@@ -51,6 +48,8 @@ public:
 
 	bool init();
 	const string getDeviceName();
+	const int getDeviceIndex();
+	VIDPID getDeviceVIDPID();
 	InputDeviceTypeEnum getDeviceType();
 
 	static uint8_t getDeviceBus(int fd);
@@ -68,6 +67,7 @@ public:
 	static string printDeviceInfo(int fd);
 	static bool getDeviceState(int fd, uint8_t type, unsigned long *array, size_t size);
 
+	// Debug methods
 	static string dumpEventBits(uint32_t value);
 	static string dumpLEDBits(uint16_t value);
 
@@ -97,6 +97,32 @@ protected:
 		bool result = isBitSet(bits, code);
 
 		return result;
+	}
+
+	// Returns number of set bits for the whole bit set array
+	// Note - size is in unsigned long's
+	static int bitCount(const BitType* bits, size_t size)
+	{
+		int result = 0;
+
+		for (size_t i = 0; i < size; i++)
+		{
+			result += bitCount(bits[i]);
+		}
+
+		return result;
+	}
+
+	// Returns number of set bits in unsigned 32 bit value
+	static inline int bitCount(BitType n) __attribute__((always_inline))
+	{
+		n = ((0xaaaaaaaa & n) >> 1) + (0x55555555 & n);
+		n = ((0xcccccccc & n) >> 2) + (0x33333333 & n);
+		n = ((0xf0f0f0f0 & n) >> 4) + (0x0f0f0f0f & n);
+		n = ((0xff00ff00 & n) >> 8) + (0x00ff00ff & n);
+		n = ((0xffff0000 & n) >> 16) + (0x0000ffff & n);
+
+		return (int)n;
 	}
 };
 

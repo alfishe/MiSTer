@@ -11,6 +11,7 @@
 #include "../../3rdparty/tinyformat/tinyformat.h"
 #include "../../common/helpers/displayhelper.h"
 #include "../../common/helpers/stringhelper.h"
+#include "../../common/file/path/path.h"
 
 #define IS_BIT_SET(var, pos) ((var) & (1 << (pos)))
 
@@ -132,11 +133,17 @@ bool BaseInputDevice::init()
 
 	openDevice();
 
-	// 1. Retrieve device name
+	// 1. Get input device index
+	index = getDeviceIndex();
+
+	// 2. Retrieve device name
 	name = getDeviceName();
 
-	// 2. Get device type
+	// 3. Get device type
 	type = getDeviceType();
+
+	// 4. Get device USB VID / PID (if available)
+	deviceID = getDeviceVIDPID();
 
 	closeDevice();
 
@@ -154,6 +161,37 @@ const string BaseInputDevice::getDeviceName()
 	if (res >= 0 && res <= EVENT_BUFFER_SIZE)
 	{
 		result.resize(res);
+	}
+
+	return result;
+}
+
+const int BaseInputDevice::getDeviceIndex()
+{
+	int result = -1;
+
+	if (path.size() > 0)
+	{
+		result = StringHelper::getIntegerRegex(path, REGEX_INPUT_DEVICE_INDEX);
+	}
+
+	return result;
+}
+
+VIDPID BaseInputDevice::getDeviceVIDPID()
+{
+	VIDPID result;
+
+	if (index != -1)
+	{
+		// Retrieve input device VID and PID using access to devices:
+		// '/sys/class/input/event%d/device/id/vendor'
+		// '/sys/class/input/event%d/device/id/product'
+		string vidDeviceName = tfm::format(LINUX_INPUT_DEVICE_VID, index);
+		string pidDeviceName = tfm::format(LINUX_INPUT_DEVICE_PID, index);
+
+		result.vid = readDeviceHexValue(vidDeviceName);
+		result.pid = readDeviceHexValue(pidDeviceName);
 	}
 
 	return result;

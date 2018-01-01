@@ -55,27 +55,26 @@ InputDeviceVector& InputManager::detectDevices()
 			{
 				string path = Path::combine(LINUX_DEVICE_INPUT, entry.name).toString();
 
+				// Query device for properties
 				BaseInputDevice device(path);
-				device.openDevice();
-				string name = device.getDeviceName();
-				uint32_t eventBits = device.getDeviceEventBits();
-				InputDeviceTypeEnum type = device.getDeviceType();
-				device.closeDevice();
+				device.init();
 
-				if (isDeviceTypeAllowed(type))
+				if (isDeviceTypeAllowed(device.type))
 				{
 					InputDevice inputDevice;
-					inputDevice.path = path;
-					inputDevice.name = name;
-					inputDevice.eventBits = eventBits;
-					inputDevice.type = type;
+					inputDevice.path = device.path;
+					inputDevice.name = device.name;
+					inputDevice.index = device.index;
+					inputDevice.deviceID = device.deviceID;
+					inputDevice.eventBits = device.eventBits;
+					inputDevice.type = device.type;
 
 					// Register device in correspondent collections
 					addInputDevice(inputDevice);
 				}
 				else
 				{
-					LOGWARN("Unknown device with name '%s' detected on path '%s'", name.c_str(), path.c_str());
+					LOGWARN("Unknown device with name '%s' detected on path '%s'", device.name.c_str(), device.path.c_str());
 				}
 			}
 		);
@@ -142,7 +141,11 @@ string InputManager::dump(InputDeviceVector& inputDevices)
 		{
 			result += tfm::format("path: '%s'", inputDevice.path.c_str());
 			result += "\n";
+			result += tfm::format("index: %d", inputDevice.index);
+			result += "\n";
 			result += tfm::format("name: '%s'", inputDevice.name.c_str());
+			result += "\n";
+			result += tfm::format("VID: 0x%04x, PID: 0x%04x", inputDevice.deviceID.vid, inputDevice.deviceID.pid);
 			result += "\n";
 			result += tfm::format("type: 0x%x ('%s')", inputDevice.type._to_integral(), inputDevice.type._to_string());
 			result += "\n";

@@ -165,8 +165,23 @@ void testInputDevices()
 			Keyboard keyboard(device.path);
 
 			keyboard.openDeviceWrite();
-			uint16_t ledBits = keyboard.getDeviceLEDBits();
 
+			// Test keys operations
+			for (int i = 0; i < 1000; i++)
+			{
+				keyboard.pollKeys();
+				if (keyboard.getPressedKeysCount() > 0)
+				{
+					string pressedKeys = keyboard.dumpKeyBits();
+					LOGINFO("%s\n", pressedKeys.c_str());
+				}
+
+				usleep(300 * 1000);
+			}
+			// -Test keys operations
+
+			// Test LED operations
+			uint16_t ledBits = keyboard.getDeviceLEDBits();
 			for (int i = 0; i < 100; i++)
 			{
 				uint16_t state = 0x0000;
@@ -189,10 +204,10 @@ void testInputDevices()
 
 				usleep(100 * 1000);
 				//ledBits = keyboard.getLEDState();
-				LOGINFO("LEDS: %s", Keyboard::dumpLEDBits(ledBits).c_str());
 
 				keyboard.setLEDState(state, false);
 			}
+			// -Test LED operations
 
 			keyboard.closeDevice();
 		}
