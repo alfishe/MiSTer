@@ -50,3 +50,45 @@ const string StringHelper::cleanup(const string &s)
 
 	return result;
 }
+
+// Returns first matched group by Regex pattern as integer
+const int StringHelper::getIntegerRegex(const string& s, const string& pattern)
+{
+	int result = -1;
+	regex regexPattern(pattern);
+	smatch match;
+
+	if (regex_search(s, match, regexPattern))
+	{
+		if (match.size() > 1)
+		{
+			string value = match[1].str();
+			if (value.size() > 0)
+			{
+				// Parse integer value
+				 stringstream ss(value);
+				 ss >> result;
+			}
+		}
+	}
+
+	return result;
+}
+
+// Returns first matched group by Regex pattern as std::string
+const string StringHelper::getStringRegex(const string& s, const string& pattern)
+{
+	string result;
+	regex regexPattern(pattern);
+	smatch match;
+
+	if (regex_search(s, match, regexPattern))
+	{
+		if (match.size() > 1)
+		{
+			result = match[1].str();
+		}
+	}
+
+	return result;
+}

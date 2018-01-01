@@ -5,6 +5,8 @@
 #include <sstream>
 #include <vector>
 #include <iterator>
+#include <regex>
+
 #include "../types.h"
 
 using namespace std;
@@ -16,6 +18,9 @@ public:
 	static StringVector split(const string &s, char delimiter, StringVector* out);
 
 	static const string cleanup(const string &s);
+
+	static const int getIntegerRegex(const string& s, const string& regex);
+	static const string getStringRegex(const string& s, const string& regex);
 
 private:
 	StringHelper(); // Disable direct object creation from class
