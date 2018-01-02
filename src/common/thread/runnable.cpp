@@ -34,10 +34,13 @@ void Runnable::start()
 
 void Runnable::stop()
 {
-	TRACE("Thread tid: %d (0x%x) requested to stop...", m_thread_id, m_thread_id);
+	if (m_thread_id < 0)
+		return;
 
 	if (!m_stopped)
 	{
+		TRACE("Thread tid: %d (0x%x) requested to stop", m_thread_id, m_thread_id);
+
 		// Request thread to stop
 		m_stop = true;
 
@@ -45,6 +48,9 @@ void Runnable::stop()
 		{
 			m_thread.join();
 		}
+
+		TRACE("Thread tid: 0x%d (0x%x) successfully stopped", m_thread_id, m_thread_id);
+		m_thread_id = -1;
 
 		m_stopped = true;
 	}
@@ -58,7 +64,7 @@ void Runnable::threadStart()
 {
 	// Get GDB compatible thread ID (gettid via syscall)
 	m_thread_id = syscall(SYS_gettid);
-	TRACE("Starting thread tid: %d (0x%x)", m_thread_id, m_thread_id);
+	TRACE("Started new thread with tid: %d (0x%x)", m_thread_id, m_thread_id);
 
 	run();
 

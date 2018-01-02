@@ -11,7 +11,7 @@ class Runnable
 {
 protected:
     thread m_thread;
-    pid_t m_thread_id;
+    pid_t m_thread_id = -1;
     atomic<bool> m_stop;
     atomic<bool> m_stopped;
 
