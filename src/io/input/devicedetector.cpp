@@ -13,7 +13,7 @@ using namespace std;
 
 DeviceDetector& DeviceDetector::instance()
 {
-	static DeviceDetector instance;
+	static DeviceDetector instance("device_detector");
 
 	return instance;
 }

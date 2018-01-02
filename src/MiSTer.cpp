@@ -7,9 +7,12 @@
 #include <exception>
 #include <stdexcept>
 #include <iostream>
+#include <thread>
 #include <unistd.h>
 #include <execinfo.h>
+#include <pthread.h>
 #include <signal.h>
+#include <sys/prctl.h>
 
 #include "3rdparty/backward/backward.hpp"
 #include "3rdparty/tinyformat/tinyformat.h"
@@ -380,6 +383,11 @@ int main(int argc, char *argv[])
 
 void init()
 {
+	// Set main thread name
+	const string threadName("main");
+	pthread_getname_np(pthread_self(), (char*)threadName.c_str(), threadName.size());
+	prctl(PR_SET_NAME, threadName.c_str(), 0, 0, 0);
+
 	// Ensure that /config folder exists on data disk
 	sysmanager::ensureConfigFolderExists();
 

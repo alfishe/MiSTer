@@ -41,6 +41,11 @@ protected:
 
 private:
 	DeviceDetector() : m_initialized(false) {}; // Disallow direct instances creation
+	DeviceDetector(const string& name)
+	{
+		m_name = name;
+		m_initialized = false;
+	}
 };
 
 #endif /* IO_INPUT_DEVICEDETECTOR_H_ */
