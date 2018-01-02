@@ -165,6 +165,10 @@ void testDeviceDetector()
 
 	detector.stop();
 	detector.dispose();
+
+	// Restart
+	detector.init();
+	detector.start();
 }
 
 void testInputDevices()
@@ -240,19 +244,47 @@ void testInputDevices()
 
 void handler(int sig)
 {
-	StackTrace st;
+	int result = 1;
 
-	st.load_here(99); 	// Limit the number of trace depth to 20
-	//st.skip_n_firsts(3);	// This will skip some backward internal function from the trace
+	if (sig == SIGHUP)
+	{
+		LOGINFO("SIGHUP received. Shutting down...");
+		// TODO: initiate graceful shutdown for the application
+		result = 0;
+	}
 
-	Printer p;
-	p.snippet = true;
-	p.object = true;
-	p.color_mode = ColorMode::always;
-	p.address = true;
-	p.print(st, stderr);
+	if (sig == SIGINT)
+	{
+		LOGINFO("SIGINT (Ctrl+C) received. Shutting down...");
+		// TODO: initiate graceful shutdown for the application
+		result = 0;
+	}
 
-	exit(1);
+	if (sig == SIGSEGV)
+	{
+		StackTrace st;
+
+		st.load_here(99); 	// Limit the number of trace depth to 20
+		st.skip_n_firsts(3);	// This will skip some backward internal function from the trace
+
+		Printer p;
+		p.snippet = true;
+		p.object = true;
+		p.color_mode = ColorMode::always;
+		p.address = true;
+		p.print(st, stderr);
+	}
+
+	if (sig == SIGKILL)
+	{
+		LOGINFO("SIGKILL received. Exiting immediately");
+		exit(result);
+	}
+
+	// Try to reclaim resources gracefully
+	dispose();
+
+	exit(result);
 }
 
 /*
@@ -264,8 +296,11 @@ void cxx_hander()
 
 int main(int argc, char *argv[])
 {
-	// Register handler for system error/exceptional cases
-	signal(SIGSEGV, handler);
+	// Register handlers for various cases
+	signal(SIGSEGV, handler);	// System error/exceptional
+	signal(SIGHUP, handler);
+	signal(SIGINT, handler);
+	signal(SIGKILL, handler);
 
 	// Register handled for C++ unhandled exceptions
 	//set_terminate(cxx_hander);
@@ -296,8 +331,8 @@ int main(int argc, char *argv[])
 
 		//for (int i = 0; i < 1000; i++)
 		{
-			testDeviceDetector();
-			//testInputDevices();
+			//testDeviceDetector();
+			testInputDevices();
 
 			testScanDir();
 			//testFilesystem();
@@ -338,6 +373,8 @@ int main(int argc, char *argv[])
 		p.print(st);
 	}
 
+	dispose();
+
 	return 0;
 }
 
@@ -345,4 +382,13 @@ void init()
 {
 	// Ensure that /config folder exists on data disk
 	sysmanager::ensureConfigFolderExists();
+
+	// Notify application
+	application.onStart();
+}
+
+void dispose()
+{
+	// Notify application
+	application.onTerminate();
 }

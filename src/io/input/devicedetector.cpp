@@ -153,7 +153,7 @@ int DeviceDetector::checkEvents()
 bool DeviceDetector::readEvents()
 {
 	static const size_t MAX_EVENTS = 16;	// Max number of events to process in a single batch
-	static const size_t MAX_FILENAME_LENGTH = NAME_MAX; // Max name length
+	static const size_t MAX_FILENAME_LENGTH = NAME_MAX + 1; // Max filename length (plus null-termination byte)
 	static const size_t EVENT_SIZE = sizeof(struct inotify_event); // Size of one event record
 	static const size_t EVENT_BUFFER_SIZE = MAX_EVENTS * (EVENT_SIZE + MAX_FILENAME_LENGTH); // Total buffer size (bytes)
 
