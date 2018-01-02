@@ -25,6 +25,7 @@
 #include "io/input/baseinputdevice.h"
 #include "common/file/scandir/scandir.h"
 #include "io/input/keyboard.h"
+#include "io/input/devicedetector.h"
 
 using namespace std;
 using namespace backward;
@@ -152,6 +153,18 @@ void testOSD()
 
 	sleep(5);
 	osd.hide();
+}
+
+void testDeviceDetector()
+{
+	DeviceDetector& detector = DeviceDetector::instance();
+	detector.init();
+	detector.start();
+
+	sleep(20);
+
+	detector.stop();
+	detector.dispose();
 }
 
 void testInputDevices()
@@ -283,11 +296,13 @@ int main(int argc, char *argv[])
 
 		//for (int i = 0; i < 1000; i++)
 		{
+			testDeviceDetector();
+			//testInputDevices();
+
 			testScanDir();
-			testInputDevices();
 			//testFilesystem();
-			testDirectories();
-			testOSD();
+			//testDirectories();
+			//testOSD();
 		}
 		// End of debug code
 
