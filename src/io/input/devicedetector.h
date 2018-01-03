@@ -24,20 +24,23 @@ public:
 public:
 	// Singleton instance
 	static DeviceDetector& instance();
-	DeviceDetector(const DeviceDetector& that) = delete; 		// Copy constructor is forbidden here (C++11 feature)
-	DeviceDetector& operator =(DeviceDetector const&) = delete;		// Disable assignments
+	DeviceDetector(const DeviceDetector& that) = delete; 			// Copy constructor is forbidden here (C++11 feature)
+	DeviceDetector& operator =(DeviceDetector const&) = delete;	// Disable assignments
 	virtual ~DeviceDetector() {};
 
+public:
 	bool init();
 	void dispose();
 
 protected:
-	// Async thread body
-	void run();
-
 	int checkEvents();
 	bool readEvents();
 	bool processEvents(uint8_t* buffer, size_t size, size_t bytesRead);
+
+// Runnable override method(s)
+protected:
+	// Async thread body
+	void run();
 
 private:
 	DeviceDetector() : m_initialized(false) {}; // Disallow direct instances creation

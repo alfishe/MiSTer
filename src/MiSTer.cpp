@@ -243,6 +243,11 @@ void testInputDevices()
 	LOGINFO("Device1 name: %s", device1name.c_str());
 }
 
+void testEventMessaging()
+{
+
+}
+
 // ==========================================================================================
 
 void handler(int sig)
@@ -334,6 +339,7 @@ int main(int argc, char *argv[])
 
 		//for (int i = 0; i < 1000; i++)
 		{
+			testEventMessaging();
 			//testDeviceDetector();
 			testInputDevices();
 
