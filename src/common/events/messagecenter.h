@@ -32,9 +32,9 @@ public:
 	void dispose();
 
 public:
-	void addObserver(const string& name, const EventObserver& observer);
-	void removeObserver(const EventObserver& observer);
-	void removeObserver(const string& name, const EventObserver& observer);
+	void addObserver(const string& name, const EventObserverPtr& observer);
+	void removeObserver(const EventObserverPtr& observer);
+	void removeObserver(const string& name, const EventObserverPtr& observer);
 	void removeObservers();
 
 	void post(const string& name, const EventSource& source, void* param);

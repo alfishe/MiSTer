@@ -55,4 +55,17 @@ void find_and_execute(T& container, const Key& key, FoundFunction found_function
     }
 }
 
+template <typename T, typename Key>
+void erase_entry_if_empty(T& container, const Key& key)
+{
+	auto it = container.find(key);
+	if (it != std::end(container))
+	{
+		if (it->second.size() == 0)
+		{
+			container.erase(key);
+		}
+	}
+}
+
 #endif /* COMMON_HELPERS_COLLECTIONHELPER_H_ */

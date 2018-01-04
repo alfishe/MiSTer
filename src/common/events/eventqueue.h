@@ -13,12 +13,14 @@ class EventQueue : public Runnable
 protected:
 	atomic<bool> m_initialized;
 	mutex m_mutexObservers;
-	condition_variable m_cvObservers;
+
+	condition_variable m_cvBuckets;
 
 
 // Data structures
 protected:
 	EventObserversMap m_observers;
+	EventObserversReverseMap m_observersReverse;
 
 // Internal counters
 protected:
@@ -44,6 +46,16 @@ public:
 // Statitic methods
 public:
 	void resetCounters();
+
+// Debug methods
+public:
+	string dumpObservers();
+	string dumpObserversMap();
+	string dumpObserversReverseMap();
+
+// Helper methods
+protected:
+
 
 // Runnable override method(s)
 protected:

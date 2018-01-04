@@ -3,8 +3,11 @@
 
 #include <functional>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
+
+#include "../types.h"
 
 using namespace std;
 
@@ -34,11 +37,12 @@ public:
 	}
 };
 typedef class EventObserver EventObserver;
-typedef shared_ptr<EventObserver> EventObserverPtr;
-typedef vector<EventObserverPtr> EventObserversVector;
 
-typedef map<string, EventObserversVector> EventObserversMap;
-typedef map<EventObserverPtr, string> EventObserversReverseMap;
+typedef EventObserver* EventObserverPtr;
+typedef set<EventObserverPtr> EventObserversSet;
+typedef map<string, EventObserversSet> EventObserversMap;
+
+typedef map<EventObserverPtr, StringSet> EventObserversReverseMap;
 
 
 

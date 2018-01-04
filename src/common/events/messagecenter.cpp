@@ -1,5 +1,7 @@
 #include "messagecenter.h"
 
+#include "../../common/logger/logger.h"
+
 MessageCenter& MessageCenter::instance()
 {
 	static MessageCenter instance;
@@ -36,4 +38,34 @@ bool MessageCenter::init()
 void MessageCenter::dispose()
 {
 	m_queue.stop();
+}
+
+
+// Public methods
+void MessageCenter::addObserver(const string& name, const EventObserverPtr& observer)
+{
+	m_queue.addObserver(name, observer);
+
+	DEBUG(m_queue.dumpObservers().c_str());
+}
+
+void MessageCenter::removeObserver(const EventObserverPtr& observer)
+{
+	m_queue.removeObserver(observer);
+
+	DEBUG(m_queue.dumpObservers().c_str());
+}
+
+void MessageCenter::removeObserver(const string& name, const EventObserverPtr& observer)
+{
+	m_queue.removeObserver(name, observer);
+
+	DEBUG(m_queue.dumpObservers().c_str());
+}
+
+void MessageCenter::removeObservers()
+{
+	m_queue.removeObservers();
+
+	DEBUG(m_queue.dumpObservers().c_str());
 }

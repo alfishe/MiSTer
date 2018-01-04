@@ -1,7 +1,9 @@
 #ifndef APPLICATION_H_
 #define APPLICATION_H_
 
-class Application
+#include "common/events/events.h"
+
+class Application : EventObserver
 {
 public:
 	// Singleton instance
@@ -12,9 +14,14 @@ public:
 private:
 	Application() {}; 										// Disallow direct instances creation
 
+// Application lifecycle delegates
 public:
 	void onStart();
 	void onTerminate();
+
+// EventObserver delegates
+public:
+	void onMessageEvent(MessageEvent event);
 };
 
 #endif /* APPLICATION_H_ */
