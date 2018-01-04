@@ -42,6 +42,12 @@ void MessageCenter::dispose()
 
 
 // Public methods
+void  MessageCenter::addObserver(const char* name, const EventObserverPtr& observer)
+{
+	string packedName(name);
+	addObserver(packedName, observer);
+}
+
 void MessageCenter::addObserver(const string& name, const EventObserverPtr& observer)
 {
 	m_queue.addObserver(name, observer);

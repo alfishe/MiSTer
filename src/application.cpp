@@ -3,6 +3,7 @@
 #include "common/logger/logger.h"
 #include "common/events/messagecenter.h"
 #include "io/input/devicedetector.h"
+#include "io/input/inputmanager.h"
 
 using namespace std;
 
@@ -27,6 +28,10 @@ void Application::onStart()
 	DeviceDetector& detector = DeviceDetector::instance();
 	detector.init();
 	detector.start();
+
+	// Start input manager
+	InputManager& inputmgr = InputManager::instance();
+	inputmgr.detectDevices();
 
 	// More initialization
 
@@ -58,12 +63,11 @@ void Application::onStart()
 	center.removeObservers();
 	*/
 
+	/*
 	// Full cycle scenario
 	center.addObserver("test1", this);
 	center.addObserver("test2", this);
 	center.addObserver("test3", this);
-
-	//sleep(2);
 	center.post("test", this, nullptr);
 	center.post("test1", this, (void *)"Message 11");
 	center.post("test1", this, (void *)"Message 12");
@@ -73,6 +77,7 @@ void Application::onStart()
 	center.post("test2", this, (void *)"Message 23");
 
 	sleep(10);
+	*/
 
 	// -test only
 }

@@ -32,6 +32,7 @@ public:
 	void dispose();
 
 public:
+	void addObserver(const char* name, const EventObserverPtr& observer);
 	void addObserver(const string& name, const EventObserverPtr& observer);
 	void removeObserver(const EventObserverPtr& observer);
 	void removeObserver(const string& name, const EventObserverPtr& observer);

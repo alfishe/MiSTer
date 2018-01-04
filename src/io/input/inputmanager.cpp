@@ -24,6 +24,15 @@ InputManager& InputManager::instance()
 	return instance;
 }
 
+InputManager::InputManager()
+{
+	TRACE("InputManager()");
+
+	MessageCenter& center = MessageCenter::defaultCenter();
+	center.addObserver(EVENT_DEVICE_INSERTED, this);
+	center.addObserver(EVENT_DEVICE_REMOVED, this);
+}
+
 InputManager::~InputManager()
 {
 	TRACE("~InputManager()");
@@ -105,6 +114,11 @@ bool InputManager::isDeviceTypeAllowed(InputDeviceTypeEnum type)
 	}
 
 	return result;
+}
+
+void InputManager::onMessageEvent(MessageEvent event)
+{
+	DEBUG("%s: notification name: '%s'", __PRETTY_FUNCTION__, event.name.c_str());
 }
 
 // ======================= Protected methods =================================

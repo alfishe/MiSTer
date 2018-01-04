@@ -199,6 +199,8 @@ bool DeviceDetector::processEvents(uint8_t* buffer, size_t size, size_t bytesRea
 	}
 	// -Sanity validation
 
+	MessageCenter& center = MessageCenter::defaultCenter();
+
 	size_t i = 0;
 	while (i < bytesRead)
 	{
@@ -212,6 +214,8 @@ bool DeviceDetector::processEvents(uint8_t* buffer, size_t size, size_t bytesRea
 					LOGINFO("The directory %s was created", event->name);
 				else
 					LOGINFO("The file %s was created with WD %d", event->name, event->wd);
+
+				center.post(EVENT_DEVICE_INSERTED, this, nullptr);
 			}
 
 			if (event->mask & IN_MODIFY)
@@ -228,6 +232,8 @@ bool DeviceDetector::processEvents(uint8_t* buffer, size_t size, size_t bytesRea
 					LOGINFO("The directory %s was deleted.\n", event->name );
 				else
 					LOGINFO("The file %s was deleted with WD %d\n", event->name, event->wd);
+
+				center.post(EVENT_DEVICE_REMOVED, this, nullptr);
 			}
 
 			// Recalc offset in buffer based on event len

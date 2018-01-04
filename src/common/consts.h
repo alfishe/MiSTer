@@ -35,4 +35,7 @@
 // can be connected to MiSTer board simultaneously
 #define MAX_INPUT_DEVICES 16
 
+#define EVENT_DEVICE_INSERTED "device_inserted"
+#define EVENT_DEVICE_REMOVED "device_removed"
+
 #endif /* COMMON_CONSTS_H_ */

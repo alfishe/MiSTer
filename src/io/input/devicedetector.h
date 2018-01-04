@@ -4,6 +4,8 @@
 #include <thread>
 #include "../../3rdparty/tinyformat/tinyformat.h"
 #include "../../common/consts.h"
+#include "../../common/events/events.h"
+#include "../../common/events/messagecenter.h"
 #include "../../common/thread/runnable.h"
 #include "input.h"
 
@@ -11,7 +13,7 @@ using namespace std;
 
 // Monitors changes in /dev/input to detect input devices connections/disconnections
 // Intended to be working as singleton in async mode
-class DeviceDetector : public Runnable
+class DeviceDetector : public Runnable, EventSource
 {
 protected:
 	atomic<bool> m_initialized;
@@ -24,6 +26,7 @@ public:
 public:
 	// Singleton instance
 	static DeviceDetector& instance();
+	DeviceDetector() = delete;
 	DeviceDetector(const DeviceDetector& that) = delete; 			// Copy constructor is forbidden here (C++11 feature)
 	DeviceDetector& operator =(DeviceDetector const&) = delete;	// Disable assignments
 	virtual ~DeviceDetector() {};
@@ -43,7 +46,6 @@ protected:
 	void run();
 
 private:
-	DeviceDetector() : m_initialized(false) {}; // Disallow direct instances creation
 	DeviceDetector(const string& name)
 	{
 		m_name = name;
