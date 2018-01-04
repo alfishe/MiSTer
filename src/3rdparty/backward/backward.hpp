@@ -819,6 +819,8 @@ public:
 			std::ifstream ifs("/proc/self/cmdline");
 			std::getline(ifs, argv0, '\0');
 		}
+
+		// Determine process executable path
 		std::string tmp;
 		if(symbol_info.dli_fname == argv0) {
 			tmp = read_symlink("/proc/self/exe");
@@ -1909,9 +1911,11 @@ private:
 			}
 
 			_resolver.load_stacktrace(st);
+			if (st.size() <= 0)
+				return;
 
 			if (ascending) {
-				for (size_t trace_idx = st.size() - 1; trace_idx >= 0; --trace_idx) {
+				for (size_t trace_idx = st.size() - 1; trace_idx >= 0 && trace_idx; --trace_idx) {
 					print_trace(os, _resolver.resolve(st[trace_idx]), colorize);
 				}
 			}
