@@ -3,7 +3,7 @@
 
 #include "common/events/events.h"
 
-class Application : EventObserver
+class Application : EventObserver, EventSource
 {
 public:
 	// Singleton instance

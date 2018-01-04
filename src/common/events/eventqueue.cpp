@@ -59,55 +59,12 @@ void EventQueue::addObserver(const string& name, const EventObserverPtr& observe
 	}
 	m_observers[name].insert(observer);
 
-
-	/*
-	find_and_execute(m_observers, name,
-		// Found lambda
-		[=](const string& key, EventObserversVector& observers)
-		{
-			observers.push_back(observer);
-		},
-		// Not found lambda
-		[=](const string& key)
-		{
-			m_observers.insert({key, EventObserversVector()});
-			m_observers[key].push_back(observer);
-		}
-	);
-	*/
-
 	// Register observer in register map (for faster removal)
 	if (!key_exists(m_observersReverse, observer))
 	{
 		m_observersReverse.insert({observer, StringSet()});
 	}
 	m_observersReverse[observer].insert(name);
-
-	/*
-	find_and_execute(m_observersReverse, observer,
-		// Found lambda
-		[=](EventObserverPtr& key, StringSet& topics)
-		{
-			topics.insert(name);
-		},
-		// Not found lambda
-		[=](const EventObserverPtr key)
-		{
-			m_observersReverse.insert({key, StringSet()});
-			m_observersReverse[key].insert(name);
-		}
-	);
-	*/
-
-	// Debug
-	/*
-	for (auto it : m_observers)
-	{
-		int count = it.second.size();
-		DEBUG("%d observers for the key '%s'", count, it.first.c_str());
-	}
-	*/
-	// -Debug
 }
 
 void EventQueue::removeObserver(const EventObserverPtr& observer)
@@ -167,6 +124,36 @@ void EventQueue::removeObservers()
 
 	m_observers.clear();
 	m_observersReverse.clear();
+}
+
+
+void EventQueue::post(const char* name, const EventSourcePtr source, void* param)
+{
+	string packedName(name);
+	post(packedName, source, param);
+}
+
+
+void EventQueue::post(const string& name, const EventSourcePtr source, void* param)
+{
+	// Just pack parameters into object container
+	MessageEvent message(name, source, param);
+
+	post(message);
+}
+
+void EventQueue::post(const MessageEvent& event)
+{
+	DEBUG("Event queue before push\n%s", dumpEventQueue().c_str());
+
+	// Lock parallel threads to access
+	unique_lock<mutex> lock(m_mutexEvents);
+	m_events.push_front(event);
+	lock.unlock();
+
+	m_cvEvents.notify_one();
+
+	DEBUG("Event queue after push\n%s", dumpEventQueue().c_str());
 }
 
 // Debug methods
@@ -236,6 +223,131 @@ string EventQueue::dumpObserversReverseMap()
 	return result;
 }
 
+string EventQueue::dumpEventQueue()
+{
+	stringstream ss;
+
+	// Lock parallel threads to access (unique_lock allows arbitrary lock/unlock)
+	//unique_lock<mutex> lock(m_mutexEvents);
+
+	ss << tfm::format("Event queue contains: %d messages", m_events.size());
+
+	if (m_events.size() > 0)
+		ss << '\n';
+
+	for (auto event : m_events)
+	{
+		ss << tfm::format("{'%s', 0x%x, 0x%x}", event.name.c_str(), event.source, event.param);
+		ss << '\n';
+	}
+
+	//lock.unlock();
+
+	string result = ss.str();
+	return result;
+}
+
+// Helper methods
+bool EventQueue::tryPop(MessageEvent& event)
+{
+	bool result = true;
+
+	unique_lock<mutex> lock(m_mutexEvents);
+	if (m_cvEvents.wait_for(lock, 50ms,
+		[&]()
+		{
+			return m_events.empty() || m_stop;
+		}
+	));
+
+	if (m_events.empty() || m_stop)
+	{
+		result = false;
+
+		//if (m_events.empty())
+		//	DEBUG("%s: queue is empty, nothing to fetch", __PRETTY_FUNCTION__);
+	}
+	else
+	{
+		DEBUG("Event queue before pop\n%s", dumpEventQueue().c_str());
+
+		event = m_events.back();
+		m_events.pop_back();
+
+		lock.unlock();
+
+		DEBUG("Event queue after pop\n%s", dumpEventQueue().c_str());
+	}
+
+	return result;
+}
+
+void EventQueue::pop(MessageEvent& event)
+{
+	unique_lock<mutex> lock(m_mutexEvents);
+	if (m_cvEvents.wait_for(lock, 50ms,
+		[&]()
+		{
+			return m_events.empty() || m_stop;
+		}
+	));
+
+	event = m_events.back();
+	m_events.pop_back();
+
+	lock.unlock();
+}
+
+void EventQueue::clearQueue()
+{
+	// Clearing queue by swapping queue to an empty one
+	lock_guard<mutex> lock(m_mutexEvents);
+	m_events = MessageEventsQueue();
+}
+
+// Broadcast single event to subscribers
+void EventQueue::processEvent(MessageEvent& event)
+{
+	string& name = event.name;
+	EventObserversSet observers;
+
+	// Locked access to collection of subscribers
+	unique_lock<mutex> lock(m_mutexObservers);
+	if (key_exists(m_observers, name))
+	{
+		// Make local copy not to block observers collection(s) access for a long
+		observers = m_observers[name];
+	}
+	lock.unlock();
+	// -Locked access to collection of subscribers
+
+	if (observers.size() > 0)
+	{
+		int observersProcessed = 0;
+		int errorCount = 0;
+
+		for (auto observer : observers)
+		{
+			try
+			{
+				observer->onMessageEvent(event);
+				observersProcessed++;
+			}
+			catch (const exception& e)
+			{
+				errorCount++;
+				LOGERROR("Exception in %s: %s\n", __PRETTY_FUNCTION__, e.what());
+			}
+		}
+
+		DEBUG("%s: Event for topic '%s' processing finished. Observers served: %d, errors: %d\n", __PRETTY_FUNCTION__, name.c_str(), observersProcessed, errorCount);
+	}
+	else
+	{
+		LOGWARN("%s: No subscribers for topic '%s'. Dropping the message\n", __PRETTY_FUNCTION__, name.c_str());
+	}
+}
+
 // Runnable methods
 void EventQueue::run()
 {
@@ -262,6 +374,14 @@ void EventQueue::run()
 
 		try
 		{
+			MessageEvent event;
+
+			if (tryPop(event))
+			{
+				eventsCount++;
+
+				processEvent(event);
+			}
 
 			// Make 1ms pause returning control to OS
 			usleep(1 * 1000);

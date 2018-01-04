@@ -69,3 +69,19 @@ void MessageCenter::removeObservers()
 
 	DEBUG(m_queue.dumpObservers().c_str());
 }
+
+void MessageCenter::post(const char* name, const EventSourcePtr source, void* param)
+{
+	string packedName(name);
+	m_queue.post(packedName, source, param);
+}
+
+void MessageCenter::post(const string& name, const EventSourcePtr source, void* param)
+{
+	m_queue.post(name, source, param);
+}
+
+void MessageCenter::post(const MessageEvent& event)
+{
+	m_queue.post(event);
+}

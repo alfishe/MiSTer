@@ -12,7 +12,7 @@
 //   deleter(objects.begin(), objects.end()); // Delete stored objects
 //	 objects.clear(); // Clear the collection content
 template<typename T>
-void deleter(T from, T to)
+inline void deleter(T from, T to)
 {
    while (from != to)
    {
@@ -30,7 +30,7 @@ void deleter(T from, T to)
 //  std::map<int, int> some_map;
 //  key_exists(some_map, 1) ? std::cout << "yes" : std::cout << "no"
 template <typename T, typename Key>
-bool key_exists(const T& container, const Key& key)
+inline bool key_exists(const T& container, const Key& key)
 {
     return (container.find(key) != std::end(container));
 }
@@ -42,7 +42,7 @@ bool key_exists(const T& container, const Key& key)
 //      [](int key, int value){ std::cout << "key " << key << " found, value: " << value << std::endl; },
 //      [](int key){ std::cout << "key " << key << " not found" << std::endl; });
 template <typename T, typename Key, typename FoundFunction, typename NotFoundFunction>
-void find_and_execute(T& container, const Key& key, FoundFunction found_function, NotFoundFunction not_found_function)
+inline void find_and_execute(T& container, const Key& key, FoundFunction found_function, NotFoundFunction not_found_function)
 {
     auto it = container.find(key);
     if (it != std::end(container))
@@ -56,7 +56,7 @@ void find_and_execute(T& container, const Key& key, FoundFunction found_function
 }
 
 template <typename T, typename Key>
-void erase_entry_if_empty(T& container, const Key& key)
+inline void erase_entry_if_empty(T& container, const Key& key)
 {
 	auto it = container.find(key);
 	if (it != std::end(container))

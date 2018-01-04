@@ -31,6 +31,7 @@ void Application::onStart()
 	// More initialization
 
 	// TODO: test only
+	/*
 	// 1. Single add / single remove
 	center.addObserver("test", this);
 	center.removeObserver("test", this);
@@ -55,6 +56,23 @@ void Application::onStart()
 	center.addObserver("test3", this);
 	center.addObserver("test3", this);
 	center.removeObservers();
+	*/
+
+	// Full cycle scenario
+	center.addObserver("test1", this);
+	center.addObserver("test2", this);
+	center.addObserver("test3", this);
+
+	//sleep(2);
+	center.post("test", this, nullptr);
+	center.post("test1", this, (void *)"Message 11");
+	center.post("test1", this, (void *)"Message 12");
+	center.post("test1", this, (void *)"Message 13");
+	center.post("test2", this, (void *)"Message 21");
+	center.post("test2", this, (void *)"Message 22");
+	center.post("test2", this, (void *)"Message 23");
+
+	sleep(10);
 
 	// -test only
 }
@@ -75,5 +93,5 @@ void Application::onTerminate()
 
 void Application::onMessageEvent(MessageEvent event)
 {
-	LOGINFO("%s", __PRETTY_FUNCTION__);
+	LOGINFO("%s: topic '%s' msg '%s'", __PRETTY_FUNCTION__, event.name.c_str(), event.param);
 }

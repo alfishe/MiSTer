@@ -37,7 +37,9 @@ public:
 	void removeObserver(const string& name, const EventObserverPtr& observer);
 	void removeObservers();
 
-	void post(const string& name, const EventSource& source, void* param);
+	void post(const char* name, const EventSourcePtr source, void* param);
+	void post(const string& name, const EventSourcePtr source, void* param);
+	void post(const MessageEvent& event);
 
 private:
 	MessageCenter(); // Disallow direct instances creation with private constructor
