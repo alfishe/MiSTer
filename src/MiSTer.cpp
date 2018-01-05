@@ -18,6 +18,7 @@
 #include "3rdparty/tinyformat/tinyformat.h"
 #include "common/system/sysmanager.h"
 #include "common/exception/misterexception.h"
+#include "common/events/messagecenter.h"
 #include "common/file/directorymanager.h"
 #include "common/file/filemanager.h"
 #include "fpga/fpgadevice.h"
@@ -295,13 +296,6 @@ void handler(int sig)
 	exit(result);
 }
 
-/*
-void cxx_hander()
-{
-
-}
-*/
-
 int main(int argc, char *argv[])
 {
 	// Register handlers for various cases
@@ -309,9 +303,6 @@ int main(int argc, char *argv[])
 	signal(SIGHUP, handler);
 	signal(SIGINT, handler);
 	signal(SIGKILL, handler);
-
-	// Register handled for C++ unhandled exceptions
-	//set_terminate(cxx_hander);
 
 	try
 	{
@@ -336,6 +327,8 @@ int main(int argc, char *argv[])
 
 		//for (int i = 0; i < 10000000; i++)
 		//	testScanDir();
+
+		sleep(100);
 
 		//for (int i = 0; i < 1000; i++)
 		{
@@ -406,3 +399,27 @@ void dispose()
 	// Notify application
 	application.onTerminate();
 }
+
+// Wrapping C++ throw (requires -Wl,--wrap=__cxa_throw or -Xl,--wrap=__cxa_throw options for the linker)
+extern "C" void __real___cxa_throw(void *thrown_exception, std::type_info *tinfo, void (*dest)(void *)) __attribute__((noreturn));
+extern "C" void __wrap___cxa_throw(void *thrown_exception, std::type_info *tinfo, void (*dest)(void *))
+{
+	stringstream ss;
+	StackTrace st;
+	st.load_here(20);
+	st.skip_n_firsts(3);
+
+	Printer p;
+	p.snippet = true;
+	p.object = false;
+	p.color_mode = ColorMode::never;
+	p.address = false;
+	p.ascending = false;
+	p.print(st, ss);
+
+	LOGERROR(ss.str().c_str());
+
+	// Call original __cxa_throw
+	__real___cxa_throw(thrown_exception, tinfo, dest);
+}
+
