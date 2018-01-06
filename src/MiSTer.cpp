@@ -29,7 +29,7 @@
 #include "io/input/baseinputdevice.h"
 #include "common/file/scandir/scandir.h"
 #include "io/input/keyboard.h"
-#include "io/input/devicedetector.h"
+#include "io/input/devicedetector/devicedetector.h"
 
 using namespace std;
 using namespace backward;
@@ -180,10 +180,11 @@ void testInputDevices()
 	InputManager& inputmgr = InputManager::instance();
 	inputmgr.detectDevices();
 
-	for_each(inputmgr.keyboards.begin(), inputmgr.keyboards.end(),
-		[](InputDevice& device)
+	for_each(inputmgr.m_keyboards.begin(), inputmgr.m_keyboards.end(),
+		[](InputDevicePair pair)
 		{
-			Keyboard keyboard(device.path);
+			InputDevice& device = pair.second;
+			Keyboard keyboard(device.name, device.path);
 
 			keyboard.openDeviceWrite();
 
@@ -328,13 +329,13 @@ int main(int argc, char *argv[])
 		//for (int i = 0; i < 10000000; i++)
 		//	testScanDir();
 
-		sleep(100);
-
 		//for (int i = 0; i < 1000; i++)
 		{
-			testEventMessaging();
+			//testEventMessaging();
 			//testDeviceDetector();
 			testInputDevices();
+
+			sleep(100);
 
 			testScanDir();
 			//testFilesystem();

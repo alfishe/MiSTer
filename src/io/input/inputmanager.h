@@ -2,6 +2,8 @@
 #define IO_INPUT_INPUTMANAGER_H_
 
 #include <list>
+#include <mutex>
+#include <string>
 #include "../../common/events/events.h"
 #include "../../common/events/messagecenter.h"
 #include "input.h"
@@ -12,30 +14,36 @@ class InputManager : public EventObserver
 {
 public:
 	// Fields
-	InputDeviceVector inputDevices;
+	InputDeviceMap m_inputDevices;
 
-	InputDeviceVector keyboards;
-	InputDeviceVector mouses;
-	InputDeviceVector joysticks;
+	InputDeviceMap m_keyboards;
+	InputDeviceMap m_mouses;
+	InputDeviceMap m_joysticks;
+
+	mutex m_mutexDevices;
 
 public:
 	// Singleton instance
 	static InputManager& instance();
-	InputManager(InputManager&&) = delete;			// Move constructor disabled (C++11 feature)
-	InputManager(const InputManager& that) = delete; // Disable copy constructor (C++11 feature)
-	InputManager& operator =(InputManager const&) = delete;		// Assignment disabled (C++11 feature)
+	InputManager(InputManager&&) = delete;					// Disable move constructor (C++11 feature)
+	InputManager(const InputManager& that) = delete; 			// Disable copy constructor (C++11 feature)
+	InputManager& operator =(InputManager const&) = delete;	// Disable assignment operator (C++11 feature)
 	virtual ~InputManager();
 
 	void reset();
-	InputDeviceVector& detectDevices();
+	InputDeviceMap& detectDevices();
 	bool isDeviceTypeAllowed(InputDeviceTypeEnum type);
+
+	bool resolveDevice(const string& name, InputDevice& inputDevice);
 
 protected:
 	void addInputDevice(InputDevice& device);
+	void removeInputDevice(const string& name);
 
 public:
 	// Debug methods
-	static string dump(InputDeviceVector& inputDevices);
+	string dumpDevicesMap();
+	static string dump(InputDevice& inputDevice);
 
 private:
 	InputManager(); // Disallow direct instances creation

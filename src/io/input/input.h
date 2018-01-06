@@ -1,6 +1,7 @@
 #ifndef IO_INPUT_INPUT_H_
 #define IO_INPUT_INPUT_H_
 
+#include <map>
 #include <string>
 #include <vector>
 #include "../../3rdparty/betterenums/enum.h"
@@ -36,13 +37,16 @@ struct InputDevice
 	uint32_t eventBits;
 
 	int index = -1;
+	string name;
 	string path;
 	VIDPID deviceID;
 	InputDeviceType type = InputDeviceType::Unknown;
-	string name;
+	string model;
 };
 
 typedef vector<InputDevice> InputDeviceVector;
+typedef map<string, InputDevice> InputDeviceMap;
+typedef pair<string, InputDevice> InputDevicePair;
 
 // Linux device paths related to input
 #define LINUX_DEVICE_INPUT "/dev/input"

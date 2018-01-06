@@ -79,11 +79,12 @@ vector<string> BaseInputDevice::ledNames =
 
 // -Initialize static field arrays
 
-BaseInputDevice::BaseInputDevice(const string& path)
+BaseInputDevice::BaseInputDevice(const string& event, const string& path)
 {
 	TRACE("BaseInputDevice()");
 
-	this->path = path;
+	this->name = string(event);
+	this->path = string(path);
 }
 
 BaseInputDevice::~BaseInputDevice()
@@ -137,7 +138,7 @@ bool BaseInputDevice::init()
 	index = getDeviceIndex();
 
 	// 2. Retrieve device name
-	name = getDeviceName();
+	model = getDeviceName();
 
 	// 3. Get device type
 	type = getDeviceType();

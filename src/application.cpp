@@ -2,7 +2,7 @@
 
 #include "common/logger/logger.h"
 #include "common/events/messagecenter.h"
-#include "io/input/devicedetector.h"
+#include "io/input/devicedetector/devicedetector.h"
 #include "io/input/inputmanager.h"
 
 using namespace std;

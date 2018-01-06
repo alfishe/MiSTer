@@ -16,7 +16,7 @@ protected:
 	uint16_t supportedLEDBits = 0x0000;
 
 public:
-	Keyboard(const string& path);
+	Keyboard(const string& event, const string& path);
 	virtual ~Keyboard();
 
 	// Key operations

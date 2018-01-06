@@ -3,6 +3,7 @@
 #include "../../common/logger/logger.h"
 
 #include <algorithm>
+#include <ostream>
 #include <sys/inotify.h>
 #include <sys/poll.h>
 #include <sys/sysinfo.h>
@@ -16,6 +17,8 @@
 #include "../../common/consts.h"
 #include "../../common/file/path/path.h"
 #include "../../common/file/scandir/scandir.h"
+#include "../../common/file/filemanager.h"
+#include "../../common/helpers/collectionhelper.h"
 
 InputManager& InputManager::instance()
 {
@@ -44,13 +47,13 @@ InputManager::~InputManager()
 ///
 void InputManager::reset()
 {
-	keyboards.clear();
-	mouses.clear();
-	joysticks.clear();
-	inputDevices.clear();
+	m_keyboards.clear();
+	m_mouses.clear();
+	m_joysticks.clear();
+	m_inputDevices.clear();
 }
 
-InputDeviceVector& InputManager::detectDevices()
+InputDeviceMap& InputManager::detectDevices()
 {
 	// Scan for available input device using path pattern:  /dev/input/event<N>
 	ScanDir scan;
@@ -62,34 +65,17 @@ InputDeviceVector& InputManager::detectDevices()
 		for_each(devices.begin(), devices.end(),
 			[&](DirectoryEntry& entry)
 			{
-				string path = Path::combine(LINUX_DEVICE_INPUT, entry.name).toString();
-
-				// Query device for properties
-				BaseInputDevice device(path);
-				device.init();
-
-				if (isDeviceTypeAllowed(device.type))
+				InputDevice inputDevice;
+				if (resolveDevice(entry.name, inputDevice))
 				{
-					InputDevice inputDevice;
-					inputDevice.path = device.path;
-					inputDevice.name = device.name;
-					inputDevice.index = device.index;
-					inputDevice.deviceID = device.deviceID;
-					inputDevice.eventBits = device.eventBits;
-					inputDevice.type = device.type;
-
 					// Register device in correspondent collections
 					addInputDevice(inputDevice);
-				}
-				else
-				{
-					LOGWARN("Unknown device with name '%s' detected on path '%s'", device.name.c_str(), device.path.c_str());
 				}
 			}
 		);
 
 		// Info logging
-		LOGINFO(dump(this->inputDevices).c_str());
+		LOGINFO(dumpDevicesMap().c_str());
 		// -Info logging
 	}
 	else
@@ -100,9 +86,47 @@ InputDeviceVector& InputManager::detectDevices()
 	// Free up ScanDir buffers
 	scan.dispose();
 
-	return this->inputDevices;
+	return m_inputDevices;
 }
 
+bool InputManager::resolveDevice(const string& name, InputDevice& inputDevice)
+{
+	bool result = false;
+
+	string path = Path::combine(LINUX_DEVICE_INPUT, name).toString();
+
+	if (filemanager::isFileExist(path.c_str()))
+	{
+		// Query device for properties
+		BaseInputDevice device(name, path);
+		device.init();
+
+		if (isDeviceTypeAllowed(device.type))
+		{
+			inputDevice.name = device.name;
+			inputDevice.path = device.path;
+			inputDevice.model = device.model;
+			inputDevice.index = device.index;
+			inputDevice.deviceID = device.deviceID;
+			inputDevice.eventBits = device.eventBits;
+			inputDevice.type = device.type;
+
+			result = true;
+		}
+		else
+		{
+			LOGWARN("Unknown device with name '%s' detected on path '%s'", device.model.c_str(), device.path.c_str());
+		}
+	}
+	else
+	{
+		LOGWARN("%s: input device with path '%s' does not exist", __PRETTY_FUNCTION__, path.c_str());
+	}
+
+	return result;
+}
+
+// Helper methods
 bool InputManager::isDeviceTypeAllowed(InputDeviceTypeEnum type)
 {
 	bool result = false;
@@ -116,79 +140,175 @@ bool InputManager::isDeviceTypeAllowed(InputDeviceTypeEnum type)
 	return result;
 }
 
+// Runnable delegate
 void InputManager::onMessageEvent(MessageEvent event)
 {
-	DEBUG("%s: notification name: '%s'", __PRETTY_FUNCTION__, event.name.c_str());
+	string& eventName = event.name;
+	string* param = (string*)event.param;
+
+	TRACE("%s: notification name: '%s'", __PRETTY_FUNCTION__, eventName.c_str());
+
+	if (param == nullptr)
+	{
+	  LOGWARN("%s: notification with name '%s' contains no expected parameter value", __PRETTY_FUNCTION__, eventName.c_str());
+	}
+
+	string name(*param);
+	delete param; // Free memory allocated in DeviceDetector::processEvents()
+
+	if (eventName == EVENT_DEVICE_INSERTED)
+	{
+		InputDevice device;
+		if (resolveDevice(name, device))
+		{
+			LOGINFO("New input device detected:\n%s", dump(device).c_str());
+
+			// Register device in correspondent collections
+			addInputDevice(device);
+		}
+	}
+	else if (eventName == EVENT_DEVICE_REMOVED)
+	{
+		// Unregister from all collections
+		removeInputDevice(name);
+	}
 }
 
 // ======================= Protected methods =================================
 void InputManager::addInputDevice(InputDevice& device)
 {
+	string name = device.name;
+	string deviceModel = device.model;
+
+	TRACE("%s: adding input device '%s' with name '%s'...", __PRETTY_FUNCTION__, device.model.c_str(), device.name.c_str());
+
+	// Protect from simultaneous multithread access
+	lock_guard<mutex> lock(m_mutexDevices);
+
 	// Register in device-type specific collection
 	switch (device.type)
 	{
 		case InputDeviceTypeEnum::Mouse:
-			mouses.push_back(device);
+			m_mouses.insert({name, device});
 			break;
 		case InputDeviceTypeEnum::Joystick:
-			joysticks.push_back(device);
+			m_joysticks.insert({name, device});
 			break;
 		case InputDeviceTypeEnum::Keyboard:
-			keyboards.push_back(device);
+			m_keyboards.insert({name, device});
 			break;
 		default:
 			break;
 	}
 
 	// Register in global collection
-	inputDevices.push_back(device);
+	m_inputDevices.insert({name, device});
+
+	TRACE("OK, added");
+}
+
+void InputManager::removeInputDevice(const string& name)
+{
+	TRACE("%s: removing input device with name '%s'...", __PRETTY_FUNCTION__, name.c_str());
+
+	if (key_exists(m_inputDevices, name))
+	{
+		// Protect from simultaneous multithread access
+		lock_guard<mutex> lock(m_mutexDevices);
+
+		InputDevice& device = m_inputDevices[name];
+
+		switch (device.type)
+		{
+			case InputDeviceTypeEnum::Mouse:
+				m_mouses.erase(device.model);
+				break;
+			case InputDeviceTypeEnum::Joystick:
+				m_joysticks.erase(device.model);
+				break;
+			case InputDeviceTypeEnum::Keyboard:
+				m_keyboards.erase(device.model);
+				break;
+			default:
+				break;
+		}
+
+		m_inputDevices.erase(name);
+
+		TRACE("OK, removed");
+	}
+	else
+	{
+		LOGWARN("%s: input device with name '%s' not registered. Unable to remove.", __PRETTY_FUNCTION__, name.c_str());
+	}
 }
 
 // ======================= Debug methods =====================================
-
-string InputManager::dump(InputDeviceVector& inputDevices)
+string InputManager::dumpDevicesMap()
 {
-	string result = tfm::format("Available input devices:  %d\n", inputDevices.size());
+	stringstream ss;
 
-	for_each(inputDevices.begin(), inputDevices.end(),
-		[&](InputDevice& inputDevice)
+	ss << tfm::format("Available input devices:  %d\n", m_inputDevices.size());
+
+	for_each(m_inputDevices.begin(), m_inputDevices.end(),
+			[&](InputDevicePair pair)
 		{
-			result += tfm::format("path: '%s'", inputDevice.path.c_str());
-			result += "\n";
-			result += tfm::format("index: %d", inputDevice.index);
-			result += "\n";
-			result += tfm::format("name: '%s'", inputDevice.name.c_str());
-			result += "\n";
-			result += tfm::format("VID: 0x%04x, PID: 0x%04x", inputDevice.deviceID.vid, inputDevice.deviceID.pid);
-			result += "\n";
-			result += tfm::format("type: 0x%x ('%s')", inputDevice.type._to_integral(), inputDevice.type._to_string());
-			result += "\n";
-
-			switch (inputDevice.type)
-			{
-				case InputDeviceTypeEnum::Mouse:
-					break;
-				case InputDeviceTypeEnum::Joystick:
-					break;
-				case InputDeviceTypeEnum::Keyboard:
-					{
-						Keyboard device(inputDevice.path);
-
-						device.openDevice();
-						uint16_t ledBits = device.getDeviceLEDBits();
-						device.closeDevice();
-
-						result += tfm::format("LED bits: 0x%04x | %s", ledBits, BaseInputDevice::dumpLEDBits(ledBits).c_str());
-						result += "\n";
-					}
-					break;
-				default:
-					break;
-			}
-
-			result += "\n";
+			ss << dump(pair.second);
+			ss << '\n';
 		}
 	);
 
-	return result;
+	/*
+	for(auto it = m_inputDevices.begin(); it != m_inputDevices.end(); it++)
+	{
+		ss << dump(it->second);
+		ss << '\n';
+	}
+	*/
+
+	ss << "\n";
+
+	return ss.str();
+}
+
+string InputManager::dump(InputDevice& inputDevice)
+{
+	stringstream ss;
+
+	ss << tfm::format("  name: '%s'", inputDevice.name.c_str());
+	ss << "\n";
+	ss << tfm::format("  path: '%s'", inputDevice.path.c_str());
+	ss << "\n";
+	ss << tfm::format("  index: %d", inputDevice.index);
+	ss << "\n";
+	ss << tfm::format("  model: '%s'", inputDevice.model.c_str());
+	ss << "\n";
+	ss << tfm::format("  VID: 0x%04x, PID: 0x%04x", inputDevice.deviceID.vid, inputDevice.deviceID.pid);
+	ss << "\n";
+	ss << tfm::format("  type: 0x%x ('%s')", inputDevice.type._to_integral(), inputDevice.type._to_string());
+	ss << "\n";
+
+	switch (inputDevice.type)
+	{
+		case InputDeviceTypeEnum::Mouse:
+			break;
+		case InputDeviceTypeEnum::Joystick:
+			break;
+		case InputDeviceTypeEnum::Keyboard:
+			{
+				Keyboard device(inputDevice.name, inputDevice.path);
+
+				device.openDevice();
+				uint16_t ledBits = device.getDeviceLEDBits();
+				device.closeDevice();
+
+				ss << tfm::format("  LED bits: 0x%04x | %s", ledBits, BaseInputDevice::dumpLEDBits(ledBits).c_str());
+				ss << "\n";
+			}
+			break;
+		default:
+			break;
+	}
+
+	return ss.str();
 }

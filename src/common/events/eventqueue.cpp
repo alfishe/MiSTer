@@ -225,10 +225,16 @@ string EventQueue::dumpObserversReverseMap()
 
 string EventQueue::dumpEventQueue()
 {
-	stringstream ss;
-
 	// Lock parallel threads to access (unique_lock allows arbitrary lock/unlock)
-	//unique_lock<mutex> lock(m_mutexEvents);
+	lock_guard<mutex> lock(m_mutexEvents);
+
+	return dumpEventQueueNoLock();
+}
+
+// Version to call from already locked access code
+string EventQueue::dumpEventQueueNoLock()
+{
+	stringstream ss;
 
 	ss << tfm::format("Event queue contains: %d messages", m_events.size());
 
@@ -240,8 +246,6 @@ string EventQueue::dumpEventQueue()
 		ss << tfm::format("{'%s', 0x%x, 0x%x}", event.name.c_str(), event.source, event.param);
 		ss << '\n';
 	}
-
-	//lock.unlock();
 
 	string result = ss.str();
 	return result;
@@ -269,14 +273,14 @@ bool EventQueue::tryPop(MessageEvent& event)
 	}
 	else
 	{
-		DEBUG("Event queue before pop\n%s", dumpEventQueue().c_str());
+		DEBUG("Event queue before pop\n%s", dumpEventQueueNoLock().c_str());
 
 		event = m_events.back();
 		m_events.pop_back();
 
 		lock.unlock();
 
-		DEBUG("Event queue after pop\n%s", dumpEventQueue().c_str());
+		DEBUG("Event queue after pop\n%s", dumpEventQueueNoLock().c_str());
 	}
 
 	return result;

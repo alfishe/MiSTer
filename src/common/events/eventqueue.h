@@ -61,6 +61,8 @@ public:
 	string dumpObserversMap();
 	string dumpObserversReverseMap();
 	string dumpEventQueue();
+protected:
+	string dumpEventQueueNoLock();
 
 // Helper methods
 protected:
