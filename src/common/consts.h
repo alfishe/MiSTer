@@ -35,7 +35,18 @@
 // can be connected to MiSTer board simultaneously
 #define MAX_INPUT_DEVICES 16
 
+// Limit max number of input events generated per device (so MAX_INPUT_DEVICES * MAX_INPUT_EVENTS buffer will be allocated)
+#define MAX_INPUT_EVENTS 10
+
+// ======== Events ============
+
 #define EVENT_DEVICE_INSERTED "device_inserted"
 #define EVENT_DEVICE_REMOVED "device_removed"
+
+#define EVENT_SHOW_OSD "show_osd"
+#define EVENT_HIDE_OSD "hide_osd"
+
+#define EVENT_CORE_SELECTED "core_selected"
+#define EVENT_CORE_STARTED "core_started"
 
 #endif /* COMMON_CONSTS_H_ */

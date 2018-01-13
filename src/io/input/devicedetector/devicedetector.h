@@ -26,9 +26,9 @@ public:
 public:
 	// Singleton instance
 	static DeviceDetector& instance();
-	DeviceDetector() = delete;
-	DeviceDetector(const DeviceDetector& that) = delete; 			// Copy constructor is forbidden here (C++11 feature)
-	DeviceDetector& operator =(DeviceDetector const&) = delete;	// Disable assignments
+	DeviceDetector() = delete;									// Disable explicit object creatib (C++11 feature)
+	DeviceDetector(const DeviceDetector& that) = delete; 			// Disable copy constructor (C++11 feature)
+	DeviceDetector& operator =(DeviceDetector const&) = delete;	// Disable assignment operator (C++11 feature)
 	virtual ~DeviceDetector() {};
 
 public:

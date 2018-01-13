@@ -20,6 +20,7 @@
 #include "../../common/file/filemanager.h"
 #include "../../common/helpers/collectionhelper.h"
 
+
 InputManager& InputManager::instance()
 {
 	static InputManager instance;
@@ -31,6 +32,11 @@ InputManager::InputManager()
 {
 	TRACE("InputManager()");
 
+	// Create input poller instance
+	InputPoller& poller = InputPoller::instance();
+	poller.init();
+
+	// Subscribe for device status events
 	MessageCenter& center = MessageCenter::defaultCenter();
 	center.addObserver(EVENT_DEVICE_INSERTED, this);
 	center.addObserver(EVENT_DEVICE_REMOVED, this);
@@ -41,12 +47,21 @@ InputManager::~InputManager()
 	TRACE("~InputManager()");
 
 	reset();
+
+	// Ensure that poller is stopped
+	InputPoller::instance().dispose();
 }
 
 /// Clear all internal information about devices
 ///
 void InputManager::reset()
 {
+	TRACE("%s", __PRETTY_FUNCTION__);
+
+	// Detach poller from events from all devices listening
+	InputPoller::instance().reset();
+
+	// Clear all collections
 	m_keyboards.clear();
 	m_mouses.clear();
 	m_joysticks.clear();
@@ -88,6 +103,25 @@ InputDeviceMap& InputManager::detectDevices()
 
 	return m_inputDevices;
 }
+
+void InputManager::startPolling()
+{
+	InputPoller& poller = InputPoller::instance();
+
+	// Add all already discovered devices to polling list
+	for (auto it = m_inputDevices.begin(); it != m_inputDevices.end(); it++)
+	{
+		poller.addInputDevice(it->second);
+	}
+
+	poller.start();
+}
+
+void InputManager::stopPolling()
+{
+	InputPoller::instance().stop();
+}
+
 
 bool InputManager::resolveDevice(const string& name, InputDevice& inputDevice)
 {
@@ -165,10 +199,21 @@ void InputManager::onMessageEvent(MessageEvent event)
 
 			// Register device in correspondent collections
 			addInputDevice(device);
+
+			// Notify poller about changes
+			InputPoller::instance().addInputDevice(device);
 		}
 	}
 	else if (eventName == EVENT_DEVICE_REMOVED)
 	{
+		if (key_exists(m_inputDevices, name))
+		{
+			InputDevice& device = m_inputDevices[name];
+
+			// Notify poller about changes
+			InputPoller::instance().removeInputDevice(device);
+		}
+
 		// Unregister from all collections
 		removeInputDevice(name);
 	}

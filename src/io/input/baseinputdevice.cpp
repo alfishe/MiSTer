@@ -621,3 +621,55 @@ string BaseInputDevice::dumpLEDBits(uint16_t value)
 
 	return result;
 }
+
+string BaseInputDevice::dumpEventType(uint16_t value)
+{
+	static const char* bitNames[] =
+	{
+		"EV_SYN",		// 0x00
+		"EV_KEY",		// 0x01
+		"EV_REL",		// 0x02
+		"EV_ABS",		// 0x03
+		"EV_MSC",		// 0x04
+		"EV_SW",			// 0x05
+		"UNKNOWN 0x06",	// 0x06
+		"UNKNOWN 0x07",	// 0x07
+		"UNKNOWN 0x08",	// 0x08
+		"UNKNOWN 0x09",	// 0x09
+		"UNKNOWN 0x0A",	// 0x0A
+		"UNKNOWN 0x0B",	// 0x0B
+		"UNKNOWN 0x0C",	// 0x0C
+		"UNKNOWN 0x0D",	// 0x0D
+		"UNKNOWN 0x0E",	// 0x0E
+		"UNKNOWN 0x0F",	// 0x0F
+		"UNKNOWN 0x10",	// 0x10
+		"EV_LED",		// 0x11
+		"EV_SND",		// 0x12
+		"UNKNOWN 0x13",	// 0x13
+		"EV_REP",		// 0x14
+		"EV_FF",			// 0x15
+		"EV_PWR",		// 0x16
+		"EV_FF_STATUS",	// 0x17
+		"UNKNOWN 0x18",	// 0x18
+		"UNKNOWN 0x19",	// 0x19
+		"UNKNOWN 0x1A",	// 0x1A
+		"UNKNOWN 0x1B",	// 0x1B
+		"UNKNOWN 0x1C",	// 0x1C
+		"UNKNOWN 0x1D",	// 0x1D
+		"UNKNOWN 0x1E",	// 0x1E
+		"UNKNOWN 0x1F"	// 0x1F
+	};
+
+	string result;
+
+	if (value <= 0x1F)
+	{
+		result = string(bitNames[value]);
+	}
+	else
+	{
+		result = tfm::format("UNKNOWN 0x%x", value);
+	}
+
+	return result;
+}

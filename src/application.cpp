@@ -32,6 +32,7 @@ void Application::onStart()
 	// Start input manager
 	InputManager& inputmgr = InputManager::instance();
 	inputmgr.detectDevices();
+	inputmgr.startPolling();
 
 	// More initialization
 
@@ -90,6 +91,10 @@ void Application::onTerminate()
 	DeviceDetector& detector = DeviceDetector::instance();
 	detector.stop();
 	detector.dispose();
+
+	// Stop polling for devices
+	InputManager& inputmgr = InputManager::instance();
+	inputmgr.stopPolling();
 
 	// Dispose message center resources
 	MessageCenter& center = MessageCenter::defaultCenter();

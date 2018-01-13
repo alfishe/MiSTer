@@ -144,7 +144,7 @@ void EventQueue::post(const string& name, const EventSourcePtr source, void* par
 
 void EventQueue::post(const MessageEvent& event)
 {
-	DEBUG("Event queue before push\n%s", dumpEventQueue().c_str());
+	//DEBUG("Event queue before push\n%s", dumpEventQueue().c_str());
 
 	// Lock parallel threads to access
 	unique_lock<mutex> lock(m_mutexEvents);
@@ -153,7 +153,7 @@ void EventQueue::post(const MessageEvent& event)
 
 	m_cvEvents.notify_one();
 
-	DEBUG("Event queue after push\n%s", dumpEventQueue().c_str());
+	//DEBUG("Event queue after push\n%s", dumpEventQueue().c_str());
 }
 
 // Debug methods
@@ -273,14 +273,14 @@ bool EventQueue::tryPop(MessageEvent& event)
 	}
 	else
 	{
-		DEBUG("Event queue before pop\n%s", dumpEventQueueNoLock().c_str());
+		//DEBUG("Event queue before pop\n%s", dumpEventQueueNoLock().c_str());
 
 		event = m_events.back();
 		m_events.pop_back();
 
 		lock.unlock();
 
-		DEBUG("Event queue after pop\n%s", dumpEventQueueNoLock().c_str());
+		//DEBUG("Event queue after pop\n%s", dumpEventQueueNoLock().c_str());
 	}
 
 	return result;

@@ -70,6 +70,7 @@ public:
 	// Debug methods
 	static string dumpEventBits(uint32_t value);
 	static string dumpLEDBits(uint16_t value);
+	static string dumpEventType(uint16_t value);
 
 protected:
 	static const string getDeviceNameQuery();

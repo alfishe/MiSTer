@@ -27,8 +27,8 @@ bool DeviceDetector::init()
 
 	if (fd_inotify != INVALID_FILE_DESCRIPTOR)
 	{
-		// Subscribe for changes in /dev/input
-		wd_inotify = inotify_add_watch(fd_inotify, LINUX_DEVICE_INPUT, IN_MODIFY | IN_CREATE | IN_DELETE);
+		// Subscribe for changes in /dev/input. React only on device insert (IN_CREATE) and removal (IN_DELETE)
+		wd_inotify = inotify_add_watch(fd_inotify, LINUX_DEVICE_INPUT, /*IN_MODIFY |*/ IN_CREATE | IN_DELETE);
 
 		if (wd_inotify != INVALID_FILE_DESCRIPTOR)
 		{

@@ -6,6 +6,7 @@
 #include <string>
 #include "../../common/events/events.h"
 #include "../../common/events/messagecenter.h"
+#include "inputpoll/inputpoller.h"
 #include "input.h"
 
 using namespace std;
@@ -32,6 +33,9 @@ public:
 
 	void reset();
 	InputDeviceMap& detectDevices();
+	void startPolling();
+	void stopPolling();
+
 	bool isDeviceTypeAllowed(InputDeviceTypeEnum type);
 
 	bool resolveDevice(const string& name, InputDevice& inputDevice);
