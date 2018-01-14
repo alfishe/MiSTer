@@ -1,6 +1,8 @@
 #ifndef COMMON_LOGGER_LOGGER_H_
 #define COMMON_LOGGER_LOGGER_H_
 
+#include <chrono>
+
 #define MAX_LOG_MESSAGE_LENGTH 4096
 
 // Shortcuts
@@ -26,6 +28,9 @@
 #else
 #define TRACE(format, ...)
 #endif
+
+// Reference application start time (monotonic clock value, recorded immediately after application start)
+extern std::chrono::steady_clock::time_point applicationStart;
 
 class logger
 {

@@ -4,6 +4,7 @@
 #include <cxxabi.h>
 
 #include <algorithm>
+#include <chrono>
 #include <exception>
 #include <stdexcept>
 #include <iostream>
@@ -33,6 +34,7 @@
 
 using namespace std;
 using namespace backward;
+using std::chrono::steady_clock;
 
 // Perform compile-time diagnostics to be sure that everything set up well.
 #ifndef _LARGEFILE64_SOURCE
@@ -42,6 +44,8 @@ using namespace backward;
 #ifndef _FILE_OFFSET_BITS
 #pragma GCC error "ERROR _FILE_OFFSET_BITS is not set. Required for LFS. Please ass -D_FILE_OFFSET_BITS=64 as a compilation parameter"
 #endif
+
+chrono::steady_clock::time_point applicationStart = steady_clock::now();
 
 void testFilesystem()
 {
