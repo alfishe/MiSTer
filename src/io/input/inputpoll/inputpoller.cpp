@@ -8,7 +8,9 @@
 #include <sys/stat.h>
 #include <linux/input.h>
 #include "../../../3rdparty/tinyformat/tinyformat.h"
+#include "../../../common/types.h"
 #include "../../../common/helpers/collectionhelper.h"
+#include "../input.h"
 #include "../baseinputdevice.h"
 
 using namespace std;
@@ -28,7 +30,7 @@ bool InputPoller::init()
 	m_fd_epoll = epoll_create(MAX_INPUT_DEVICES);
 	if (m_fd_epoll != INVALID_FILE_DESCRIPTOR)
 	{
-		m_eventsBuffer = (epoll_event*)calloc(MAX_INPUT_DEVICES * MAX_INPUT_EVENTS, sizeof(struct epoll_event));
+		m_eventsBuffer = (epoll_event*)calloc(MAX_INPUT_DEVICES * MAX_INPUT_EVENTS, sizeof(epoll_event));
 		if (m_eventsBuffer != nullptr)
 		{
 			m_initialized = true;
@@ -73,7 +75,7 @@ void InputPoller::addInputDevice(InputDevice& device)
 
 	if (fd != INVALID_FILE_DESCRIPTOR)
 	{
-		struct epoll_event event;
+		epoll_event event;
 		event.data.fd = fd;
 		event.events = EPOLLIN | EPOLLET;
 
@@ -100,12 +102,8 @@ void InputPoller::addInputDevice(InputDevice& device)
 
 void InputPoller::removeInputDevice(InputDevice& device)
 {
-	pthread_mutex_t* mtx = (pthread_mutex_t*)m_mutexPoll.native_handle();
-
 	// Lock parallel threads to access (active till return from method and lock destruction)
 	lock_guard<mutex> lock(m_mutexPoll);
-
-	return;
 
 	int fd = device.fd;
 	removeInputDeviceNoLock(fd);
@@ -234,54 +232,111 @@ int InputPoller::checkEvents()
 
 void InputPoller::readEvents(int fd)
 {
-	struct input_event events[MAX_INPUT_EVENTS];
+	input_event events[MAX_INPUT_EVENTS];
 
 	int len = read(fd, &events, sizeof(events));
 
 	if (len > 0)
 	{
-		TRACE("%s: received: %d", __PRETTY_FUNCTION__, len);
+		unsigned eventsCount = len / sizeof(input_event);
 
-		for (unsigned i = 0; i < len / sizeof(input_event); i++)
+		TRACE("%s: received: %d raw events", __PRETTY_FUNCTION__, eventsCount);
+
+		unsigned packetStartIdx = 0;
+		unsigned idx = 0;
+
+		while (idx < eventsCount)
 		{
-			struct input_event& event = events[i];
-
-			string code;
-			switch (event.type)
+			// Process single event (everything between event start and EV_SYN)
+			for (; idx < eventsCount; idx++)
 			{
-				// Usually generated to specify type of event for keys (MSC_SCAN)
-				case EV_MSC:
-					code = tfm::format("0x%x (%s)", event.code, BaseInputDevice::dumpMscType(event.code));
-					break;
-				// Delimiter for separate events (all event records till next EV_SYN belong to a single event)
-				case EV_SYN:
-					code = tfm::format("0x%x (%s)", event.code, BaseInputDevice::dumpSynType(event.code));
-					break;
-				case EV_LED:
-					code = tfm::format("0x%x (%s)", event.code, BaseInputDevice::dumpLEDBits(event.code));
-					break;
-				case EV_KEY:
-					code = tfm::format("0x%04x (%s)", event.code, BaseInputDevice::dumpKey(event.code));
-					break;
-				case EV_REL:
-					code = tfm::format("0x%x (%s)", event.code, BaseInputDevice::dumpRelType(event.code));
-					break;
-				case EV_ABS:
-					code = tfm::format("0x%x (%s)", event.code, BaseInputDevice::dumpAbsType(event.code));
-					break;
-				default:
-					code = tfm::format("0x%x", event.code);
-					break;
+				input_event& event = events[idx];
+
+				// Determine end of packet
+				if (event.type == EV_SYN && event.code == SYN_REPORT)
+				{
+					int packetLen = idx - packetStartIdx;
+					if (packetLen > 0)
+					{
+						translateEvents(fd, &events[packetStartIdx], (unsigned)packetLen);
+					}
+
+					packetStartIdx = idx + 1;
+				}
+				else if (idx == eventsCount - 1)
+				{
+					// We've reached end of events list but no synchronization record met
+					int packetLen = idx - packetStartIdx;
+					if (packetLen > 0)
+					{
+						translateEvents(fd, &events[packetStartIdx], (unsigned)packetLen);
+					}
+				}
 			}
-
-			TRACE("Type: 0x%x (%s), code: %s, value: %d",
-				event.type,
-				BaseInputDevice::dumpEventType(event.type).c_str(),
-				code.c_str(),
-				event.value
-			);
-
 		}
+	}
+}
+
+// Translate single logical event from device into higher level messages
+void InputPoller::translateEvents(int fd, input_event* events, unsigned numEvents)
+{
+	if (events == nullptr || numEvents == 0)
+	{
+		LOGWARN("%s: invalid parameters supplied", __PRETTY_FUNCTION__);
+		return;
+	}
+
+	// Check if descriptor is registered
+	if (!key_exists(m_devices, fd))
+	{
+		LOGWARN("%s: unknown device fd: 0x%x", __PRETTY_FUNCTION__, fd);
+		return;
+	}
+
+	// Resolve device type from descriptor
+	InputDevice& device = m_devices[fd];
+	InputDeviceTypeEnum type = device.type;
+
+	TRACE("Device %s:'%s' received %d event(s), EV_SYN excluded", device.dumpDeviceType().c_str(), device.model.c_str(), numEvents);
+
+	for (unsigned i = 0; i < numEvents; i++)
+	{
+		input_event& event = events[i];
+
+		string code;
+		switch (event.type)
+		{
+			// Usually generated to specify type of event for keys (MSC_SCAN)
+			case EV_MSC:
+				code = tfm::format("0x%x (%s)", event.code, BaseInputDevice::dumpMscType(event.code));
+				break;
+			// Delimiter for separate events (all event records till next EV_SYN belong to a single event)
+			case EV_SYN:
+				code = tfm::format("0x%x (%s)", event.code, BaseInputDevice::dumpSynType(event.code));
+				break;
+			case EV_LED:
+				code = tfm::format("0x%x (%s)", event.code, BaseInputDevice::dumpLEDType(event.code));
+				break;
+			case EV_KEY:
+				code = tfm::format("0x%04x (%s)", event.code, BaseInputDevice::dumpKey(event.code));
+				break;
+			case EV_REL:
+				code = tfm::format("0x%x (%s)", event.code, BaseInputDevice::dumpRelType(event.code));
+				break;
+			case EV_ABS:
+				code = tfm::format("0x%x (%s)", event.code, BaseInputDevice::dumpAbsType(event.code));
+				break;
+			default:
+				code = tfm::format("0x%x", event.code);
+				break;
+		}
+
+		TRACE("Type: 0x%x (%s), code: %s, value: %d",
+			event.type,
+			BaseInputDevice::dumpEventType(event.type).c_str(),
+			code.c_str(),
+			event.value
+		);
 	}
 }
 

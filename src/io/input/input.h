@@ -42,6 +42,15 @@ struct InputDevice
 	VIDPID deviceID;
 	InputDeviceType type = InputDeviceType::Unknown;
 	string model;
+
+// Debug methods
+public:
+	string dumpDeviceType()
+	{
+		string result = type._to_string();
+
+		return result;
+	};
 };
 
 typedef vector<InputDevice> InputDeviceVector;

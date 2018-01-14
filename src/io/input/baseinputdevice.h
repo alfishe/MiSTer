@@ -75,6 +75,7 @@ public:
 	// Debug methods
 	static string dumpEventBits(uint32_t value);
 	static string dumpLEDBits(uint16_t value);
+	static string dumpLEDType(uint16_t value);
 	static string dumpEventType(uint16_t value);
 	static string dumpSynType(uint16_t value);
 	static string dumpMscType(uint16_t value);

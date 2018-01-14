@@ -8,6 +8,8 @@
 #include "../../../common/thread/runnable.h"
 #include "../input.h"
 
+typedef struct input_event input_event;
+typedef struct epoll_event epoll_event;
 typedef map<int, InputDevice> EPollMap;
 
 class InputPoller : public Runnable, EventSource
@@ -18,7 +20,7 @@ protected:
 
 	EPollMap m_devices;
 	int m_fd_epoll = INVALID_FILE_DESCRIPTOR;
-	struct epoll_event* m_eventsBuffer = nullptr;
+	epoll_event* m_eventsBuffer = nullptr;
 
 public:
 	// Latency is important for fast input events reaction
@@ -47,6 +49,7 @@ protected:
 	void makeNonBlocking(int fd);
 	int checkEvents();
 	void readEvents(int fd);
+	void translateEvents(int fd, input_event* events, unsigned numEvents);
 
 	void removeInputDeviceNoLock(int fd);
 

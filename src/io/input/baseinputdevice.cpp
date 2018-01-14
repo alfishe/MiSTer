@@ -1012,11 +1012,27 @@ string BaseInputDevice::dumpLEDBits(uint16_t value)
 	return result;
 }
 
+string BaseInputDevice::dumpLEDType(uint16_t value)
+{
+	string result;
+
+	if (value < ledNames.size())
+	{
+		result = string(ledNames[value]);
+	}
+	else
+	{
+		result = tfm::format("UNKNOWN 0x%x", value);
+	}
+
+	return result;
+}
+
 string BaseInputDevice::dumpEventType(uint16_t value)
 {
 	string result;
 
-	if (value <= 0x1F)
+	if (value < eventNames.size())
 	{
 		result = string(eventNames[value]);
 	}
