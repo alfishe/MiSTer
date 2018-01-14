@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <linux/input.h>
+#include "../../../3rdparty/tinyformat/tinyformat.h"
 #include "../../../common/helpers/collectionhelper.h"
 #include "../baseinputdevice.h"
 
@@ -245,10 +246,38 @@ void InputPoller::readEvents(int fd)
 		{
 			struct input_event& event = events[i];
 
-			TRACE("Type: 0x%x (%s), code: 0x%x, value: %d",
+			string code;
+			switch (event.type)
+			{
+				// Usually generated to specify type of event for keys (MSC_SCAN)
+				case EV_MSC:
+					code = tfm::format("0x%x (%s)", event.code, BaseInputDevice::dumpMscType(event.code));
+					break;
+				// Delimiter for separate events (all event records till next EV_SYN belong to a single event)
+				case EV_SYN:
+					code = tfm::format("0x%x (%s)", event.code, BaseInputDevice::dumpSynType(event.code));
+					break;
+				case EV_LED:
+					code = tfm::format("0x%x (%s)", event.code, BaseInputDevice::dumpLEDBits(event.code));
+					break;
+				case EV_KEY:
+					code = tfm::format("0x%04x (%s)", event.code, BaseInputDevice::dumpKey(event.code));
+					break;
+				case EV_REL:
+					code = tfm::format("0x%x (%s)", event.code, BaseInputDevice::dumpRelType(event.code));
+					break;
+				case EV_ABS:
+					code = tfm::format("0x%x (%s)", event.code, BaseInputDevice::dumpAbsType(event.code));
+					break;
+				default:
+					code = tfm::format("0x%x", event.code);
+					break;
+			}
+
+			TRACE("Type: 0x%x (%s), code: %s, value: %d",
 				event.type,
 				BaseInputDevice::dumpEventType(event.type).c_str(),
-				event.code,
+				code.c_str(),
 				event.value
 			);
 

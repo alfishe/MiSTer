@@ -29,6 +29,11 @@ class BaseInputDevice: public InputDevice
 protected:
 	static vector<string> eventNames;
 	static vector<string> ledNames;
+	static vector<string> synNames;
+	static vector<string> mscNames;
+	static vector<string> keyNames;
+	static vector<string> relNames;
+	static vector<string> absNames;
 
 	// Ioctl input-related bit arrays
 	unsigned long bit_ev[BITFIELD_LONGS_PER_ARRAY(EV_MAX)];
@@ -71,6 +76,11 @@ public:
 	static string dumpEventBits(uint32_t value);
 	static string dumpLEDBits(uint16_t value);
 	static string dumpEventType(uint16_t value);
+	static string dumpSynType(uint16_t value);
+	static string dumpMscType(uint16_t value);
+	static string dumpKey(uint16_t value);
+	static string dumpRelType(uint16_t value);
+	static string dumpAbsType(uint16_t value);
 
 protected:
 	static const string getDeviceNameQuery();

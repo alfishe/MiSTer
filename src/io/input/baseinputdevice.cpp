@@ -77,6 +77,371 @@ vector<string> BaseInputDevice::ledNames =
 	"UNDEFINED 0x0F"		// 0x0F
 };
 
+vector<string> BaseInputDevice::synNames =
+{
+	"SYN_REPORT",		// 0x00
+	"SYN_CONFIG",		// 0x01
+	"SYN_MT_REPORT",		// 0x02
+	"SYN_DROPPED	",		// 0x03
+};
+
+vector<string> BaseInputDevice::mscNames =
+{
+	"MSC_SERIAL",		// 0x00
+	"MSC_PULSELED",		// 0x01
+	"MSC_GESTURE",		// 0x02
+	"MSC_RAW",			// 0x03
+	"MSC_SCAN",			// 0x04
+	"MSC_TIMESTAMP",		// 0x05
+	"UNKNOWN_0x06",		// 0x06
+};
+
+vector<string> BaseInputDevice::keyNames =
+{
+	"KEY_RESERVED",			// 0x00
+	"KEY_ESC",				// 0x01
+	"KEY_1",					// 0x02
+	"KEY_2",					// 0x03
+	"KEY_3",					// 0x04
+	"KEY_4",					// 0x05
+	"KEY_5",					// 0x06
+	"KEY_6",					// 0x07
+	"KEY_7",					// 0x08
+	"KEY_8",					// 0x09
+	"KEY_9",					// 0x0A
+	"KEY_0",					// 0x0B
+	"KEY_MINUS",				// 0x0C
+	"KEY_EQUAL",				// 0x0D
+	"KEY_BACKSPACE",			// 0x0E
+	"KEY_TAB",				// 0x0F
+	"KEY_Q",					// 0x10
+	"KEY_W",					// 0x11
+	"KEY_E",					// 0x12
+	"KEY_R",					// 0x13
+	"KEY_T",					// 0x14
+	"KEY_Y",					// 0x15
+	"KEY_U",					// 0x16
+	"KEY_I",					// 0x17
+	"KEY_O",					// 0x18
+	"KEY_P",					// 0x19
+	"KEY_LEFTBRACE",			// 0x1A
+	"KEY_RIGHTBRACE",		// 0x1B
+	"KEY_ENTER",				// 0x1C
+	"KEY_LEFTCTRL",			// 0x1D
+	"KEY_A",					// 0x1E
+	"KEY_S",					// 0x1F
+	"KEY_D",					// 0x20
+	"KEY_F",					// 0x21
+	"KEY_G",					// 0x22
+	"KEY_H",					// 0x23
+	"KEY_J",					// 0x24
+	"KEY_K",					// 0x25
+	"KEY_L",					// 0x26
+	"KEY_SEMICOLON",			// 0x27
+	"KEY_APOSTROPHE",		// 0x28
+	"KEY_GRAVE",				// 0x29
+	"KEY_LEFTSHIFT",			// 0x2A
+	"KEY_BACKSLASH",			// 0x2B
+	"KEY_Z",					// 0x2C
+	"KEY_X",					// 0x2D
+	"KEY_C",					// 0x2E
+	"KEY_V",					// 0x2F
+	"KEY_B",					// 0x30
+	"KEY_N",					// 0x31
+	"KEY_M",					// 0x32
+	"KEY_COMMA",				// 0x33
+	"KEY_DOT",				// 0x34
+	"KEY_SLASH",				// 0x35
+	"KEY_RIGHTSHIFT",		// 0x36
+	"KEY_KPASTERISK",		// 0x37
+	"KEY_LEFTALT",			// 0x38
+	"KEY_SPACE",				// 0x39
+	"KEY_CAPSLOCK",			// 0x3A
+	"KEY_F1",				// 0x3B
+	"KEY_F2",				// 0x3C
+	"KEY_F3",				// 0x3D
+	"KEY_F4",				// 0x3E
+	"KEY_F5",				// 0x3F
+	"KEY_F6",				// 0x40
+	"KEY_F7",				// 0x41
+	"KEY_F8",				// 0x42
+	"KEY_F9",				// 0x43
+	"KEY_F10",				// 0x44
+	"KEY_NUMLOCK",			// 0x45
+	"KEY_SCROLLLOCK",		// 0x46
+	"KEY_KP7",				// 0x47
+	"KEY_KP8",				// 0x48
+	"KEY_KP9",				// 0x49
+	"KEY_KPMINUS",			// 0x4A
+	"KEY_KP4",				// 0x4B
+	"KEY_KP5",				// 0x4C
+	"KEY_KP6",				// 0x4D
+	"KEY_KPPLUS",			// 0x4E
+	"KEY_KP1",				// 0x4F
+	"KEY_KP2",				// 0x50
+	"KEY_KP3",				// 0x51
+	"KEY_KP0",				// 0x52
+	"KEY_KPDOT",				// 0x53
+	"UNKNOWN_0x54",			// 0x54
+	"KEY_ZENKAKUHANKAKU",	// 0x55
+	"KEY_102ND",				// 0x56
+	"KEY_F11",				// 0x57
+	"KEY_F12",				// 0x58
+	"KEY_RO",				// 0x59
+	"KEY_KATAKANA",			// 0x5A
+	"KEY_HIRAGANA",			// 0x5B
+	"KEY_HENKAN",			// 0x5C
+	"KEY_KATAKANAHIRAGANA", 	// 0x5D
+	"KEY_MUHENKAN",			// 0x5E
+	"KEY_KPJPCOMMA",			// 0x5F
+	"KEY_KPENTER",			// 0x60
+	"KEY_RIGHTCTRL",			// 0x61
+	"KEY_KPSLASH",			// 0x62
+	"KEY_SYSRQ",				// 0x63
+	"KEY_RIGHTALT",			// 0x64
+	"KEY_LINEFEED",			// 0x65
+	"KEY_HOME",				// 0x66
+	"KEY_UP",				// 0x67
+	"KEY_PAGEUP",			// 0x68
+	"KEY_LEFT",				// 0x69
+	"KEY_RIGHT",				// 0x6A
+	"KEY_END",				// 0x6B
+	"KEY_DOWN",				// 0x6C
+	"KEY_PAGEDOWN",			// 0x6D
+	"KEY_INSERT",			// 0x6E
+	"KEY_DELETE",			// 0x6F
+	"KEY_MACRO",				// 0x70
+	"KEY_MUTE",				// 0x71
+	"KEY_VOLUMEDOWN",		// 0x72
+	"KEY_VOLUMEUP",			// 0x73
+	"KEY_POWER",				// 0x74
+	"KEY_KPEQUAL",			// 0x75
+	"KEY_KPPLUSMINUS",		// 0x76
+	"KEY_PAUSE",				// 0x77
+	"KEY_SCALE",				// 0x78
+	"KEY_KPCOMMA",			// 0x79
+	"KEY_HANGUEL",			// 0x7A
+	"KEY_HANJA",				// 0x7B
+	"KEY_YEN",				// 0x7C
+	"KEY_LEFTMETA",			// 0x7D
+	"KEY_RIGHTMETA",			// 0x7E
+	"KEY_COMPOSE",			// 0x7F
+
+	"KEY_STOP",				// 0x80
+	"KEY_AGAIN",				// 0x81
+	"KEY_PROPS",				// 0x82
+	"KEY_UNDO",				// 0x83
+	"KEY_FRONT",				// 0x84
+	"KEY_COPY",				// 0x85
+	"KEY_OPEN",				// 0x86
+	"KEY_PASTE",				// 0x87
+	"KEY_FIND",				// 0x88
+	"KEY_CUT",				// 0x89
+	"KEY_HELP",				// 0x8A
+	"KEY_MENU",				// 0x8B
+	"KEY_CALC",				// 0x8C
+	"KEY_SETUP",				// 0x8D
+	"KEY_SLEEP",				// 0x8E
+	"KEY_WAKEUP",			// 0x8F
+	"KEY_FILE",				// 0x90
+	"KEY_SENDFILE",			// 0x91
+	"KEY_DELETEFILE",		// 0x92
+	"KEY_XFER",				// 0x93
+	"KEY_PROG1",				// 0x94
+	"KEY_PROG2",				// 0x95
+	"KEY_WWW",				// 0x96
+	"KEY_MSDOS",				// 0x97
+	"KEY_COFFEE",			// 0x98
+	"KEY_ROTATE_DISPLAY",	// 0x99
+	"KEY_CYCLEWINDOWS",		// 0x9A
+	"KEY_MAIL",				// 0x9B
+	"KEY_BOOKMARKS",			// 0x9C
+	"KEY_COMPUTER",			// 0x9D
+	"KEY_BACK",				// 0x9E
+	"KEY_FORWARD",			// 0x9F
+	"KEY_CLOSECD",			// 0xA0
+	"KEY_EJECTCD",			// 0xA1
+	"KEY_EJECTCLOSECD",		// 0xA2
+	"KEY_NEXTSONG",			// 0xA3
+	"KEY_PLAYPAUSE",			// 0xA4
+	"KEY_PREVIOUSSONG",		// 0xA5
+	"KEY_STOPCD",			// 0xA6
+	"KEY_RECORD",			// 0xA7
+	"KEY_REWIND",			// 0xA8
+	"KEY_PHONE",				// 0xA9
+	"KEY_ISO",				// 0xAA
+	"KEY_CONFIG",			// 0xAB
+	"KEY_HOMEPAGE",			// 0xAC
+	"KEY_REFRESH",			// 0xAD
+	"KEY_EXIT",				// 0xAE
+	"KEY_MOVE",				// 0xAF
+	"KEY_EDIT",				// 0xB0
+	"KEY_SCROLLUP",			// 0xB1
+	"KEY_SCROLLDOWN",		// 0xB2
+	"KEY_KPLEFTPAREN",		// 0xB3
+	"KEY_KPRIGHTPAREN",		// 0xB4
+	"KEY_NEW",				// 0xB5
+	"KEY_REDO",				// 0xB6
+	"KEY_F13",				// 0xB7
+	"KEY_F14",				// 0xB8
+	"KEY_F15",				// 0xB9
+	"KEY_F16",				// 0xBA
+	"KEY_F17",				// 0xBB
+	"KEY_F18",				// 0xBC
+	"KEY_F19",				// 0xBD
+	"KEY_F20",				// 0xBE
+	"KEY_F21",				// 0xBF
+	"KEY_F22",				// 0xC0
+	"KEY_F23",				// 0xC1
+	"KEY_F24",				// 0xC2
+	"UNKNOWN_0xC3",			// 0xC3
+	"UNKNOWN_0xC4",			// 0xC4
+	"UNKNOWN_0xC5",			// 0xC5
+	"UNKNOWN_0xC6",			// 0xC6
+	"UNKNOWN_0xC7",			// 0xC7
+	"KEY_PLAYCD",			// 0xC8
+	"KEY_PAUSECD",			// 0xC9
+	"KEY_PROG3",				// 0xCA
+	"KEY_PROG4",				// 0xCB
+	"KEY_DASHBOARD",			// 0xCC
+	"KEY_SUSPEND",			// 0xCD
+	"KEY_CLOSE",				// 0xCE
+	"KEY_PLAY",				// 0xCF
+	"KEY_FASTFORWARD",		// 0xD0
+	"KEY_BASSBOOST",			// 0xD1
+	"KEY_PRINT",				// 0xD2
+	"KEY_HP",				// 0xD3
+	"KEY_CAMERA",			// 0xD4
+	"KEY_SOUND",				// 0xD5
+	"KEY_QUESTION",			// 0xD6
+	"KEY_EMAIL",				// 0xD7
+	"KEY_CHAT",				// 0xD8
+	"KEY_SEARCH",			// 0xD9
+	"KEY_CONNECT",			// 0xDA
+	"KEY_FINANCE",			// 0xDB
+	"KEY_SPORT",				// 0xDC
+	"KEY_SHOP",				// 0xDD
+	"KEY_ALTERASE",			// 0xDE
+	"KEY_CANCEL	",			// 0xDF
+	"KEY_BRIGHTNESSDOWN",	// 0xE0
+	"KEY_BRIGHTNESSUP",		// 0xE1
+	"KEY_MEDIA",				// 0xE2
+	"KEY_SWITCHVIDEOMODE",	// 0xE3
+	"KEY_KBDILLUMTOGGLE",	// 0xE4
+	"KEY_KBDILLUMDOWN",		// 0xE5
+	"KEY_KBDILLUMUP",		// 0xE6
+	"KEY_SEND",				// 0xE7
+	"KEY_REPLY",				// 0xE8
+	"KEY_FORWARDMAIL",		// 0xE9
+	"KEY_SAVE",				// 0xEA
+	"KEY_DOCUMENTS",			// 0xEB
+	"KEY_BATTERY",			// 0xEC
+	"KEY_BLUETOOTH",			// 0xED
+	"KEY_WLAN",				// 0xEE
+	"KEY_UWB",				// 0xEF
+	"KEY_UNKNOWN",			// 0xF0
+	"KEY_VIDEO_NEXT",		// 0xF1
+	"KEY_VIDEO_PREV",		// 0xF2
+	"KEY_BRIGHTNESS_CYCLE",	// 0xF3
+	"KEY_BRIGHTNESS_AUTO",	// 0xF4
+	"KEY_DISPLAY_OFF",		// 0xF5
+	"KEY_WWAN",				// 0xF6
+	"KEY_RFKILL",			// 0xF7
+	"KEY_MICMUTE",			// 0xF8
+	"UNKNOWN_0xF9",			// 0xF9
+	"UNKNOWN_0xFA",			// 0xFA
+	"UNKNOWN_0xFB",			// 0xFB
+	"UNKNOWN_0xFC",			// 0xFC
+	"UNKNOWN_0xFD",			// 0xFD
+	"UNKNOWN_0xFE",			// 0xFE
+	"RESERVED_AT",			// 0xFF
+
+
+};
+
+vector<string> BaseInputDevice::relNames =
+{
+	"REL_X",			// 0x00
+	"REL_Y",			// 0x01
+	"REL_Z",			// 0x02
+	"REL_RX",		// 0x03
+	"REL_RY",		// 0x04
+	"REL_RZ",		// 0x05
+	"REL_HWHEEL",	// 0x06
+	"REL_DIAL",		// 0x07
+	"REL_WHEEL",		// 0x08
+	"REL_MISC",		// 0x09
+	"UNKNOWN_0x0A",	// 0x0A
+	"UNKNOWN_0x0B",	// 0x0B
+	"UNKNOWN_0x0C",	// 0x0C
+	"UNKNOWN_0x0D",	// 0x0D
+	"UNKNOWN_0x0E",	// 0x0E
+	"UNKNOWN_0x0F",	// 0x0F
+};
+
+vector<string> BaseInputDevice::absNames =
+{
+	"ABS_X",					// 0x00
+	"ABS_Y",					// 0x01
+	"ABS_Z",					// 0x02
+	"ABS_RX",				// 0x03
+	"ABS_RY",				// 0x04
+	"ABS_RZ",				// 0x05
+	"ABS_THROTTLE",			// 0x06
+	"ABS_RUDDER",			// 0x07
+	"ABS_WHEEL",				// 0x08
+	"ABS_GAS",				// 0x09
+	"ABS_BRAKE",				// 0x0A
+	"ABS_HAT0X",				// 0x10
+	"ABS_HAT0Y",				// 0x11
+	"ABS_HAT1X",				// 0x12
+	"ABS_HAT1Y",				// 0x13
+	"ABS_HAT2X",				// 0x14
+	"ABS_HAT2Y",				// 0x15
+	"ABS_HAT3X",				// 0x16
+	"ABS_HAT3Y",				// 0x17
+	"ABS_PRESSUR",			// 0x18
+	"ABS_DISTANC",			// 0x19
+	"ABS_TILT_X",			// 0x1A
+	"ABS_TILT_Y",			// 0x1B
+	"ABS_TOOL_WIDTH",		// 0x1C
+	"UNKNOWN_0x1D",			// 0x1D
+	"UNKNOWN_0x1E",			// 0x1E
+	"UNKNOWN_0x1F",			// 0x1F
+	"ABS_VOLUME",			// 0x20
+	"UNKNOWN_0x21",			// 0x21
+	"UNKNOWN_0x22",			// 0x22
+	"UNKNOWN_0x23",			// 0x23
+	"UNKNOWN_0x24",			// 0x24
+	"UNKNOWN_0x25",			// 0x25
+	"UNKNOWN_0x26",			// 0x26
+	"UNKNOWN_0x27",			// 0x27
+	"ABS_MISC",				// 0x28
+	"UNKNOWN_0x29",			// 0x29
+	"UNKNOWN_0x2A",			// 0x2A
+	"UNKNOWN_0x2B",			// 0x2B
+	"UNKNOWN_0x2C",			// 0x2C
+	"UNKNOWN_0x2D",			// 0x2D
+	"UNKNOWN_0x2E",			// 0x2E
+	"ABS_MT_SLOT",			// 0x2F
+	"ABS_MT_TOUCH_MAJOR",	// 0x30
+	"ABS_MT_TOUCH_MINOR",	// 0x31
+	"ABS_MT_WIDTH_MAJOR",	// 0x32
+	"ABS_MT_WIDTH_MINOR",	// 0x33
+	"ABS_MT_ORIENTATION",	// 0x34
+	"ABS_MT_POSITION_X",		// 0x35
+	"ABS_MT_POSITION_Y",		// 0x36
+	"ABS_MT_TOOL_TYPE",		// 0x37
+	"ABS_MT_BLOB_ID",		// 0x38
+	"ABS_MT_TRACKING_ID",	// 0x39
+	"ABS_MT_PRESSURE",		// 0x3A
+	"ABS_MT_DISTANCE",		// 0x3B
+	"ABS_MT_TOOL_X",			// 0x3C
+	"ABS_MT_TOOL_Y",			// 0x3D
+	"UNKNOWN_0x3E",			// 0x3E
+	"UNKNOWN_0x3F",			// 0x3F
+};
+
 // -Initialize static field arrays
 
 BaseInputDevice::BaseInputDevice(const string& event, const string& path)
@@ -516,53 +881,17 @@ const string BaseInputDevice::getDeviceProductQuery()
 
 string BaseInputDevice::dumpEventBits(uint32_t value)
 {
-	static const char* bitNames[] =
-	{
-		"EV_SYN",		// 0x00
-		"EV_KEY",		// 0x01
-		"EV_REL",		// 0x02
-		"EV_ABS",		// 0x03
-		"EV_MSC",		// 0x04
-		"EV_SW",			// 0x05
-		"UNKNOWN 0x06",	// 0x06
-		"UNKNOWN 0x07",	// 0x07
-		"UNKNOWN 0x08",	// 0x08
-		"UNKNOWN 0x09",	// 0x09
-		"UNKNOWN 0x0A",	// 0x0A
-		"UNKNOWN 0x0B",	// 0x0B
-		"UNKNOWN 0x0C",	// 0x0C
-		"UNKNOWN 0x0D",	// 0x0D
-		"UNKNOWN 0x0E",	// 0x0E
-		"UNKNOWN 0x0F",	// 0x0F
-		"UNKNOWN 0x10",	// 0x10
-		"EV_LED",		// 0x11
-		"EV_SND",		// 0x12
-		"UNKNOWN 0x13",	// 0x13
-		"EV_REP",		// 0x14
-		"EV_FF",			// 0x15
-		"EV_PWR",		// 0x16
-		"EV_FF_STATUS",	// 0x17
-		"UNKNOWN 0x18",	// 0x18
-		"UNKNOWN 0x19",	// 0x19
-		"UNKNOWN 0x1A",	// 0x1A
-		"UNKNOWN 0x1B",	// 0x1B
-		"UNKNOWN 0x1C",	// 0x1C
-		"UNKNOWN 0x1D",	// 0x1D
-		"UNKNOWN 0x1E",	// 0x1E
-		"UNKNOWN 0x1F"	// 0x1F
-	};
-
 	string result;
 
 	uint8_t idx = 0x1F;
 	for (uint32_t i = 1 << 0x1F; i > 0; i >>= 1)
 	{
-		if ((value & i) && idx < sizeof(bitNames) / sizeof(char*))
+		if ((value & i) && idx < eventNames.size())
 		{
 			if (result.size() > 0)
 				result += ", ";
 
-			result += bitNames[idx];
+			result += eventNames[idx];
 		}
 
 		idx--;
@@ -578,37 +907,17 @@ string BaseInputDevice::dumpEventBits(uint32_t value)
 
 string BaseInputDevice::dumpLEDBits(uint16_t value)
 {
-	static const char* bitNames[] =
-	{
-		"LED_NUML",			// 0x00
-		"LED_CAPSL",			// 0x01
-		"LED_SCROLLL",		// 0x02
-		"LED_COMPOSE",		// 0x03
-		"LED_KANA",			// 0x04
-		"LED_SLEEP",			// 0x05
-		"LED_SUSPEND",		// 0x06
-		"LED_MUTE",			// 0x07
-		"LED_MISC",			// 0x08
-		"LED_MAIL",			// 0x09
-		"LED_CHARGING",		// 0x0A
-		"UNDEFINED 0x0B",	// 0x0B
-		"UNDEFINED 0x0C",	// 0x0C
-		"UNDEFINED 0x0D",	// 0x0D
-		"UNDEFINED 0x0E",	// 0x0E
-		"UNDEFINED 0x0F"		// 0x0F
-	};
-
 	string result;
 
 	uint8_t idx = 0x0F;
 	for (uint32_t i = 1 << 0x0F; i > 0; i >>= 1)
 	{
-		if ((value & i) && idx < sizeof(bitNames) / sizeof(char*))
+		if ((value & i) && idx < ledNames.size())
 		{
 			if (result.size() > 0)
 				result += ", ";
 
-			result += bitNames[idx];
+			result += ledNames[idx];
 		}
 
 		idx--;
@@ -624,47 +933,91 @@ string BaseInputDevice::dumpLEDBits(uint16_t value)
 
 string BaseInputDevice::dumpEventType(uint16_t value)
 {
-	static const char* bitNames[] =
-	{
-		"EV_SYN",		// 0x00
-		"EV_KEY",		// 0x01
-		"EV_REL",		// 0x02
-		"EV_ABS",		// 0x03
-		"EV_MSC",		// 0x04
-		"EV_SW",			// 0x05
-		"UNKNOWN 0x06",	// 0x06
-		"UNKNOWN 0x07",	// 0x07
-		"UNKNOWN 0x08",	// 0x08
-		"UNKNOWN 0x09",	// 0x09
-		"UNKNOWN 0x0A",	// 0x0A
-		"UNKNOWN 0x0B",	// 0x0B
-		"UNKNOWN 0x0C",	// 0x0C
-		"UNKNOWN 0x0D",	// 0x0D
-		"UNKNOWN 0x0E",	// 0x0E
-		"UNKNOWN 0x0F",	// 0x0F
-		"UNKNOWN 0x10",	// 0x10
-		"EV_LED",		// 0x11
-		"EV_SND",		// 0x12
-		"UNKNOWN 0x13",	// 0x13
-		"EV_REP",		// 0x14
-		"EV_FF",			// 0x15
-		"EV_PWR",		// 0x16
-		"EV_FF_STATUS",	// 0x17
-		"UNKNOWN 0x18",	// 0x18
-		"UNKNOWN 0x19",	// 0x19
-		"UNKNOWN 0x1A",	// 0x1A
-		"UNKNOWN 0x1B",	// 0x1B
-		"UNKNOWN 0x1C",	// 0x1C
-		"UNKNOWN 0x1D",	// 0x1D
-		"UNKNOWN 0x1E",	// 0x1E
-		"UNKNOWN 0x1F"	// 0x1F
-	};
-
 	string result;
 
 	if (value <= 0x1F)
 	{
-		result = string(bitNames[value]);
+		result = string(eventNames[value]);
+	}
+	else
+	{
+		result = tfm::format("UNKNOWN 0x%x", value);
+	}
+
+	return result;
+}
+
+string BaseInputDevice::dumpSynType(uint16_t value)
+{
+	string result;
+
+	if (value < synNames.size())
+	{
+		result = string(synNames[value]);
+	}
+	else
+	{
+		result = tfm::format("UNKNOWN 0x%x", value);
+	}
+
+	return result;
+}
+
+string BaseInputDevice::dumpMscType(uint16_t value)
+{
+	string result;
+
+	if (value < mscNames.size())
+	{
+		result = string(mscNames[value]);
+	}
+	else
+	{
+		result = tfm::format("UNKNOWN 0x%x", value);
+	}
+
+	return result;
+}
+
+string BaseInputDevice::dumpKey(uint16_t value)
+{
+	string result;
+
+	if (value < keyNames.size())
+	{
+		result = string(keyNames[value]);
+	}
+	else
+	{
+		result = tfm::format("UNKNOWN 0x%04x", value);
+	}
+
+	return result;
+}
+
+string BaseInputDevice::dumpRelType(uint16_t value)
+{
+	string result;
+
+	if (value < relNames.size())
+	{
+		result = string(relNames[value]);
+	}
+	else
+	{
+		result = tfm::format("UNKNOWN 0x%x", value);
+	}
+
+	return result;
+}
+
+string BaseInputDevice::dumpAbsType(uint16_t value)
+{
+	string result;
+
+	if (value < absNames.size())
+	{
+		result = string(absNames[value]);
 	}
 	else
 	{
