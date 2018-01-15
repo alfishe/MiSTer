@@ -98,7 +98,7 @@ public:
 
 protected:
     friend class EventQueue; // Allow only EventQueue derived classes to trigger notification events
-    virtual void onMessageEvent(const MessageEvent event) = 0;
+    virtual void onMessageEvent(const MessageEvent& event) = 0;
 };
 
 #endif /* COMMON_EVENTS_EVENTS_H_ */

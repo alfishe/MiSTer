@@ -101,7 +101,7 @@ void Application::onTerminate()
 	center.dispose();
 }
 
-void Application::onMessageEvent(MessageEvent event)
+void Application::onMessageEvent(const MessageEvent& event)
 {
 	LOGINFO("%s: topic '%s' msg '%s'", __PRETTY_FUNCTION__, event.name.c_str(), event.param);
 }

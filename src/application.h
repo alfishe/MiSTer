@@ -21,7 +21,7 @@ public:
 
 // EventObserver delegates
 public:
-	void onMessageEvent(MessageEvent event);
+	void onMessageEvent(const MessageEvent& event);
 };
 
 #endif /* APPLICATION_H_ */

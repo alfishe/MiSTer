@@ -175,9 +175,9 @@ bool InputManager::isDeviceTypeAllowed(InputDeviceTypeEnum type)
 }
 
 // Runnable delegate
-void InputManager::onMessageEvent(MessageEvent event)
+void InputManager::onMessageEvent(const MessageEvent& event)
 {
-	string& eventName = event.name;
+	string eventName = event.name;
 	string* param = (string*)event.param;
 
 	TRACE("%s: notification name: '%s'", __PRETTY_FUNCTION__, eventName.c_str());

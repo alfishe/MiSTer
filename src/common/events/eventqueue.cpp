@@ -370,6 +370,9 @@ void EventQueue::run()
 	int eventsCount = 0;
 	int errorCount = 0;
 
+	// Temporary holder instance
+	MessageEvent event;
+
 	// Event loop
 	while (!m_stop)
 	{
@@ -378,8 +381,6 @@ void EventQueue::run()
 
 		try
 		{
-			MessageEvent event;
-
 			if (tryPop(event))
 			{
 				eventsCount++;

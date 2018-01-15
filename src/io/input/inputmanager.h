@@ -54,7 +54,7 @@ private:
 
 // EventObserver delegates
 public:
-	void onMessageEvent(MessageEvent event);
+	void onMessageEvent(const MessageEvent& event);
 };
 
 #endif /* IO_INPUT_INPUTMANAGER_H_ */
