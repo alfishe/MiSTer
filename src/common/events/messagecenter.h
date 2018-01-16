@@ -25,7 +25,7 @@ public:
 	virtual ~MessageCenter();
 	MessageCenter(MessageCenter&&) = delete;						// Move constructor disabled (C++11 feature)
 	MessageCenter(const MessageCenter& that) = delete; 			// Copy constructor disabled (C++11 feature)
-	MessageCenter& operator =(MessageCenter const&) = delete;		// Assignment disabled (C++11 feature)
+	MessageCenter& operator =(const MessageCenter&) = delete;		// Assignment operator disabled (C++11 feature)
 
 public:
 	bool init();
@@ -38,9 +38,9 @@ public:
 	void removeObserver(const string& name, const EventObserverPtr& observer);
 	void removeObservers();
 
-	void post(const char* name, const EventSourcePtr source, void* param);
-	void post(const string& name, const EventSourcePtr source, void* param);
-	void post(const MessageEvent& event);
+	void post(const char* topic, const EventSourcePtr source, MessagePayloadBase* payload);
+	void post(const string& topic, const EventSourcePtr source, MessagePayloadBase* payload);
+	void post(const string& topic, EventMessageBase& event);
 
 private:
 	MessageCenter(); // Disallow direct instances creation with private constructor

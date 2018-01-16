@@ -47,9 +47,7 @@ public:
 	void removeObserver(const string& name, const EventObserverPtr& observer);
 	void removeObservers();
 
-	void post(const char* name, const EventSourcePtr source, void* param);
-	void post(const string& name, const EventSourcePtr source, void* param);
-	void post(const MessageEvent& event);
+	void post(const EventMessageBase& event);
 
 // Statitic methods
 public:
@@ -66,11 +64,11 @@ protected:
 
 // Helper methods
 protected:
-	bool tryPop(MessageEvent& event);
-	void pop(MessageEvent& event);
+	bool tryPop(EventMessageBase& event);
+	void pop(EventMessageBase& event);
 	void clearQueue();
 
-	inline void processEvent(MessageEvent& event) __attribute__((always_inline));
+	inline void processEvent(EventMessageBase& event) __attribute__((always_inline));
 
 // Runnable override method(s)
 protected:

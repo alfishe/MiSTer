@@ -76,18 +76,22 @@ void MessageCenter::removeObservers()
 	DEBUG(m_queue.dumpObservers().c_str());
 }
 
-void MessageCenter::post(const char* name, const EventSourcePtr source, void* param)
+void MessageCenter::post(const char* topic, const EventSourcePtr source, MessagePayloadBase* payload)
 {
-	string packedName(name);
-	m_queue.post(packedName, source, param);
+	EventMessageBase message = EventMessageBase(topic, source, payload);
+
+	post(topic, message);
 }
 
-void MessageCenter::post(const string& name, const EventSourcePtr source, void* param)
+void MessageCenter::post(const string& topic, const EventSourcePtr source, MessagePayloadBase* payload)
 {
-	m_queue.post(name, source, param);
+	EventMessageBase message = EventMessageBase(topic, source, payload);
+
+	post(topic, message);
 }
 
-void MessageCenter::post(const MessageEvent& event)
+void MessageCenter::post(const string& topic, EventMessageBase& event)
 {
+	event.topic = string(topic);
 	m_queue.post(event);
 }

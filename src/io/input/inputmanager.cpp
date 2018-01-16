@@ -15,6 +15,7 @@
 #include "keyboard.h"
 #include "../../3rdparty/tinyformat/tinyformat.h"
 #include "../../common/consts.h"
+#include "../../common/messagetypes.h"
 #include "../../common/file/path/path.h"
 #include "../../common/file/scandir/scandir.h"
 #include "../../common/file/filemanager.h"
@@ -175,20 +176,21 @@ bool InputManager::isDeviceTypeAllowed(InputDeviceTypeEnum type)
 }
 
 // Runnable delegate
-void InputManager::onMessageEvent(const MessageEvent& event)
+void InputManager::onMessageEvent(const EventMessageBase* event)
 {
-	string eventName = event.name;
-	string* param = (string*)event.param;
+	string eventName = event->topic;
 
-	TRACE("%s: notification name: '%s'", __PRETTY_FUNCTION__, eventName.c_str());
-
-	if (param == nullptr)
+	if (event->payload == nullptr)
 	{
 	  LOGWARN("%s: notification with name '%s' contains no expected parameter value", __PRETTY_FUNCTION__, eventName.c_str());
+	  return;
 	}
 
-	string name(*param);
-	delete param; // Free memory allocated in DeviceDetector::processEvents()
+	// Extract device name from the payload
+	DeviceStatusEvent* payload = (DeviceStatusEvent*)event->payload;
+	string name = payload->device;
+
+	TRACE("%s: notification name: '%s' with value '%s'", __PRETTY_FUNCTION__, eventName.c_str(), name.c_str());
 
 	if (eventName == EVENT_DEVICE_INSERTED)
 	{

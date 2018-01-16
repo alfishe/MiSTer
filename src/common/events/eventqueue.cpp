@@ -126,23 +126,7 @@ void EventQueue::removeObservers()
 	m_observersReverse.clear();
 }
 
-
-void EventQueue::post(const char* name, const EventSourcePtr source, void* param)
-{
-	string packedName(name);
-	post(packedName, source, param);
-}
-
-
-void EventQueue::post(const string& name, const EventSourcePtr source, void* param)
-{
-	// Just pack parameters into object container
-	MessageEvent message(name, source, param);
-
-	post(message);
-}
-
-void EventQueue::post(const MessageEvent& event)
+void EventQueue::post(const EventMessageBase& event)
 {
 	//DEBUG("Event queue before push\n%s", dumpEventQueue().c_str());
 
@@ -243,7 +227,7 @@ string EventQueue::dumpEventQueueNoLock()
 
 	for (auto event : m_events)
 	{
-		ss << tfm::format("{'%s', 0x%x, 0x%x}", event.name.c_str(), event.source, event.param);
+		ss << tfm::format("{'%s', 0x%x}", event.topic.c_str(), event.source);
 		ss << '\n';
 	}
 
@@ -252,7 +236,7 @@ string EventQueue::dumpEventQueueNoLock()
 }
 
 // Helper methods
-bool EventQueue::tryPop(MessageEvent& event)
+bool EventQueue::tryPop(EventMessageBase& event)
 {
 	bool result = true;
 
@@ -286,7 +270,7 @@ bool EventQueue::tryPop(MessageEvent& event)
 	return result;
 }
 
-void EventQueue::pop(MessageEvent& event)
+void EventQueue::pop(EventMessageBase& event)
 {
 	unique_lock<mutex> lock(m_mutexEvents);
 	if (m_cvEvents.wait_for(lock, 50ms,
@@ -310,9 +294,9 @@ void EventQueue::clearQueue()
 }
 
 // Broadcast single event to subscribers
-void EventQueue::processEvent(MessageEvent& event)
+void EventQueue::processEvent(EventMessageBase& event)
 {
-	string& name = event.name;
+	string& name = event.topic;
 	EventObserversSet observers;
 
 	// Locked access to collection of subscribers
@@ -334,7 +318,7 @@ void EventQueue::processEvent(MessageEvent& event)
 		{
 			try
 			{
-				observer->onMessageEvent(event);
+				observer->onMessageEvent(&event);
 				observersProcessed++;
 			}
 			catch (const exception& e)
@@ -371,7 +355,7 @@ void EventQueue::run()
 	int errorCount = 0;
 
 	// Temporary holder instance
-	MessageEvent event;
+	EventMessageBase event;
 
 	// Event loop
 	while (!m_stop)

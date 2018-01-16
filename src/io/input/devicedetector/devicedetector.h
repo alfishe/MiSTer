@@ -4,6 +4,7 @@
 #include <thread>
 #include "../../../3rdparty/tinyformat/tinyformat.h"
 #include "../../../common/consts.h"
+#include "../../../common/messagetypes.h"
 #include "../../../common/events/events.h"
 #include "../../../common/events/messagecenter.h"
 #include "../../../common/thread/runnable.h"

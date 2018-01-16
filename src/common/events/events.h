@@ -1,9 +1,12 @@
 #ifndef COMMON_EVENTS_EVENTS_H_
 #define COMMON_EVENTS_EVENTS_H_
 
+#include "../logger/logger.h"
+
 #include <functional>
 #include <deque>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -22,7 +25,7 @@ typedef map<string, EventObserversSet> EventObserversMap;
 
 typedef map<EventObserverPtr, StringSet> EventObserversReverseMap;
 
-typedef class MessageEvent MessageEvent;
+typedef class EventMessageBase MessageEvent;
 typedef deque<MessageEvent> MessageEventsQueue;
 
 // Base class for all event-producers
@@ -51,44 +54,63 @@ public:
 	}
 };
 
-struct MessageEvent
+// Base class for every userData payload
+struct MessagePayloadBase
+{
+	virtual ~MessagePayloadBase() {};
+};
+
+// Base class for every message in a system delivered via EventQueue
+struct EventMessageBase
 {
 public:
-	string name;
+	string topic;
 	EventSourcePtr source;
-	void* param;
+	MessagePayloadBase* payload;
 
 public:
-	MessageEvent() {};
-	MessageEvent(const string& name, const EventSourcePtr source, const void* param) : name(name), source(source), param((void*)param) {};
-	/*
-	MessageEvent(const MessageEvent& that)
+	EventMessageBase()
 	{
-		name = that.name;
-		source = that.source;
-		param = that.param;
-	}
-	*/
-	/*
-	MessageEvent& operator =(MessageEvent const& that)
-	{
-		name = that.name;
-		source = that.source;
-		param = that.param;
+		TRACE("EventMessageBase()");
+	};
 
-		return *this;
-	}*/
+	EventMessageBase(const string& topic, const EventSourcePtr source, MessagePayloadBase* payload)
+	{
+		TRACE ("EventMessageBase(<params>)");
+
+		this->topic = topic;
+		this->source = source;
+		this->payload = payload;
+	};
+
+	EventMessageBase(const EventMessageBase& that)
+	{
+		topic = that.topic;
+		source = that.source;
+		payload = that.payload;
+	}
+
+	virtual ~EventMessageBase()
+	{
+		TRACE("~EventMessageBase()");
+
+		// Free up memory occupied by event payload object
+		if (payload != nullptr)
+		{
+			delete payload;
+		}
+	}
 };
-typedef class MessageEvent MessageEvent;
+typedef struct EventMessageBase EventMessageBase;
 
 class EventObserver
 {
 public:
 	virtual ~EventObserver() {};
 
-    function<void (MessageEvent)> getNotifyFunc()
+    function<void (EventMessageBase*)> getNotifyFunc()
     {
-        auto messageObserver = [=](MessageEvent event) -> void
+        auto messageObserver = [=](EventMessageBase* event) -> void
         	{
             this->onMessageEvent(event);
         };
@@ -98,7 +120,7 @@ public:
 
 protected:
     friend class EventQueue; // Allow only EventQueue derived classes to trigger notification events
-    virtual void onMessageEvent(const MessageEvent& event) = 0;
+    virtual void onMessageEvent(const EventMessageBase* event) = 0;
 };
 
 #endif /* COMMON_EVENTS_EVENTS_H_ */
