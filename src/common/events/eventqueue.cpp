@@ -334,6 +334,12 @@ void EventQueue::processEvent(EventMessageBase& event)
 	{
 		LOGWARN("%s: No subscribers for topic '%s'. Dropping the message\n", __PRETTY_FUNCTION__, name.c_str());
 	}
+
+	// Free up memory occupied by event payload object
+	if (event.payload != nullptr)
+	{
+		delete event.payload;
+	}
 }
 
 // Runnable methods

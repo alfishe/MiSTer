@@ -93,12 +93,6 @@ public:
 	virtual ~EventMessageBase()
 	{
 		TRACE("~EventMessageBase()");
-
-		// Free up memory occupied by event payload object
-		if (payload != nullptr)
-		{
-			delete payload;
-		}
 	}
 };
 typedef struct EventMessageBase EventMessageBase;

@@ -35,7 +35,7 @@ public:
 	EventQueue();
 	virtual ~EventQueue();
 	EventQueue(const EventQueue& that) = delete; 			// Disable copy constructor (C++11 feature)
-	EventQueue& operator =(EventQueue const&) = delete;		// Disable assignments (C++11 feature)
+	EventQueue& operator =(EventQueue const&) = delete;		// Disable assignment operator (C++11 feature)
 
 public:
 	bool init();
