@@ -71,12 +71,12 @@ public:
 public:
 	EventMessageBase()
 	{
-		TRACE("EventMessageBase()");
+		//TRACE("EventMessageBase()");
 	};
 
 	EventMessageBase(const string& topic, const EventSourcePtr source, MessagePayloadBase* payload)
 	{
-		TRACE ("EventMessageBase(<params>)");
+		//TRACE("EventMessageBase('%s')", topic.c_str());
 
 		this->topic = topic;
 		this->source = source;
@@ -85,6 +85,8 @@ public:
 
 	EventMessageBase(const EventMessageBase& that)
 	{
+		//TRACE("=EventMessageBase('%s')", that.topic.c_str());
+
 		topic = that.topic;
 		source = that.source;
 		payload = that.payload;
@@ -92,7 +94,7 @@ public:
 
 	virtual ~EventMessageBase()
 	{
-		TRACE("~EventMessageBase()");
+		//TRACE("~EventMessageBase()");
 	}
 };
 typedef struct EventMessageBase EventMessageBase;
@@ -102,9 +104,9 @@ class EventObserver
 public:
 	virtual ~EventObserver() {};
 
-    function<void (EventMessageBase*)> getNotifyFunc()
+    function<void (EventMessageBase&)> getNotifyFunc()
     {
-        auto messageObserver = [=](EventMessageBase* event) -> void
+        auto messageObserver = [=](EventMessageBase& event) -> void
         	{
             this->onMessageEvent(event);
         };
@@ -114,7 +116,7 @@ public:
 
 protected:
     friend class EventQueue; // Allow only EventQueue derived classes to trigger notification events
-    virtual void onMessageEvent(const EventMessageBase* event) = 0;
+    virtual void onMessageEvent(const EventMessageBase& event) = 0;
 };
 
 #endif /* COMMON_EVENTS_EVENTS_H_ */

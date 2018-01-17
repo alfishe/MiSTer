@@ -176,18 +176,18 @@ bool InputManager::isDeviceTypeAllowed(InputDeviceTypeEnum type)
 }
 
 // Runnable delegate
-void InputManager::onMessageEvent(const EventMessageBase* event)
+void InputManager::onMessageEvent(const EventMessageBase& event)
 {
-	string eventName = event->topic;
+	string eventName = event.topic;
 
-	if (event->payload == nullptr)
+	if (event.payload == nullptr)
 	{
 	  LOGWARN("%s: notification with name '%s' contains no expected parameter value", __PRETTY_FUNCTION__, eventName.c_str());
 	  return;
 	}
 
 	// Extract device name from the payload
-	DeviceStatusEvent* payload = (DeviceStatusEvent*)event->payload;
+	DeviceStatusEvent* payload = (DeviceStatusEvent*)event.payload;
 	string name = payload->device;
 
 	TRACE("%s: notification name: '%s' with value '%s'", __PRETTY_FUNCTION__, eventName.c_str(), name.c_str());

@@ -19,8 +19,8 @@ struct DeviceStatusEvent: public MessagePayloadBase
 {
 	string device;
 
-	DeviceStatusEvent(string device) : device(device) { TRACE("DeviceStatusEvent(<param>)"); };
-	virtual ~DeviceStatusEvent() { TRACE("~DeviceStatusEvent()"); };
+	DeviceStatusEvent(string device) : device(device) { /*TRACE("DeviceStatusEvent(<param>)");*/ };
+	virtual ~DeviceStatusEvent() { /*TRACE("~DeviceStatusEvent()");*/ };
 };
 
 struct MouseEvent: public MessagePayloadBase
@@ -29,6 +29,15 @@ struct MouseEvent: public MessagePayloadBase
 	int y;
 
 	MouseEvent(int x, int y) : x(x), y(y) {};
+};
+
+struct KeyboardEvent: public MessagePayloadBase
+{
+	uint16_t key;
+	bool state;
+
+	KeyboardEvent(uint16_t key, bool state): key(key), state(state) {};
+	virtual ~KeyboardEvent() {};
 };
 
 #endif /* COMMON_MESSAGETYPES_H_ */

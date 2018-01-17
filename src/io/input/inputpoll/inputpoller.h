@@ -5,6 +5,7 @@
 #include <mutex>
 #include "../../../common/consts.h"
 #include "../../../common/events/events.h"
+#include "../../../common/events/messagecenter.h"
 #include "../../../common/thread/runnable.h"
 #include "../input.h"
 

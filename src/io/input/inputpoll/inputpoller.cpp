@@ -9,6 +9,7 @@
 #include <linux/input.h>
 #include "../../../3rdparty/tinyformat/tinyformat.h"
 #include "../../../common/types.h"
+#include "../../../common/messagetypes.h"
 #include "../../../common/helpers/collectionhelper.h"
 #include "../input.h"
 #include "../baseinputdevice.h"
@@ -86,17 +87,19 @@ void InputPoller::addInputDevice(InputDevice& device)
 			lock_guard<mutex> lock(m_mutexPoll);
 
 			m_devices.insert({fd, device});
+
+			DEBUG("%s: added '%s'", __PRETTY_FUNCTION__, device.model.c_str());
 		}
 		else
 		{
-			LOGERROR("%s: unable to add device to epoll", __PRETTY_FUNCTION__);
+			LOGERROR("%s: unable to add device to epoll '%s'", __PRETTY_FUNCTION__, device.model.c_str());
 
 			close(fd);
 		}
 	}
 	else
 	{
-		LOGERROR("%s: unable to open device '%s' for polling", __PRETTY_FUNCTION__, path);
+		LOGERROR("%s: unable to open device '%s' for polling", __PRETTY_FUNCTION__, path.c_str());
 	}
 }
 
@@ -299,6 +302,8 @@ void InputPoller::translateEvents(int fd, input_event* events, unsigned numEvent
 
 	TRACE("Device %s:'%s' received %d event(s), EV_SYN excluded", device.dumpDeviceType().c_str(), device.model.c_str(), numEvents);
 
+	MessageCenter& center = MessageCenter::defaultCenter();
+
 	for (unsigned i = 0; i < numEvents; i++)
 	{
 		input_event& event = events[i];
@@ -319,6 +324,7 @@ void InputPoller::translateEvents(int fd, input_event* events, unsigned numEvent
 				break;
 			case EV_KEY:
 				code = tfm::format("0x%04x (%s)", event.code, BaseInputDevice::dumpKey(event.code));
+				center.post(EVENT_KEYBOARD, this, new KeyboardEvent(event.code, (bool)event.value));
 				break;
 			case EV_REL:
 				code = tfm::format("0x%x (%s)", event.code, BaseInputDevice::dumpRelType(event.code));
@@ -337,6 +343,8 @@ void InputPoller::translateEvents(int fd, input_event* events, unsigned numEvent
 			code.c_str(),
 			event.value
 		);
+
+		//center.post();
 	}
 }
 

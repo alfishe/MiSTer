@@ -19,9 +19,11 @@ public:
 	void onStart();
 	void onTerminate();
 
-// EventObserver delegates
+	void testEvents();
+
+// EventObserver delegate
 public:
-	void onMessageEvent(const EventMessageBase* event);
+	void onMessageEvent(const EventMessageBase& event);
 };
 
 #endif /* APPLICATION_H_ */

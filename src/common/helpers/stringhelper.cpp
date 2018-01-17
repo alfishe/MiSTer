@@ -51,6 +51,21 @@ const string StringHelper::cleanup(const string &s)
 	return result;
 }
 
+// Checks whether string matches regex expression or not
+const bool StringHelper::isMatch(const string&s, const string& pattern)
+{
+	bool result = false;
+
+	regex regexPattern(pattern);
+
+	if (regex_match(s, regexPattern))
+	{
+		result = true;
+	}
+
+	return result;
+}
+
 // Returns first matched group by Regex pattern as integer
 const int StringHelper::getIntegerRegex(const string& s, const string& pattern)
 {

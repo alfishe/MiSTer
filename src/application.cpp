@@ -1,6 +1,8 @@
 #include "application.h"
 
 #include "common/logger/logger.h"
+
+#include "common/messagetypes.h"
 #include "common/events/messagecenter.h"
 #include "io/input/devicedetector/devicedetector.h"
 #include "io/input/inputmanager.h"
@@ -21,9 +23,6 @@ Application::~Application()
 
 void Application::onStart()
 {
-	// Start message center (needs to be started as earlier as possible)
-	MessageCenter& center = MessageCenter::defaultCenter();
-
 	// Start input device detector
 	DeviceDetector& detector = DeviceDetector::instance();
 	detector.init();
@@ -35,8 +34,27 @@ void Application::onStart()
 	inputmgr.startPolling();
 
 	// More initialization
+}
 
-	// TODO: test only
+void Application::onTerminate()
+{
+	// Other activities during app termination
+
+	// Stop input device detector
+	DeviceDetector& detector = DeviceDetector::instance();
+	detector.stop();
+	detector.dispose();
+
+	// Stop polling for devices
+	InputManager& inputmgr = InputManager::instance();
+	inputmgr.stopPolling();
+}
+
+// TODO: Remove, test only
+void Application::testEvents()
+{
+	MessageCenter& center = MessageCenter::defaultCenter();
+
 	/*
 	// 1. Single add / single remove
 	center.addObserver("test", this);
@@ -64,44 +82,33 @@ void Application::onStart()
 	center.removeObservers();
 	*/
 
-	/*
+
 	// Full cycle scenario
 	center.addObserver("test1", this);
 	center.addObserver("test2", this);
 	center.addObserver("test3", this);
 	center.post("test", this, nullptr);
-	center.post("test1", this, (void *)"Message 11");
-	center.post("test1", this, (void *)"Message 12");
-	center.post("test1", this, (void *)"Message 13");
-	center.post("test2", this, (void *)"Message 21");
-	center.post("test2", this, (void *)"Message 22");
-	center.post("test2", this, (void *)"Message 23");
+
+	center.post("test1", this, new DeviceStatusEvent("Message 11"));
+	center.post("test1", this, new DeviceStatusEvent("Message 12"));
+	center.post("test1", this, new DeviceStatusEvent("Message 13"));
+	center.post("test2", this, new DeviceStatusEvent("Message 21"));
+	center.post("test2", this, new DeviceStatusEvent("Message 22"));
+	center.post("test2", this, new DeviceStatusEvent("Message 23"));
 
 	sleep(10);
-	*/
 
-	// -test only
 }
 
-void Application::onTerminate()
+// EventObserver delegate
+void Application::onMessageEvent(const EventMessageBase& event)
 {
-	// Other activities during app termination
+	string value;
 
-	// Stop input device detector
-	DeviceDetector& detector = DeviceDetector::instance();
-	detector.stop();
-	detector.dispose();
+	if (event.payload != nullptr)
+	{
+		value = ((DeviceStatusEvent*)event.payload)->device;
+	}
 
-	// Stop polling for devices
-	InputManager& inputmgr = InputManager::instance();
-	inputmgr.stopPolling();
-
-	// Dispose message center resources
-	MessageCenter& center = MessageCenter::defaultCenter();
-	center.dispose();
-}
-
-void Application::onMessageEvent(const EventMessageBase* event)
-{
-	LOGINFO("%s: topic '%s'", __PRETTY_FUNCTION__, event->topic.c_str());
+	LOGINFO("%s: topic '%s', value '%s'", __PRETTY_FUNCTION__, event.topic.c_str(), value.c_str());
 }

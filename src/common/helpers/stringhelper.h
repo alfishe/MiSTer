@@ -19,8 +19,10 @@ public:
 
 	static const string cleanup(const string &s);
 
-	static const int getIntegerRegex(const string& s, const string& regex);
-	static const string getStringRegex(const string& s, const string& regex);
+	static const bool isMatch(const string&s, const string& pattern);
+
+	static const int getIntegerRegex(const string& s, const string& pattern);
+	static const string getStringRegex(const string& s, const string& pattern);
 
 private:
 	StringHelper(); // Disable direct object creation from class

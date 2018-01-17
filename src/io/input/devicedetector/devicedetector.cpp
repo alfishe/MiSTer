@@ -8,6 +8,7 @@
 #include <sys/inotify.h>
 #include <sys/ioctl.h>
 #include <limits.h>
+#include "../../../common/helpers/stringhelper.h"
 
 using namespace std;
 
@@ -215,8 +216,12 @@ bool DeviceDetector::processEvents(uint8_t* buffer, size_t size, size_t bytesRea
 				else
 					LOGINFO("The file %s was created with WD %d", event->name, event->wd);
 
-				MessagePayloadBase* payload = new DeviceStatusEvent(event->name); // Allocating here. Will be destroyed automatically by Message Center queue
-				center.post(EVENT_DEVICE_INSERTED, this, payload);
+				// Notification needs to be sent only on 'event<N>' device status change, not about all synonyms exported to /dev/input
+				if (StringHelper::isMatch(event->name, REGEX_INPUT_DEVICE_INDEX))
+				{
+					MessagePayloadBase* payload = new DeviceStatusEvent(event->name); // Allocating here. Will be destroyed automatically by Message Center queue
+					center.post(EVENT_DEVICE_INSERTED, this, payload);
+				}
 			}
 
 			if (event->mask & IN_MODIFY)
@@ -234,8 +239,12 @@ bool DeviceDetector::processEvents(uint8_t* buffer, size_t size, size_t bytesRea
 				else
 					LOGINFO("The file %s was deleted with WD %d\n", event->name, event->wd);
 
-				MessagePayloadBase* payload = new DeviceStatusEvent(event->name); // Allocating here. Will be destroyed automatically by Message Center queue
-				center.post(EVENT_DEVICE_REMOVED, this, payload);
+				// Notification needs to be sent only on 'event<N>' device status change, not about all synonyms exported to /dev/input
+				if (StringHelper::isMatch(event->name, REGEX_INPUT_DEVICE_INDEX))
+				{
+					MessagePayloadBase* payload = new DeviceStatusEvent(event->name); // Allocating here. Will be destroyed automatically by Message Center queue
+					center.post(EVENT_DEVICE_REMOVED, this, payload);
+				}
 			}
 
 			// Recalc offset in buffer based on event len

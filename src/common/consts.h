@@ -44,7 +44,7 @@
 #define EVENT_DEVICE_REMOVED "device_removed"
 
 #define EVENT_KEYBOARD "device_key"
-#define EVENT_MOUSE "device_key"
+#define EVENT_MOUSE "device_mouse"
 #define EVENT_JOYSTICK "device_joystick"
 
 #define EVENT_SHOW_OSD "show_osd"

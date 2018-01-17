@@ -128,6 +128,8 @@ void EventQueue::removeObservers()
 
 void EventQueue::post(const EventMessageBase& event)
 {
+	TRACE("%s", __PRETTY_FUNCTION__);
+
 	//DEBUG("Event queue before push\n%s", dumpEventQueue().c_str());
 
 	// Lock parallel threads to access
@@ -138,6 +140,8 @@ void EventQueue::post(const EventMessageBase& event)
 	m_cvEvents.notify_one();
 
 	//DEBUG("Event queue after push\n%s", dumpEventQueue().c_str());
+
+	TRACE("Posted successfully");
 }
 
 // Debug methods
@@ -227,7 +231,7 @@ string EventQueue::dumpEventQueueNoLock()
 
 	for (auto event : m_events)
 	{
-		ss << tfm::format("{'%s', 0x%x}", event.topic.c_str(), event.source);
+		ss << tfm::format("{'%s', %x, %x}", event.topic.c_str(), event.source, event.payload);
 		ss << '\n';
 	}
 
@@ -238,26 +242,27 @@ string EventQueue::dumpEventQueueNoLock()
 // Helper methods
 bool EventQueue::tryPop(EventMessageBase& event)
 {
-	bool result = true;
+	bool result = false;
 
 	unique_lock<mutex> lock(m_mutexEvents);
+
+	// Wait until new event inserted to a queue OR stop requested (timeout 50ms)
 	if (m_cvEvents.wait_for(lock, 50ms,
 		[&]()
 		{
-			return m_events.empty() || m_stop;
+			return !m_events.empty() || m_stop;
 		}
 	));
 
-	if (m_events.empty() || m_stop)
+	if (m_stop)
 	{
-		result = false;
-
-		//if (m_events.empty())
-		//	DEBUG("%s: queue is empty, nothing to fetch", __PRETTY_FUNCTION__);
+		DEBUG("%s: Stop signal set - interrupt processing", __PRETTY_FUNCTION__);
 	}
-	else
+	else if (!m_events.empty())
 	{
-		//DEBUG("Event queue before pop\n%s", dumpEventQueueNoLock().c_str());
+		result = true;
+
+		DEBUG("Event queue before pop\n%s", dumpEventQueueNoLock().c_str());
 
 		event = m_events.back();
 		m_events.pop_back();
@@ -318,7 +323,7 @@ void EventQueue::processEvent(EventMessageBase& event)
 		{
 			try
 			{
-				observer->onMessageEvent(&event);
+				observer->onMessageEvent(event);
 				observersProcessed++;
 			}
 			catch (const exception& e)
@@ -369,6 +374,8 @@ void EventQueue::run()
 		// Count number of iterations passed in event loop
 		loopIterationsCount++;
 
+		//TRACE("Event loop iteration %d", loopIterationsCount);
+
 		try
 		{
 			if (tryPop(event))
@@ -378,19 +385,20 @@ void EventQueue::run()
 				processEvent(event);
 			}
 
-			// Make 1ms pause returning control to OS
-			usleep(1 * 1000);
+			// DEBUG: Make pause to slow down queue fetching cycles
+			// sleep(2);
 		}
 		catch (const exception& e)
 		{
 			errorCount++;
+			LOGERROR("Event queue loop error: %s", e.what());
 		}
 	}
 
 	LOGINFO("EventQueue: thread with tid: %d (0x%x) loop stopped]\n    Loop iterations passed: %d", m_thread_id, m_thread_id, loopIterationsCount);
 }
 
-// Statitic methods
+// Statistic methods
 void EventQueue::resetCounters()
 {
 	m_processedEvents = 0;

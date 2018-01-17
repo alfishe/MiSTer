@@ -335,9 +335,9 @@ int main(int argc, char *argv[])
 
 		//for (int i = 0; i < 1000; i++)
 		{
-			//testEventMessaging();
+			testEventMessaging();
 			//testDeviceDetector();
-			testInputDevices();
+			//testInputDevices();
 
 			sleep(100);
 
@@ -395,6 +395,12 @@ void init()
 	// Ensure that /config folder exists on data disk
 	sysmanager::ensureConfigFolderExists();
 
+	// Start message center (needs to be started as earlier as possible)
+	MessageCenter& center = MessageCenter::defaultCenter();
+
+	// Test
+	//application.testEvents();
+
 	// Notify application
 	application.onStart();
 }
@@ -403,6 +409,10 @@ void dispose()
 {
 	// Notify application
 	application.onTerminate();
+
+	// Dispose message center resources
+	MessageCenter& center = MessageCenter::defaultCenter();
+	center.dispose();
 }
 
 // Wrapping C++ throw (requires -Wl,--wrap=__cxa_throw or -Xl,--wrap=__cxa_throw options for the linker)
