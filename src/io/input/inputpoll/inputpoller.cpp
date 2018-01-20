@@ -8,8 +8,6 @@
 #include <sys/stat.h>
 #include <linux/input.h>
 #include "../../../3rdparty/tinyformat/tinyformat.h"
-#include "../../../common/types.h"
-#include "../../../common/messagetypes.h"
 #include "../../../common/helpers/collectionhelper.h"
 #include "../input.h"
 #include "../baseinputdevice.h"
@@ -292,18 +290,193 @@ void InputPoller::translateEvents(int fd, input_event* events, unsigned numEvent
 	// Check if descriptor is registered
 	if (!key_exists(m_devices, fd))
 	{
-		LOGWARN("%s: unknown device fd: 0x%x", __PRETTY_FUNCTION__, fd);
+		LOGWARN("%s: unknown device fd: 0x%x. No notifications will be created.", __PRETTY_FUNCTION__, fd);
 		return;
 	}
 
 	// Resolve device type from descriptor
 	InputDevice& device = m_devices[fd];
-	InputDeviceTypeEnum type = device.type;
+	InputDeviceTypeEnum deviceType = device.type;
 
 	TRACE("Device %s:'%s' received %d event(s), EV_SYN excluded", device.dumpDeviceType().c_str(), device.model.c_str(), numEvents);
 
-	MessageCenter& center = MessageCenter::defaultCenter();
+	string topic;
+	MessagePayloadBase* payload = nullptr;
 
+	switch (deviceType)
+	{
+		case InputDeviceTypeEnum::Mouse:
+			{
+				topic = EVENT_MOUSE;
+				MInputEvents* event = new MInputEvents();
+				createMouseEvent(event, events, numEvents);
+				payload = event;
+			}
+			break;
+		case InputDeviceTypeEnum::Keyboard:
+			{
+				topic = EVENT_KEYBOARD;
+				MInputEvents* event = new MInputEvents();
+				createKeyboardEvent(event, events, numEvents);
+				payload = event;
+			}
+			break;
+		case InputDeviceTypeEnum::Joystick:
+			{
+				topic = EVENT_JOYSTICK;
+				MInputEvents* event = new MInputEvents();
+				createJoystickEvent(event, events, numEvents);
+				payload = event;
+			}
+			break;
+		default:
+			LOGWARN("%s: unable to process events for device type '%s'", __PRETTY_FUNCTION__, device.dumpDeviceType().c_str());
+			break;
+	};
+
+	// Broadcast event notification
+	if (!topic.empty() && payload != nullptr)
+	{
+		MessageCenter& center = MessageCenter::defaultCenter();
+		center.post(topic, this, payload);
+	}
+}
+
+void InputPoller::createMouseEvent(MInputEvents* mouseEvent, input_event* events, unsigned numEvents)
+{
+	uint16_t code;
+	int32_t value;
+
+	for (unsigned i = 0; i < numEvents; i++)
+	{
+		input_event& event = events[i];
+
+		code = event.code;
+		value = event.value;
+
+		switch (event.type)
+		{
+			case EV_REL:
+				{
+					MInputEvent relMoveEvent;
+					relMoveEvent.type = RelativeMove;
+
+					bool toAdd = true;
+					switch (code)
+					{
+						case REL_X:
+							relMoveEvent.event.relativeMoveEvent.deltaX = value;
+							break;
+						case REL_Y:
+							relMoveEvent.event.relativeMoveEvent.deltaY = value;
+							break;
+						case REL_WHEEL:
+							relMoveEvent.event.relativeMoveEvent.wheelMove = value;
+							break;
+						default:
+							toAdd = false;
+							break;
+					};
+
+					if (toAdd)
+					{
+						mouseEvent->push_back(relMoveEvent);
+					}
+				}
+				break;
+			case EV_KEY:
+				{
+					MInputEvent keyEvent;
+					keyEvent.type = Key;
+					keyEvent.event.keyEvent.key = code;
+					keyEvent.event.keyEvent.state = (bool)value;
+					mouseEvent->push_back(keyEvent);
+				}
+				break;
+			default:
+				// The rest is irrelevant for the mouse
+				break;
+		}
+	}
+}
+
+void InputPoller::createKeyboardEvent(MInputEvents* keyboardEvent, input_event* events, unsigned numEvents)
+{
+	uint16_t code;
+	int32_t value;
+
+	for (unsigned i = 0; i < numEvents; i++)
+	{
+		input_event& event = events[i];
+
+		code = event.code;
+		value = event.value;
+
+		switch (event.type)
+		{
+			case EV_KEY:
+				{
+					MInputEvent keyEvent;
+					keyEvent.type = Key;
+					keyEvent.event.keyEvent.key = code;
+					keyEvent.event.keyEvent.state = (bool)value;
+					keyboardEvent->push_back(keyEvent);
+				}
+				break;
+			case EV_LED:
+				break;
+			case EV_MSC:
+				// Scan codes skipped for now, but can be introduced later
+				break;
+			default:
+				// The rest is irrelevant for the keyboard
+				break;
+		}
+	}
+}
+
+void InputPoller::createJoystickEvent(MInputEvents* joystickEvent, input_event* events, unsigned numEvents)
+{
+	uint16_t code;
+	int32_t value;
+
+	for (unsigned i = 0; i < numEvents; i++)
+	{
+		input_event& event = events[i];
+
+		code = event.code;
+		value = event.value;
+
+		switch (event.type)
+		{
+			case EV_ABS:
+				{
+					MInputEvent absoluteMoveEvent;
+					absoluteMoveEvent.type = AbsoluteMove;
+					//absoluteMoveEvent.event.absoluteMoveEvent;
+				}
+				break;
+			case EV_KEY:
+				{
+					MInputEvent keyEvent;
+					keyEvent.type = Key;
+					keyEvent.event.keyEvent.key = code;
+					keyEvent.event.keyEvent.state = (bool)value;
+					joystickEvent->push_back(keyEvent);
+				}
+				break;
+			case EV_LED:
+				break;
+			default:
+				// The rest is irrelevant for the keyboard
+				break;
+		}
+	}
+}
+
+// Debug methods
+void InputPoller::dumpEPollEvents(input_event* events, unsigned numEvents)
+{
 	for (unsigned i = 0; i < numEvents; i++)
 	{
 		input_event& event = events[i];
@@ -324,7 +497,6 @@ void InputPoller::translateEvents(int fd, input_event* events, unsigned numEvent
 				break;
 			case EV_KEY:
 				code = tfm::format("0x%04x (%s)", event.code, BaseInputDevice::dumpKey(event.code));
-				center.post(EVENT_KEYBOARD, this, new KeyboardEvent(event.code, (bool)event.value));
 				break;
 			case EV_REL:
 				code = tfm::format("0x%x (%s)", event.code, BaseInputDevice::dumpRelType(event.code));
@@ -343,8 +515,6 @@ void InputPoller::translateEvents(int fd, input_event* events, unsigned numEvent
 			code.c_str(),
 			event.value
 		);
-
-		//center.post();
 	}
 }
 

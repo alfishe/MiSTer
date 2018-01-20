@@ -4,6 +4,8 @@
 #include <map>
 #include <mutex>
 #include "../../../common/consts.h"
+#include "../../../common/types.h"
+#include "../../../common/messagetypes.h"
 #include "../../../common/events/events.h"
 #include "../../../common/events/messagecenter.h"
 #include "../../../common/thread/runnable.h"
@@ -52,7 +54,14 @@ protected:
 	void readEvents(int fd);
 	void translateEvents(int fd, input_event* events, unsigned numEvents);
 
+	void createMouseEvent(MInputEvents* mouseEvent, input_event* events, unsigned numEvents);
+	void createKeyboardEvent(MInputEvents* keyboardEvent, input_event* events, unsigned numEvents);
+	void createJoystickEvent(MInputEvents* joystickEvent, input_event* events, unsigned numEvents);
+
 	void removeInputDeviceNoLock(int fd);
+
+	// Debug
+	void dumpEPollEvents(input_event* events, unsigned numEvents);
 
 // Runnable override method(s)
 protected:
