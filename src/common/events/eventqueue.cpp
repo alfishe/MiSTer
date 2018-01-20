@@ -354,10 +354,11 @@ bool EventQueue::tryPop(EventMessageBase& event)
 		event = m_events.back();
 		m_events.pop_back();
 
-		lock.unlock();
-
 		//DEBUG("Event queue after pop\n%s", dumpEventQueueNoLock().c_str());
 	}
+
+	lock.unlock();
+	m_cvEvents.notify_one();
 
 	return result;
 }
@@ -376,6 +377,7 @@ void EventQueue::pop(EventMessageBase& event)
 	m_events.pop_back();
 
 	lock.unlock();
+	m_cvEvents.notify_one();
 }
 
 void EventQueue::clearQueue()
