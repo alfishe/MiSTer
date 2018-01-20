@@ -9,22 +9,18 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "../types.h"
 
 using namespace std;
 
+// Marker for event publisher
 typedef struct EventSource EventSource;
 typedef EventSource* EventSourcePtr;
 
-typedef class EventObserver EventObserver;
-typedef EventObserver* EventObserverPtr;
-typedef set<EventObserverPtr> EventObserversSet;
-typedef map<string, EventObserversSet> EventObserversMap;
-
-typedef map<EventObserverPtr, StringSet> EventObserversReverseMap;
-
+// Event queue
 typedef class EventMessageBase MessageEvent;
 typedef deque<MessageEvent> MessageEventsQueue;
 
@@ -118,5 +114,18 @@ protected:
     friend class EventQueue; // Allow only EventQueue derived classes to trigger notification events
     virtual void onMessageEvent(const EventMessageBase& event) = 0;
 };
+
+// Observer / class method delegate
+typedef class EventObserver EventObserver;
+typedef EventObserver* EventObserverPtr;
+typedef set<EventObserverPtr> EventObserversSet;
+typedef map<string, EventObserversSet> EventObserversMap;
+typedef map<EventObserverPtr, StringSet> EventObserversReverseMap;
+
+// Observer / lambda delegate
+typedef function<void(const EventObserver*, const EventMessageBase& event)> EventHandler;
+typedef tuple<EventObserver*, EventHandler> EventDelegateTuple;
+typedef vector<EventDelegateTuple> EventFunctors;
+typedef map<string, EventFunctors> EventObserversMapF;
 
 #endif /* COMMON_EVENTS_EVENTS_H_ */

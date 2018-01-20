@@ -55,6 +55,13 @@ void MessageCenter::addObserver(const string& name, const EventObserverPtr& obse
 	DEBUG(m_queue.dumpObservers().c_str());
 }
 
+void MessageCenter::addObserver(const string& name, const EventObserverPtr& observer, const EventHandler& handler)
+{
+	m_queue.addObserver(name, observer, handler);
+
+	DEBUG(m_queue.dumpObservers().c_str());
+}
+
 void MessageCenter::removeObserver(const EventObserverPtr& observer)
 {
 	m_queue.removeObserver(observer);

@@ -41,9 +41,13 @@ void EventQueue::dispose()
 }
 
 // Public methods
-void EventQueue::addObserver(const string& name, const EventObserverPtr& observer)
+
+// Register class method delegate
+// Usage: (note, calling object should be derived from EventObserver)
+//	center.addObserver(EVENT_KEYBOARD, this);
+void EventQueue::addObserver(const string& topic, const EventObserverPtr observer)
 {
-	if (name.empty())
+	if (topic.empty())
 	{
 		LOGWARN("%s: Empty name parameter supplied", __PRETTY_FUNCTION__);
 		return;
@@ -55,19 +59,61 @@ void EventQueue::addObserver(const string& name, const EventObserverPtr& observe
 	// Add observer to correspondent topic in forward map
 	if (!key_exists(m_observersReverse, observer))
 	{
-		m_observers.insert({name, EventObserversSet()});
+		m_observers.insert({topic, EventObserversSet()});
 	}
-	m_observers[name].insert(observer);
+	m_observers[topic].insert(observer);
 
-	// Register observer in register map (for faster removal)
+	// Register observer in reverse map (for faster removal)
 	if (!key_exists(m_observersReverse, observer))
 	{
 		m_observersReverse.insert({observer, StringSet()});
 	}
-	m_observersReverse[observer].insert(name);
+	m_observersReverse[observer].insert(topic);
 }
 
-void EventQueue::removeObserver(const EventObserverPtr& observer)
+// Register lambda delegate
+// Usage: (note, calling object should be derived from EventObserver)
+//  center.addObserver(EVENT_MOUSE, this,
+//		[](const EventObserver* obj, const EventMessageBase& event)
+//		{
+//			if (obj != nullptr && obj == &CommandCenter::instance())
+//			{
+//				// Here you can call any method
+//				((CommandCenter*)obj)->onMouse(event);
+//			}
+//			else
+//			{
+//				LOGERROR("Lambda called but unable to determine CommandCenter instance");
+//			}
+//		}
+//	);
+void EventQueue::addObserver(const string& topic, const EventObserverPtr observer, const EventHandler& handler)
+{
+	if (topic.empty())
+	{
+		LOGWARN("%s: Empty name parameter supplied", __PRETTY_FUNCTION__);
+		return;
+	}
+
+	// Lock parallel threads to access (active till return from method and lock destruction)
+	lock_guard<mutex> lock(m_mutexObservers);
+
+	// Add observer to correspondent topic in forward map
+	if (!key_exists(m_fObservers, topic))
+	{
+		m_fObservers.insert( { topic, EventFunctors() } );
+	}
+	m_fObservers[topic].push_back(make_tuple(observer, handler));
+
+	// Register observer in reverse map (for faster removal)
+	if (!key_exists(m_observersReverse, observer))
+	{
+		m_observersReverse.insert({observer, StringSet()});
+	}
+	m_observersReverse[observer].insert(topic);
+}
+
+void EventQueue::removeObserver(const EventObserverPtr observer)
 {
 	// Lock parallel threads to access (active till return from method and lock destruction)
 	lock_guard<mutex> lock(m_mutexObservers);
@@ -75,17 +121,40 @@ void EventQueue::removeObserver(const EventObserverPtr& observer)
 	// Perform observer lookup in reverse map
 	if (key_exists(m_observersReverse, observer))
 	{
-		// Remove from forward map
+		// Remove from forward maps
 		auto& topics = m_observersReverse[observer];
 		for (auto topic : topics)
 		{
+			// Remove from class method delegate map
 			if (key_exists(m_observers, topic))
 			{
 				auto& observers = m_observers[topic];
 				observers.erase(observers.find(observer));
 			}
-
 			erase_entry_if_empty(m_observers, topic);
+
+			// Remove from lambda delegate map
+			if (key_exists(m_fObservers, topic))
+			{
+				auto& observers = m_fObservers[topic];
+				vector<EventFunctors::iterator> toRemove;
+
+				// Find matching records in tuple<EventObserver*, EventHandler>
+				// and add them to list for deletion
+				for (auto it = observers.begin(); it != observers.end(); it++)
+				{
+					if (get<0>(*it) == observer)
+					{
+						toRemove.push_back(it);
+					}
+				}
+
+				for (auto handler : toRemove)
+				{
+					observers.erase(handler);
+				}
+			}
+			erase_entry_if_empty(m_fObservers, topic);
 		}
 
 		// Remove from reverse map
@@ -93,25 +162,42 @@ void EventQueue::removeObserver(const EventObserverPtr& observer)
 	}
 }
 
-void EventQueue::removeObserver(const string& name, const EventObserverPtr& observer)
+void EventQueue::removeObserver(const string& topic, const EventObserverPtr observer)
 {
 	// Lock parallel threads to access (active till return from method and lock destruction)
 	lock_guard<mutex> lock(m_mutexObservers);
 
 	// Remove from forward map
-	if (key_exists(m_observers, name))
+	if (key_exists(m_observers, topic))
 	{
-		auto& observers = m_observers[name];
+		auto& observers = m_observers[topic];
 		observers.erase(observers.find(observer));
 
-		erase_entry_if_empty(m_observers, name);
+		erase_entry_if_empty(m_observers, topic);
+	}
+
+	// Remove from lambda delegate map
+	if (key_exists(m_fObservers, topic))
+	{
+		auto& observers = m_fObservers[topic];
+
+		// Find matching records in tuple<EventObserver*, EventHandler>
+		for (auto it = observers.begin(); it != observers.end(); it++)
+		{
+			if (get<0>(*it) == observer)
+			{
+				observers.erase(it);
+			}
+		}
+
+		erase_entry_if_empty(m_fObservers, topic);
 	}
 
 	// Remove from reverse map
 	if (key_exists(m_observersReverse, observer))
 	{
 		auto& topics = m_observersReverse[observer];
-		topics.erase(topics.find(name));
+		topics.erase(topics.find(topic));
 
 		erase_entry_if_empty(m_observersReverse, observer);
 	}
@@ -123,6 +209,7 @@ void EventQueue::removeObservers()
 	lock_guard<mutex> lock(m_mutexObservers);
 
 	m_observers.clear();
+	m_fObservers.clear();
 	m_observersReverse.clear();
 }
 
@@ -303,6 +390,7 @@ void EventQueue::processEvent(EventMessageBase& event)
 {
 	string& name = event.topic;
 	EventObserversSet observers;
+	EventFunctors fObservers;
 
 	// Locked access to collection of subscribers
 	unique_lock<mutex> lock(m_mutexObservers);
@@ -310,10 +398,12 @@ void EventQueue::processEvent(EventMessageBase& event)
 	{
 		// Make local copy not to block observers collection(s) access for a long
 		observers = m_observers[name];
+		fObservers = m_fObservers[name];
 	}
 	lock.unlock();
 	// -Locked access to collection of subscribers
 
+	// Process onMessageEvent delegates
 	if (observers.size() > 0)
 	{
 		int observersProcessed = 0;
@@ -338,6 +428,16 @@ void EventQueue::processEvent(EventMessageBase& event)
 	else
 	{
 		LOGWARN("%s: No subscribers for topic '%s'. Dropping the message\n", __PRETTY_FUNCTION__, name.c_str());
+	}
+
+	// Process lambda delegates
+	if (fObservers.size() > 0)
+	{
+		for (EventDelegateTuple observer : fObservers)
+		{
+			// observer = tuple<EventObserver*, EventHandler>
+			get<1>(observer)(get<0>(observer), event);
+		}
 	}
 
 	// Free up memory occupied by event payload object

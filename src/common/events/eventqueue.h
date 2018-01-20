@@ -23,6 +23,8 @@ protected:
 	EventObserversMap m_observers;
 	EventObserversReverseMap m_observersReverse;
 
+	EventObserversMapF m_fObservers;
+
 	MessageEventsQueue m_events;
 
 // Internal counters
@@ -42,9 +44,11 @@ public:
 	void dispose();
 
 public:
-	void addObserver(const string& name, const EventObserverPtr& observer);
-	void removeObserver(const EventObserverPtr& observer);
-	void removeObserver(const string& name, const EventObserverPtr& observer);
+	void addObserver(const string& topic, const EventObserverPtr observer);
+	void addObserver(const string& topic, const EventObserverPtr observer, const EventHandler& handler);
+
+	void removeObserver(const EventObserverPtr observer);
+	void removeObserver(const string& topic, const EventObserverPtr observer);
 	void removeObservers();
 
 	void post(const EventMessageBase& event);
