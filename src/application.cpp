@@ -6,6 +6,7 @@
 #include "common/events/messagecenter.h"
 #include "io/input/devicedetector/devicedetector.h"
 #include "io/input/inputmanager.h"
+#include "io/input/commandcenter.h"
 
 using namespace std;
 
@@ -32,6 +33,9 @@ void Application::onStart()
 	InputManager& inputmgr = InputManager::instance();
 	inputmgr.detectDevices();
 	inputmgr.startPolling();
+
+	// Start command center
+	CommandCenter& cmdcenter = CommandCenter::instance();
 
 	// More initialization
 }

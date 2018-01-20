@@ -49,12 +49,12 @@ public:
 	string dumpDevicesMap();
 	static string dump(InputDevice& inputDevice);
 
-private:
-	InputManager(); // Disallow direct instances creation
-
 // EventObserver delegates
 public:
 	void onMessageEvent(const EventMessageBase& event);
+
+private:
+	InputManager();	// Disable explicit object creation (only singleton instace allowed)
 };
 
 #endif /* IO_INPUT_INPUTMANAGER_H_ */

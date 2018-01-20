@@ -8,7 +8,9 @@
 #include <set>
 #include <string>
 #include <vector>
+#include "../3rdparty/betterenums/enum.h"
 #include "consts.h"
+
 
 using namespace std;
 
@@ -57,5 +59,14 @@ typedef struct
 
 typedef vector<string> StringVector;
 typedef set<string> StringSet;
+
+// Declare enum using Better-enums macro (allows to operate with enum names, indexes and size in runtime)
+BETTER_ENUM(InputDeviceTypeEnum, uint8_t,
+	Unknown = 0,
+	Keyboard,
+	Mouse,
+	Joystick
+)
+
 
 #endif /* COMMON_TYPES_H_ */

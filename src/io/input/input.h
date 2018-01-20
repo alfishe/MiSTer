@@ -4,19 +4,11 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "../../3rdparty/betterenums/enum.h"
 #include "../../common/consts.h"
 #include "../../common/types.h"
 
 using namespace std;
 
-// Declare enum using Better-enums macro (allows to operate with enum names, indexes and size in runtime)
-BETTER_ENUM(InputDeviceTypeEnum, uint8_t,
-	Unknown = 0,
-	Keyboard,
-	Mouse,
-	Joystick
-)
 
 /*
 enum InputDeviceType

@@ -54,9 +54,9 @@ protected:
 	void readEvents(int fd);
 	void translateEvents(int fd, input_event* events, unsigned numEvents);
 
-	void createMouseEvent(MInputEvents* mouseEvent, input_event* events, unsigned numEvents);
-	void createKeyboardEvent(MInputEvents* keyboardEvent, input_event* events, unsigned numEvents);
-	void createJoystickEvent(MInputEvents* joystickEvent, input_event* events, unsigned numEvents);
+	void createMouseEvent(MInputMessage* message, int fd, input_event* events, unsigned numEvents);
+	void createKeyboardEvent(MInputMessage* message, int fd, input_event* events, unsigned numEvents);
+	void createJoystickEvent(MInputMessage* message, int fd, input_event* events, unsigned numEvents);
 
 	void removeInputDeviceNoLock(int fd);
 

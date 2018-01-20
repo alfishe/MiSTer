@@ -308,24 +308,24 @@ void InputPoller::translateEvents(int fd, input_event* events, unsigned numEvent
 		case InputDeviceTypeEnum::Mouse:
 			{
 				topic = EVENT_MOUSE;
-				MInputEvents* event = new MInputEvents();
-				createMouseEvent(event, events, numEvents);
+				MInputMessage* event = new MInputMessage();
+				createMouseEvent(event, fd, events, numEvents);
 				payload = event;
 			}
 			break;
 		case InputDeviceTypeEnum::Keyboard:
 			{
 				topic = EVENT_KEYBOARD;
-				MInputEvents* event = new MInputEvents();
-				createKeyboardEvent(event, events, numEvents);
+				MInputMessage* event = new MInputMessage();
+				createKeyboardEvent(event, fd, events, numEvents);
 				payload = event;
 			}
 			break;
 		case InputDeviceTypeEnum::Joystick:
 			{
 				topic = EVENT_JOYSTICK;
-				MInputEvents* event = new MInputEvents();
-				createJoystickEvent(event, events, numEvents);
+				MInputMessage* event = new MInputMessage();
+				createJoystickEvent(event, fd, events, numEvents);
 				payload = event;
 			}
 			break;
@@ -342,8 +342,11 @@ void InputPoller::translateEvents(int fd, input_event* events, unsigned numEvent
 	}
 }
 
-void InputPoller::createMouseEvent(MInputEvents* mouseEvent, input_event* events, unsigned numEvents)
+void InputPoller::createMouseEvent(MInputMessage* message, int fd, input_event* events, unsigned numEvents)
 {
+	message->deviceID = fd;
+	message->deviceType = InputDeviceTypeEnum::Mouse;
+
 	uint16_t code;
 	int32_t value;
 
@@ -359,6 +362,7 @@ void InputPoller::createMouseEvent(MInputEvents* mouseEvent, input_event* events
 			case EV_REL:
 				{
 					MInputEvent relMoveEvent;
+					relMoveEvent.deviceID = fd;
 					relMoveEvent.type = RelativeMove;
 
 					bool toAdd = true;
@@ -380,17 +384,18 @@ void InputPoller::createMouseEvent(MInputEvents* mouseEvent, input_event* events
 
 					if (toAdd)
 					{
-						mouseEvent->push_back(relMoveEvent);
+						message->events.push_back(relMoveEvent);
 					}
 				}
 				break;
 			case EV_KEY:
 				{
 					MInputEvent keyEvent;
+					keyEvent.deviceID = fd;
 					keyEvent.type = Key;
 					keyEvent.event.keyEvent.key = code;
 					keyEvent.event.keyEvent.state = (bool)value;
-					mouseEvent->push_back(keyEvent);
+					message->events.push_back(keyEvent);
 				}
 				break;
 			default:
@@ -400,8 +405,11 @@ void InputPoller::createMouseEvent(MInputEvents* mouseEvent, input_event* events
 	}
 }
 
-void InputPoller::createKeyboardEvent(MInputEvents* keyboardEvent, input_event* events, unsigned numEvents)
+void InputPoller::createKeyboardEvent(MInputMessage* message, int fd, input_event* events, unsigned numEvents)
 {
+	message->deviceID = fd;
+	message->deviceType = InputDeviceTypeEnum::Keyboard;
+
 	uint16_t code;
 	int32_t value;
 
@@ -417,10 +425,11 @@ void InputPoller::createKeyboardEvent(MInputEvents* keyboardEvent, input_event* 
 			case EV_KEY:
 				{
 					MInputEvent keyEvent;
+					keyEvent.deviceID = fd;
 					keyEvent.type = Key;
 					keyEvent.event.keyEvent.key = code;
 					keyEvent.event.keyEvent.state = (bool)value;
-					keyboardEvent->push_back(keyEvent);
+					message->events.push_back(keyEvent);
 				}
 				break;
 			case EV_LED:
@@ -435,8 +444,11 @@ void InputPoller::createKeyboardEvent(MInputEvents* keyboardEvent, input_event* 
 	}
 }
 
-void InputPoller::createJoystickEvent(MInputEvents* joystickEvent, input_event* events, unsigned numEvents)
+void InputPoller::createJoystickEvent(MInputMessage* message, int fd, input_event* events, unsigned numEvents)
 {
+	message->deviceID = fd;
+	message->deviceType = InputDeviceTypeEnum::Joystick;
+
 	uint16_t code;
 	int32_t value;
 
@@ -452,6 +464,7 @@ void InputPoller::createJoystickEvent(MInputEvents* joystickEvent, input_event* 
 			case EV_ABS:
 				{
 					MInputEvent absoluteMoveEvent;
+					absoluteMoveEvent.deviceID = fd;
 					absoluteMoveEvent.type = AbsoluteMove;
 					//absoluteMoveEvent.event.absoluteMoveEvent;
 				}
@@ -459,13 +472,12 @@ void InputPoller::createJoystickEvent(MInputEvents* joystickEvent, input_event* 
 			case EV_KEY:
 				{
 					MInputEvent keyEvent;
+					keyEvent.deviceID = fd;
 					keyEvent.type = Key;
 					keyEvent.event.keyEvent.key = code;
 					keyEvent.event.keyEvent.state = (bool)value;
-					joystickEvent->push_back(keyEvent);
+					message->events.push_back(keyEvent);
 				}
-				break;
-			case EV_LED:
 				break;
 			default:
 				// The rest is irrelevant for the keyboard

@@ -47,6 +47,11 @@ InputManager::~InputManager()
 {
 	TRACE("~InputManager()");
 
+	// Unsubscribe from all notifications
+	MessageCenter& center = MessageCenter::defaultCenter();
+	center.removeObserver(this);
+
+	// Reset information about all registered input devices
 	reset();
 
 	// Ensure that poller is stopped
