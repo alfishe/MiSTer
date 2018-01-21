@@ -292,11 +292,11 @@ bool FPGADevice::program(const void* rbf_data, uint32_t rbf_size)
 }
 
 #ifdef REBOOT_ON_RBF_LOAD
-void FPGADevice::saveCoreNameForUboot(const char *name)
+void FPGADevice::saveCoreNameForUboot(const string& name)
 {
 	int fd;
 
-	if ((fd = open("/dev/mem", O_RDWR | O_SYNC)) != -1)
+	if ((fd = open(LINUX_MEMORY_DEVICE, O_RDWR | O_SYNC)) != -1)
 	{
 		uint8_t* buffer = (uint8_t *)mmap(nullptr, UBOOT_EXTRA_ENV_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, UBOOT_EXTRA_ENV_BASE);
 		if (buffer != (uint8_t *)MAP_FAILED)
@@ -306,7 +306,7 @@ void FPGADevice::saveCoreNameForUboot(const char *name)
 
 			// Extra env settings in U-Boot script syntax
 			// 'core="<name>"\0\0\0\0'
-			string ubootEnv = tfm::format("core=\"%s\"\0\0\0\0", name);
+			string ubootEnv = tfm::format("core=\"%s\"\0\0\0\0", name.c_str());
 			memcpy(buffer + 4, ubootEnv.c_str(), ubootEnv.length());
 
 			// Unmap address buffer
@@ -334,7 +334,7 @@ void FPGADevice::enableHPSFPGABridges()
 {
 	// 1. Write all 1 to bits [13:0] (0x3FFF) of FPGAPORTRST (0xFFC25080), to enable all SDRAM controller ports exit reset
 	// 2. Deassert reset signals from all bridges (HPS2FPGA, Lightweight HPS2FPGA, FPGA2HPS)
-	// 3. Maps the On-chip RAM to address 0x0 for the MPU L3 master
+	// 3. Map the On-chip RAM to address 0x0 for the MPU L3 master
 	//    Enable HPS2FPGA AXI bridge visibility for L3 masters
 	//    Enable Lightweight HPS2FPGA AXI bridge visibility for L3 masters
 
@@ -412,7 +412,7 @@ uint32_t FPGADevice::core_read(uint32_t offset)
 
 	if (offset <= MAX_FPGA_OFFSET)
 	{
-		// Read 32-bit value using aligned offset address
+		// Read 32-bit value using aligned to 4-bytes offset address
 		result = readl((void*)(SOCFPGA_LWFPGASLAVES_ADDRESS + (offset & ~3)));
 	}
 

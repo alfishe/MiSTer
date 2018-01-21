@@ -83,7 +83,7 @@ public:
 	void enableHPSFPGABridges();
 
 #ifdef REBOOT_ON_RBF_LOAD
-	void saveCoreNameForUboot(const char *name);
+	void saveCoreNameForUboot(const string& name);
 #endif
 
 	// Indicators
