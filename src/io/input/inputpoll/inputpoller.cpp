@@ -300,6 +300,8 @@ void InputPoller::translateEvents(int fd, input_event* events, unsigned numEvent
 
 	TRACE("Device %s:'%s' received %d event(s), EV_SYN excluded", device.dumpDeviceType().c_str(), device.model.c_str(), numEvents);
 
+	TRACE(dumpEPollEvents(events, numEvents).c_str());
+
 	string topic;
 	MessagePayloadBase* payload = nullptr;
 
@@ -487,8 +489,10 @@ void InputPoller::createJoystickEvent(MInputMessage* message, int fd, input_even
 }
 
 // Debug methods
-void InputPoller::dumpEPollEvents(input_event* events, unsigned numEvents)
+string InputPoller::dumpEPollEvents(input_event* events, unsigned numEvents)
 {
+	stringstream ss;
+
 	for (unsigned i = 0; i < numEvents; i++)
 	{
 		input_event& event = events[i];
@@ -521,13 +525,15 @@ void InputPoller::dumpEPollEvents(input_event* events, unsigned numEvents)
 				break;
 		}
 
-		TRACE("Type: 0x%x (%s), code: %s, value: %d",
+		ss << tfm::format("Type: 0x%x (%s), code: %s, value: %d\n",
 			event.type,
 			BaseInputDevice::dumpEventType(event.type).c_str(),
 			code.c_str(),
 			event.value
 		);
 	}
+
+	return ss.str();
 }
 
 // Runnable method

@@ -525,11 +525,11 @@ vector<string> BaseInputDevice::absNames =
 
 // -Initialize static field arrays
 
-BaseInputDevice::BaseInputDevice(const string& event, const string& path)
+BaseInputDevice::BaseInputDevice(const string& name, const string& path)
 {
 	TRACE("BaseInputDevice()");
 
-	this->name = string(event);
+	this->name = string(name);
 	this->path = string(path);
 }
 

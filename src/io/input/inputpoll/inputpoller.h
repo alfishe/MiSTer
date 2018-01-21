@@ -61,7 +61,7 @@ protected:
 	void removeInputDeviceNoLock(int fd);
 
 	// Debug
-	void dumpEPollEvents(input_event* events, unsigned numEvents);
+	string dumpEPollEvents(input_event* events, unsigned numEvents);
 
 // Runnable override method(s)
 protected:

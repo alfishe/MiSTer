@@ -44,7 +44,7 @@ public:
 	// Input device fields are located in a base InputDevice class
 
 public:
-	BaseInputDevice(const string& event, const string& path);
+	BaseInputDevice(const string& name, const string& path);
 	virtual ~BaseInputDevice();
 
 	int openDevice();

@@ -11,7 +11,7 @@
 #include "../../common/consts.h"
 #include "../../common/exception/misterexception.h"
 
-Keyboard::Keyboard(const string& event, const string& path) : BaseInputDevice(event, path)
+Keyboard::Keyboard(const string& name, const string& path) : BaseInputDevice(name, path)
 {
 }
 
