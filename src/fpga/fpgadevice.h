@@ -2,8 +2,12 @@
 #define FPGA_FPGADEVICE_H_
 
 #include <stdint.h>
+#include <string>
 #include "socfpga_base_addrs.h"
 #include "../common/consts.h"
+#include "../common/file/path/path.h"
+
+using namespace std;
 
 // Shortcuts to common functionality
 #define DISKLED_ON  FPGADevice::instance().set_led(ON)
@@ -73,7 +77,7 @@ public:
 
 
 	// FPGA load methods
-	bool load_rbf(const char *name);
+	bool load_rbf(const string& name);
 	bool program(const void* rbf_data, uint32_t rbf_size);
 	void disableHPSFPGABridges();
 	void enableHPSFPGABridges();

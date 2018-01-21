@@ -16,7 +16,7 @@ CoreManager& CoreManager::instance()
 	return instance;
 }
 
-bool CoreManager::loadCore(const char* filename)
+bool CoreManager::loadCore(const string& filename)
 {
 	bool result = false;
 
@@ -31,11 +31,11 @@ bool CoreManager::loadCore(const char* filename)
 
 		result = true;
 
-		LOGINFO("Core %s successfully loaded", filename);
+		LOGINFO("Core %s successfully loaded", filename.c_str());
 	}
 	else
 	{
-		LOGERROR("Unable to load core file: %s", filename);
+		LOGERROR("Unable to load core file: %s", filename.c_str());
 	}
 
 	return result;

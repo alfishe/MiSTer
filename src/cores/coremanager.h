@@ -17,7 +17,7 @@ public:
 	static CoreManager& instance();
 	CoreManager(const CoreManager& that) = delete; // Copy constructor is forbidden here (C++11 feature)
 
-	bool loadCore(const char* filename);
+	bool loadCore(const string& filename);
 	CoreType getCoreType();
 	const string getCoreName();
 	bool isMenuCore();

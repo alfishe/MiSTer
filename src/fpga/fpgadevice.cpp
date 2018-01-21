@@ -129,20 +129,15 @@ void FPGADevice::core_reset(bool reset)
 }
 
 // FPGA load
-bool FPGADevice::load_rbf(const char *name)
+bool FPGADevice::load_rbf(const string& name)
 {
 	bool result = false;
 
-	// Should be sufficient if file is located not too deep in folder hierarchy.
-	// Otherwise PATH_MAX (4096) should be used.
-	int filepath_len = NAME_MAX * 2;
-	char filepath[filepath_len];
-
 	// Info logging
-	LOGINFO("Loading RBF file: %s...  ", name);
+	LOGINFO("Loading RBF file: %s...  ", name.c_str());
 
 	// Create full core .rbf filepath (assuming it's in root of data volume)
-	snprintf(filepath, filepath_len, "%s/%s", sysmanager::getDataRootDir(), name);
+	string filePath = Path::combine(sysmanager::getDataRootDir(), name).toString();
 
 #ifdef REBOOT_ON_RBF_LOAD
 	// TODO: re-check whether it's still needed
@@ -150,12 +145,12 @@ bool FPGADevice::load_rbf(const char *name)
 	result = saveCoreNameForUboot(name);
 #else
 	// Do loading .RBF file
-	if (filemanager::isFileExist(filepath))
+	if (filemanager::isFileExist(filePath))
 	{
 		// Info logging
 		LOGINFO("Found");
 
-		uint64_t filesize = filemanager::getFileSize(filepath);
+		uint64_t filesize = filemanager::getFileSize(filePath);
 		if (filesize > 0)
 		{
 			// Info logging
@@ -164,7 +159,7 @@ bool FPGADevice::load_rbf(const char *name)
 			void* buffer = malloc(filesize);
 			if (buffer != nullptr)
 			{
-				if (filemanager::readFileIntoMemory(filepath, (uint8_t *)buffer, filesize))
+				if (filemanager::readFileIntoMemory(filePath, (uint8_t *)buffer, filesize))
 				{
 					// Disable all HPS<->FPGA bridges before reconfiguring FPGA
 					disableHPSFPGABridges();
@@ -177,16 +172,16 @@ bool FPGADevice::load_rbf(const char *name)
 
 						result = true;
 
-						LOGINFO("FPGA successfully programmed with '%s' file", filepath);
+						LOGINFO("FPGA successfully programmed with '%s' file", filePath.c_str());
 					}
 					else
 					{
-						LOGERROR("Unable to program FPGA with '%s' file", filepath);
+						LOGERROR("Unable to program FPGA with '%s' file", filePath.c_str());
 					}
 				}
 				else
 				{
-					LOGERROR("Unable to read FPGA bitstream file: %s", filepath);
+					LOGERROR("Unable to read FPGA bitstream file: %s", filePath.c_str());
 				}
 
 				free(buffer);
@@ -208,7 +203,7 @@ bool FPGADevice::load_rbf(const char *name)
 	else
 	{
 		// Info logging
-		LOGWARN("File '%s' not found", filepath);
+		LOGWARN("File '%s' not found", filePath.c_str());
 	}
 #endif // REBOOT_ON_RBF_LOAD
 

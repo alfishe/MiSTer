@@ -16,11 +16,11 @@
 #include "../../3rdparty/openbsd/string.h"
 #include "../helpers/stringhelper.h"
 
-bool filemanager::isFolderExists(const char *path)
+bool filemanager::isFolderExists(const string& path)
 {
 	bool result = false;
 
-	DIR* dir = opendir(path);
+	DIR* dir = opendir(path.c_str());
 	if (dir)
 	{
 	    // Directory exists
@@ -32,28 +32,29 @@ bool filemanager::isFolderExists(const char *path)
 	return result;
 }
 
-bool filemanager::isPathMounted(char *path)
+bool filemanager::isPathMounted(const string& path)
 {
 	bool result = false;
 
 	struct stat file_stat;
 	struct stat parent_stat;
 
-	if (stat(path, &file_stat) != -1)
+	if (stat(path.c_str(), &file_stat) != -1)
 	{
 		if (file_stat.st_mode & S_IFDIR)
 		{
-			if (stat(dirname(path), &parent_stat) != -1)
+			char* dirpath = (char*)path.c_str();
+			if (stat(dirname(dirpath), &parent_stat) != -1)
 			{
 				if (file_stat.st_dev != parent_stat.st_dev ||
 					(file_stat.st_dev == parent_stat.st_dev &&
 					file_stat.st_ino == parent_stat.st_ino)
 				)
 				{
-					LOGINFO("%s is a mountpoint.", path);
+					LOGINFO("%s is a mountpoint.", path.c_str());
 
 					struct statfs fs_stat;
-					if (!statfs(path, &fs_stat))
+					if (!statfs(path.c_str(), &fs_stat))
 					{
 						LOGINFO("%s is FS: 0x%08X", path, fs_stat.f_type);
 						if (fs_stat.f_type != EXT4_SUPER_MAGIC)
@@ -71,22 +72,22 @@ bool filemanager::isPathMounted(char *path)
 		}
 		else
 		{
-			LOGERROR("%s is not a directory.\n", path);
+			LOGERROR("%s is not a directory.\n", path.c_str());
 		}
 	}
 	else
 	{
-		LOGERROR("failed to stat %s\n", path);
+		LOGERROR("failed to stat %s\n", path.c_str());
 	}
 
 	return result;
 }
 
-bool filemanager::isFileExist(const char *path)
+bool filemanager::isFileExist(const string& path)
 {
 	bool result = false;
 
-	if (access(path, F_OK) != -1)
+	if (access(path.c_str(), F_OK) != -1)
 	{
 		result = true;
 	}
@@ -94,11 +95,11 @@ bool filemanager::isFileExist(const char *path)
 	return result;
 }
 
-bool filemanager::isFileWritable(const char *path)
+bool filemanager::isFileWritable(const string& path)
 {
 	bool result = false;
 
-	if (access(path, W_OK) != -1)
+	if (access(path.c_str(), W_OK) != -1)
 	{
 		result = true;
 	}
@@ -106,12 +107,12 @@ bool filemanager::isFileWritable(const char *path)
 	return result;
 }
 
-uint64_t filemanager::getFileSize(const char *path)
+uint64_t filemanager::getFileSize(const string& path)
 {
 	uint64_t result = 0;
 
 	struct stat64 st;
-	if (stat64(path, &st) == 0)
+	if (stat64(path.c_str(), &st) == 0)
 	{
 		result = st.st_size;
 	}
@@ -226,7 +227,7 @@ bool filemanager::fileSeek(int fd, __off64_t offset, int origin)
 	return result;
 }
 
-bool filemanager::openFile(FileDescriptor *file, char *filepath)
+bool filemanager::openFile(FileDescriptor* file, const string& filepath)
 {
 	bool result = false;
 
@@ -239,22 +240,22 @@ bool filemanager::openFile(FileDescriptor *file, char *filepath)
 			file->fd = INVALID_FILE_DESCRIPTOR;
 		}
 
-		file->fd = open(filepath, O_RDWR);
+		file->fd = open(filepath.c_str(), O_RDWR);
 
 		if (file->fd != INVALID_FILE_DESCRIPTOR)
 		{
 			// Safely copy full filepath
-			strlcpy(file->name, filepath, sizeof(file->name) / sizeof(file->name[0]));
+			strlcpy(file->name, filepath.c_str(), sizeof(file->name) / sizeof(file->name[0]));
 			result = true;
 
-			TRACE("%s: File '%s' successfully opened as read-write", __PRETTY_FUNCTION__, filepath);
+			TRACE("%s: File '%s' successfully opened as read-write", __PRETTY_FUNCTION__, filepath.c_str());
 		}
 	}
 
 	return result;
 }
 
-bool filemanager::openFileReadOnly(FileDescriptor *file, char *filepath)
+bool filemanager::openFileReadOnly(FileDescriptor *file, const string& filepath)
 {
 	bool result = false;
 
@@ -267,22 +268,22 @@ bool filemanager::openFileReadOnly(FileDescriptor *file, char *filepath)
 			file->fd = INVALID_FILE_DESCRIPTOR;
 		}
 
-		file->fd = open(filepath, O_RDONLY);
+		file->fd = open(filepath.c_str(), O_RDONLY);
 
 		if (file->fd != INVALID_FILE_DESCRIPTOR)
 		{
 			// Safely copy full filepath
-			strlcpy(file->name, filepath, sizeof(file->name) / sizeof(file->name[0]));
+			strlcpy(file->name, filepath.c_str(), sizeof(file->name) / sizeof(file->name[0]));
 			result = true;
 
-			TRACE("%s: File '%s' successfully opened as read-only", __PRETTY_FUNCTION__, filepath);
+			TRACE("%s: File '%s' successfully opened as read-only", __PRETTY_FUNCTION__, filepath.c_str());
 		}
 	}
 
 	return result;
 }
 
-void filemanager::closeFile(FileDescriptor *file)
+void filemanager::closeFile(FileDescriptor* file)
 {
 	if (file != nullptr && file->fd != INVALID_FILE_DESCRIPTOR)
 	{
@@ -327,12 +328,12 @@ bool filemanager::writeFile(FileDescriptor *file, uint8_t *buffer, uint32_t buff
 	return result;
 }
 
-bool filemanager::readFileIntoMemory(char *filepath, uint8_t* buffer, uint32_t bufferSize)
+bool filemanager::readFileIntoMemory(const string& filepath, uint8_t* buffer, uint32_t bufferSize)
 {
 	bool result = false;
 
 	// Initial validation
-	if (filepath == nullptr || buffer == nullptr || bufferSize == 0)
+	if (buffer == nullptr || bufferSize == 0)
 	{
 		LOGWARN("%s: invalid parameters", __PRETTY_FUNCTION__);
 
@@ -351,7 +352,7 @@ bool filemanager::readFileIntoMemory(char *filepath, uint8_t* buffer, uint32_t b
 	}
 	else
 	{
-		LOGERROR("%s: Unable to open file %s as read-only", __PRETTY_FUNCTION__, filepath);
+		LOGERROR("%s: Unable to open file %s as read-only", __PRETTY_FUNCTION__, filepath.c_str());
 	}
 
 	return result;
