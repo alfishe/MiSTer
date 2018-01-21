@@ -1,8 +1,11 @@
 #ifndef CORES_COREMANAGER_H_
 #define CORES_COREMANAGER_H_
 
+#include <string>
 #include "../interfaces/icoreinterface.h"
 #include "../fpga/fpgacommand.h"
+
+using namespace std;
 
 class CoreManager
 {
@@ -16,7 +19,7 @@ public:
 
 	bool loadCore(const char* filename);
 	CoreType getCoreType();
-	char *getCoreName();
+	const string getCoreName();
 	bool isMenuCore();
 
 	ICoreInterface* getCurrentCore();

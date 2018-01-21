@@ -51,12 +51,12 @@ CoreType CoreManager::getCoreType()
 	return result;
 }
 
-char* CoreManager::getCoreName()
+const string CoreManager::getCoreName()
 {
 	FPGADevice& device = FPGADevice::instance();
 	FPGACommand& command = *device.command;
 
-	char *result = command.getCoreName();
+	string result(command.getCoreName());
 
 	return result;
 }
@@ -65,7 +65,7 @@ bool CoreManager::isMenuCore()
 {
 	bool result = false;
 
-	if (strncmp(getCoreName(), "MENU", 4) == 0)
+	if (strncmp(getCoreName().c_str(), "MENU", 4) == 0)
 	{
 		result = true;
 	}
@@ -78,7 +78,7 @@ ICoreInterface* CoreManager::getCurrentCore()
 	if (currentCore == nullptr)
 	{
 		CoreType type = getCoreType();
-		char *name = getCoreName();
+		const string name = getCoreName();
 	}
 
 	return currentCore;
