@@ -25,10 +25,10 @@
 #include "fpga/fpgadevice.h"
 #include "fpga/fpgacommand.h"
 #include "cores/coremanager.h"
-#include "gui/osd/osd.h"
 #include "io/input/inputmanager.h"
 #include "io/input/baseinputdevice.h"
 #include "common/file/scandir/scandir.h"
+#include "gui/osd/osd.h"
 #include "io/input/keyboard.h"
 #include "io/input/devicedetector/devicedetector.h"
 
@@ -108,7 +108,7 @@ void testDirectories()
 
 void testOSD()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 	osd.show();
 	sleep(1);
 
@@ -185,9 +185,9 @@ void testInputDevices()
 	inputmgr.detectDevices();
 
 	for_each(inputmgr.m_keyboards.begin(), inputmgr.m_keyboards.end(),
-		[](InputDevicePair pair)
+		[](BaseInputDevicePair pair)
 		{
-			InputDevice& device = pair.second;
+			InputDevice& device = *pair.second;
 			Keyboard keyboard(device.name, device.path);
 
 			keyboard.openDeviceWrite();
@@ -276,17 +276,23 @@ void handler(int sig)
 
 	if (sig == SIGSEGV)
 	{
-		StackTrace st;
+		LOGERROR("SIGSEGV signal received.");
 
-		st.load_here(99); 	// Limit the number of trace depth to 20
-		st.skip_n_firsts(3);	// This will skip some backward internal function from the trace
+		stringstream ss;
+		StackTrace st;
+		st.load_here(20);
+		st.skip_n_firsts(3);
 
 		Printer p;
 		p.snippet = true;
-		p.object = true;
-		p.color_mode = ColorMode::always;
-		p.address = true;
-		p.print(st, stderr);
+		p.object = false;
+		p.color_mode = ColorMode::never;
+		p.address = false;
+		p.ascending = false;
+		p.print(st, ss);
+
+		LOGERROR(ss.str().c_str());
+		LOGERROR("Shutting down...");
 	}
 
 	if (sig == SIGKILL)

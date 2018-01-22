@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "../common/consts.h"
+#include "../common/messagetypes.h"
+#include "../common/events/messagecenter.h"
 #include "../fpga/fpgadevice.h"
 #include "../fpga/fpgacommand.h"
 
@@ -27,7 +29,12 @@ bool CoreManager::loadCore(const string& filename)
 	{
 		// Determine core type
 
-		// Instantiate correspondent
+		// Instantiate correspondent adapter(s) in ARM code
+
+		// Notify that core was started successfully
+		MessageCenter& center = MessageCenter::instance();
+		MessagePayloadBase* payload = new CoreStartedEvent(filename); // Allocating here. Will be destroyed automatically by Message Center queue
+		center.post(EVENT_CORE_STARTED, this, payload);
 
 		result = true;
 
