@@ -6,10 +6,10 @@
 class Application : EventObserver, EventSource
 {
 public:
-	// Singleton instance
-	static Application& instance();
-	Application(const Application& that) = delete; 			// Copy constructor is forbidden here (C++11 feature)
-	Application& operator =(Application const&) = delete;		// Disable assignments
+	static Application& instance();							// Singleton instance
+	Application(Application&&) = delete;						// Disable move constructor (C++11 feature)
+	Application(const Application& that) = delete; 			// Disable copy constructor (C++11 feature)
+	Application& operator =(Application const&) = delete;		// Disable assignment operator (C++11 feature)
 	virtual ~Application();
 private:
 	Application() {}; 										// Disallow direct instances creation
@@ -19,6 +19,11 @@ public:
 	void onStart();
 	void onTerminate();
 
+// Helper methods
+protected:
+	void startupDiagnostics();
+
+// Debug methhods
 	void testEvents();
 
 // EventObserver delegate

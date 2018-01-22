@@ -25,13 +25,15 @@ public:
 	mutex m_mutexDevices;
 
 public:
-	// Singleton instance
-	static InputManager& instance();
+	static InputManager& instance();							// Singleton instance
 	InputManager(InputManager&&) = delete;					// Disable move constructor (C++11 feature)
 	InputManager(const InputManager& that) = delete; 			// Disable copy constructor (C++11 feature)
 	InputManager& operator =(InputManager const&) = delete;	// Disable assignment operator (C++11 feature)
 	virtual ~InputManager();
+private:
+	InputManager();	// Disable explicit object creation (only singleton instace allowed)
 
+public:
 	// Get/find methods
 	BaseInputDevice* findInputDeviceByName(const string& name);
 
@@ -58,8 +60,7 @@ public:
 public:
 	void onMessageEvent(const EventMessageBase& event);
 
-private:
-	InputManager();	// Disable explicit object creation (only singleton instace allowed)
+
 };
 
 #endif /* IO_INPUT_INPUTMANAGER_H_ */

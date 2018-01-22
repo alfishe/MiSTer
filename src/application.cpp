@@ -4,6 +4,7 @@
 
 #include "common/messagetypes.h"
 #include "common/events/messagecenter.h"
+#include "system/systemmanager.h"
 #include "io/input/devicedetector/devicedetector.h"
 #include "io/input/inputmanager.h"
 #include "io/input/commandcenter.h"
@@ -38,6 +39,7 @@ void Application::onStart()
 	CommandCenter& cmdcenter = CommandCenter::instance();
 
 	// More initialization
+	startupDiagnostics();
 }
 
 void Application::onTerminate()
@@ -53,6 +55,15 @@ void Application::onTerminate()
 	InputManager& inputmgr = InputManager::instance();
 	inputmgr.stopPolling();
 }
+
+// Helper methods
+void Application::startupDiagnostics()
+{
+	uint32_t ipAddr = SystemManager::getBoardIPAddr();
+	string ip = SystemManager::getBoardIP();
+	LOGINFO("Ethernet IP: %s", ip.c_str());
+}
+
 
 // TODO: Remove, test only
 void Application::testEvents()
