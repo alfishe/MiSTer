@@ -24,7 +24,7 @@ public:
 
 	// Raw POSIX oriented file methods (for compatibility only)
 	static void flush();
-	static int openFileReadOnly(char *filepath);
+	static int openFileReadOnly(const string& filepath);
 	static bool fileSeek(int fd, __off64_t offset, int origin);
 
 	// Higher level fileDescriptor oriented file methods

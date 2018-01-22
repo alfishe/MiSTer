@@ -195,9 +195,9 @@ bool filemanager::fileSeek(FileDescriptor *file, __off64_t offset, int origin)
 	return result;
 }
 
-int filemanager::openFileReadOnly(char *path)
+int filemanager::openFileReadOnly(const string& path)
 {
-	int fd = open(path, O_RDONLY);
+	int fd = open(path.c_str(), O_RDONLY);
 
 	return fd;
 }
