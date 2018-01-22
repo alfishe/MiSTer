@@ -11,18 +11,18 @@
 #include "../../fpga/fpgaconnector.h"
 #include "../../fpga/fpgacommand.h"
 
-osd& osd::instance()
+OSD& OSD::instance()
 {
-	static osd instance;
+	static OSD instance;
 
 	return instance;
 }
 
-osd::~osd()
+OSD::~OSD()
 {
 }
 
-void osd::show()
+void OSD::show()
 {
 	FPGADevice& fpga = FPGADevice::instance();
 	FPGACommand& command = *(fpga.command);
@@ -32,7 +32,7 @@ void osd::show()
 	highResolution = false;
 }
 
-void osd::showHighres()
+void OSD::showHighres()
 {
 	FPGADevice& fpga = FPGADevice::instance();
 	FPGACommand& command = *(fpga.command);
@@ -43,7 +43,7 @@ void osd::showHighres()
 	highResolution = true;
 }
 
-void osd::hide()
+void OSD::hide()
 {
 	FPGADevice& fpga = FPGADevice::instance();
 	FPGACommand& command = *(fpga.command);
@@ -53,7 +53,7 @@ void osd::hide()
 	highResolution = false;
 }
 
-void osd::fill()
+void OSD::fill()
 {
 	memset(framebuffer, 0xAA, sizeof(framebuffer));
 
@@ -61,7 +61,7 @@ void osd::fill()
 	transferFramebuffer();
 }
 
-void osd::clear()
+void OSD::clear()
 {
 	// Clear internal buffer
 	clearFramebuffer();
@@ -70,7 +70,7 @@ void osd::clear()
 	transferFramebuffer();
 }
 
-void osd::compose()
+void OSD::compose()
 {
 	// Copy Title over framebuffer content
 	for (unsigned idx = 0; idx < sizeof(titlebuffer) / 2; idx++)
@@ -91,7 +91,7 @@ void osd::compose()
 	transferFramebuffer();
 }
 
-void osd::setTitle(const char *title, uint8_t arrows)
+void OSD::setTitle(const char *title, uint8_t arrows)
 {
 	uint8_t idx = 0;
 	uint8_t xOffset = 0;
@@ -159,7 +159,7 @@ void osd::setTitle(const char *title, uint8_t arrows)
 	}
 }
 
-void osd::printLine(uint8_t line, const char *text, bool invert)
+void OSD::printLine(uint8_t line, const char *text, bool invert)
 {
 	uint8_t heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_LINES : OSD_HEIGHT_LINES;
 	if (line >= heightLimit)
@@ -192,12 +192,12 @@ void osd::printLine(uint8_t line, const char *text, bool invert)
 
 // Helper methods
 
-void osd::clearFramebuffer()
+void OSD::clearFramebuffer()
 {
 	memset(framebuffer, 0, sizeof(framebuffer));
 }
 
-void osd::rotateCharacter(uint8_t *in, uint8_t *out)
+void OSD::rotateCharacter(uint8_t *in, uint8_t *out)
 {
 	uint8_t value;
 
@@ -214,7 +214,7 @@ void osd::rotateCharacter(uint8_t *in, uint8_t *out)
 	}
 }
 
-uint8_t osd::scale4Bits(uint8_t byte)
+uint8_t OSD::scale4Bits(uint8_t byte)
 {
 	uint8_t result = 0;
 	uint8_t mask = 0b00000001;
@@ -235,7 +235,7 @@ uint8_t osd::scale4Bits(uint8_t byte)
 	return result;
 }
 
-uint16_t osd::scale8Bits(uint8_t byte)
+uint16_t OSD::scale8Bits(uint8_t byte)
 {
 	uint16_t result = 0;
 	uint16_t mask = 0b0000000000000001;
@@ -262,7 +262,7 @@ uint16_t osd::scale8Bits(uint8_t byte)
  * Usually takes ~6.1ms to accomplish
  * Not VBlank synchronized, so don't try to make heavy animations
  */
-void osd::transferFramebuffer()
+void OSD::transferFramebuffer()
 {
 	FPGADevice& fpga = FPGADevice::instance();
 	FPGAConnector& connector = *(fpga.connector);

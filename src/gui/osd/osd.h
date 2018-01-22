@@ -64,7 +64,7 @@
 #define OSD_ENABLE		((uint8_t)0x01)
 #define OSD_DISABLE		((uint8_t)0x00)
 
-class osd
+class OSD
 {
 public:
 	// Low-res mode (32x8 symbols, 256x8 bytes)
@@ -91,9 +91,9 @@ protected:
 	uint32_t scroll_timer = 0;  // file/dir name scrolling timer
 
 public:
-	static osd& instance();
-	osd(osd &that) = delete; // Copy constructor is forbidden here (C++11 feature)
-	virtual ~osd();
+	static OSD& instance();
+	OSD(OSD &that) = delete; // Copy constructor is forbidden here (C++11 feature)
+	virtual ~OSD();
 
 	// Show/hide logic methods
 	void show();
@@ -116,7 +116,7 @@ protected:
 	void transferFramebuffer();
 
 private:
-	osd() {}; // Prevent creation. Only singleton via instance() should be accessible
+	OSD() {}; // Prevent creation. Only singleton via instance() should be accessible
 };
 
 #endif /* GUI_OSD_OSD_H_ */

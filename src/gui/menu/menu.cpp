@@ -304,7 +304,7 @@ bool menu::selectFile(const char* extension)
 // Helper methods
 void menu::menuNone1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	helptext = helptexts[HELPTEXT_NONE];
 	menumask = 0;
@@ -319,7 +319,7 @@ void menu::menuNone2()
 
 	FPGADevice& fpga = FPGADevice::instance();
 	FPGACommand& command = *fpga.command;
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	CoreType coreType = command.getCoreType();
 
@@ -362,7 +362,7 @@ void menu::menuNone2()
 
 void menu::menuArchieMain1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0x3F;
 	osd.setTitle("ARCHIE", false);
@@ -1178,7 +1178,7 @@ void menu::menuMistStorageFileSelected()
 
 void menu::menuMistSystem1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0xFF;
 	osd.setTitle("System", false);
@@ -1305,7 +1305,7 @@ void menu::menuMistSystemFileSelected()
 
 void menu::menuMistVideo1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0x7f;
 	osd.setTitle("A/V", false);
@@ -1412,7 +1412,7 @@ void menu::menuMistVideo2()
 
 void menu::menuMistVideoAdjust1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0x1F;
 	osd.setTitle("V-adjust");
@@ -1753,7 +1753,7 @@ void menu::menuLoadConfig2()
  */
 void menu::menuFileSelect1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	helptext = helptexts[HELPTEXT_NONE];
 	osd.setTitle("Select");
@@ -1981,7 +1981,7 @@ void menu::menuSaveConfig2()
 
 void menu::menuSettingsChipset1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	helptext = helptexts[HELPTEXT_CHIPSET];
 	menumask = 0;
@@ -2115,7 +2115,7 @@ void menu::menuSettingsChipset2()
 
 void menu::menuSettingsMemory1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	helptext = helptexts[HELPTEXT_MEMORY];
 	menumask = 0x3F;
@@ -2217,7 +2217,7 @@ void menu::menuSettingsHardfile1()
 	// Make the menu work on the copy, not the original, and copy on acceptance,
 	// not on rejection.
 
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	helptext = helptexts[HELPTEXT_HARDFILE];
 	osd.setTitle("Harddisks");
@@ -2430,7 +2430,7 @@ void menu::menuHardfileExit()
  */
 void menu::menuHardfileChanged1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0x03;
 	parentstate = menustate;
@@ -2501,7 +2501,7 @@ void menu::menuHardfileChanged2()
 
 void menu::menuSynthRDB1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0x01;
 	parentstate = menustate;
@@ -2526,7 +2526,7 @@ void menu::menuSynthRDB1()
 
 void menu::menuSynthRDB2_1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0x01;
 	parentstate = menustate;
@@ -2561,7 +2561,7 @@ void menu::menuSynthRDB2()
 
 void menu::menuSettingsVideo1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0x0F;
 	parentstate = menustate;
@@ -2652,7 +2652,7 @@ void menu::menuRomfileSelected()
 
 void menu::menuRomfileSelected1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0x03;
 	parentstate = menustate;
@@ -2720,7 +2720,7 @@ void menu::menuRomfileSelected2()
 
 void menu::menuFirmware1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	helptext = helptexts[HELPTEXT_NONE];
 	parentstate = menustate;
@@ -2842,7 +2842,7 @@ void menu::menuFirmware2()
 
 void menu::menuFirmwareCoreFileSelected()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	// close OSD now as the new core may not even have one
 	osd.hide();
@@ -2911,7 +2911,7 @@ void menu::menuStorage()
 
 void menu::menuKbdmap()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	helptext = 0;
 	menumask = 1;
@@ -3037,7 +3037,7 @@ void menu::menuInfo()
 
 void menu::printFolder()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	CharStringSet extensions;
 	extensions.insert("rbf");
