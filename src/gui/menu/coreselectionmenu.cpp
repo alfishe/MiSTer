@@ -3,6 +3,7 @@
 #include "../../common/logger/logger.h"
 
 #include <algorithm>
+#include "../../common/file/path/path.h"
 #include "../../common/helpers/collectionhelper.h"
 
 void CoreSelectionMenu::readAvailableCores()
@@ -11,12 +12,14 @@ void CoreSelectionMenu::readAvailableCores()
 	scan.scanFolder(DATA_ROOT, ScanDir::getFPGACoreFilter(), ScanDir::getAlphaSortCaseInsensitive());
 
 	m_coreNames = scan.getScanResults();
+
+	// Strip extensions from displayname property
 	if (m_coreNames.size() > 0)
 	{
 		for_each(m_coreNames.begin(), m_coreNames.end(),
-			[&](const DirectoryEntry& entry)
+			[&](DirectoryEntry& entry)
 			{
-
+				entry.displayname = Path::getFileNameWithoutExtension(entry.displayname);
 			}
 		);
 	}
