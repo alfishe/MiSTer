@@ -1,5 +1,7 @@
 #include "hdmipll.h"
 
+#include "../../common/logger/logger.h"
+
 VideoMode HDMIPLL::m_videoModes[8] =
 {
 	{ {1280, 110, 40,  220, 720,  5,  5, 20}, 74.25  },
@@ -12,6 +14,97 @@ VideoMode HDMIPLL::m_videoModes[8] =
 	{ {1280, 440, 40,  220, 720,  5,  5, 20}, 74.25  }
 };
 
+// Calculate PLL parameters for specified <freqPixelclock>
+// Input: freqPixelclock - target pixel clock (in MHz)
+// Output: M, K, C PLL parameters
+//		M - Feedback counter multiply factor value
+//		K - Fractional multiply factor value
+//		C - Post-scale divide factor value
+// See more: https://www.altera.com/en_US/pdfs/literature/ug/altera_pll.pdf
+bool HDMIPLL::getPLL(double freqPixelclock, uint32_t *M, uint32_t *K, uint32_t *C)
+{
+	bool result = false;
+
+	LOGWARN("%s: Doesn't work after porting yet!", __PRETTY_FUNCTION__);
+	return result;
+
+	// Limits:
+	// Multiply Factor (M-Counter)		[1-512]				- Specifies the multiply factor of M-counter
+	// Fractional Multiply Factor (K)	[1 to (2^Fcout-1)]	- Specifies the fractional multiply factor of DSM. Fcout is the value of fractional carry out parameter.
+	// Divide Factor (C-Counter)			[1-512]				- Specifies the divide factor for the output clock (C-counter)
+	//
+	// Divide Factor (N-Counter)			[1-512]				- Specifies the divide factor of N-counter
+
+	uint32_t multiplierCoeff = 1;
+	uint32_t feedbackMultiply_M;		// M-value
+	uint32_t fractionalMultiply_K;	// K-value
+	uint32_t postScaleDivide_C; 		// C-value
+
+	//
+	while ((freqPixelclock * multiplierCoeff) < 400.0)
+	{
+		multiplierCoeff++;
+	}
+
+	TRACE("Calculating PLL parameters for freq: %.3f MHz ...", freqPixelclock);
+
+	while (true)
+	{
+		printf("C=%d, ", multiplierCoeff);
+		*C = multiplierCoeff;
+
+		double fvco = freqPixelclock * multiplierCoeff;
+		printf("Fvco=%f, ", fvco);
+
+		uint32_t m = (uint32_t)(fvco / 50);
+		printf("M=%d, ", m);
+		*M = m;
+
+		double ko = ((fvco / 50) - m);
+		printf("K_orig=%f, ", ko);
+
+		uint32_t k = (uint32_t)(ko * 4294967296);
+		if (!k) k = 1;
+		printf("K=%u. ", k);
+		*K = k;
+
+		if (ko && (ko <= 0.05f || ko >= 0.95f))
+		{
+			if (fvco > 1500.f)
+			{
+				printf("Fvco > 1500MHz. Cannot calculate PLL parameters!");
+				return 0;
+			}
+
+			printf("K_orig is outside desired range try next C0\n");
+			multiplierCoeff++;
+		}
+		else
+		{
+			TRACE("Calculated successfully");
+			result = true;
+			break;
+		}
+	}
+
+	return result;
+}
+
+uint32_t HDMIPLL::getPLLDivisor(uint32_t div)
+{
+	uint32_t result;
+
+	if (div & 1)
+	{
+		result = 0x20000 | (((div / 2) + 1) << 8) | (div / 2);
+	}
+	else
+	{
+		result = ((div / 2) << 8) | (div / 2);
+	}
+
+	return result;
+}
 
 void HDMIPLL::parseCustomVideoMode(const string& mode)
 {

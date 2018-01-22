@@ -19,7 +19,7 @@ protected:
 	static VideoMode m_videoModes[8];
 
 public:
-	static uint32_t getPLL(double freqPixelclock, uint32_t *M, uint32_t *K, uint32_t *C);
+	static bool getPLL(double freqPixelclock, uint32_t *M, uint32_t *K, uint32_t *C);
 	static uint32_t getPLLDivisor(uint32_t div);
 
 	static void parseVideoMode(const string& mode);
