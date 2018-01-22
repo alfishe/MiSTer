@@ -3,10 +3,12 @@
 
 #include "../../logger/logger.h"
 
+#include <algorithm>
 #include <functional>
 #include <string>
 #include <dirent.h>
 #include <fnmatch.h>
+#include "../../consts.h"
 #include "../../types.h"
 
 using namespace std;
@@ -62,6 +64,16 @@ public:
 		};
 	};
 
+	// Returns lambda verifying that directory entry has name matching to '*.rbf'
+	static filter_func getFPGACoreFilter()
+	{
+		return [](const struct dirent *ent) -> int
+		{
+			// Any match to '*.rbf', but not equal to 'menu.rbf' will be returned
+			return !fnmatch("*.rbf", ent->d_name, 0) && fnmatch(MENU_CORE, ent->d_name, 0);
+		};
+	};
+
 	//============= Default sorters =====================
 
 	// Returns native scandir alphasort function wrapped into lambda
@@ -70,6 +82,19 @@ public:
 		return [](const struct dirent** dir1, const struct dirent** dir2) -> int
 		{
 			return alphasort(dir1, dir2);
+		};
+	}
+
+	static compar_func getAlphaSortCaseInsensitive()
+	{
+		return [](const struct dirent** dir1, const struct dirent** dir2) -> int
+		{
+			string str1((*dir1)->d_name);
+			string str2((*dir2)->d_name);
+			transform(str1.begin(), str1.end(), str1.begin(), ::tolower);
+			transform(str2.begin(), str2.end(), str2.begin(), ::tolower);
+
+			return str1.compare(str2);
 		};
 	}
 

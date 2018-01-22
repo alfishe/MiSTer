@@ -6,6 +6,7 @@
 #define LINUX_MEMORY_DEVICE "/dev/mem"
 #define DATA_ROOT "/media/fat"
 #define CONFIG_DIR "config"
+#define MENU_CORE "menu.rbf"
 
 // Data volume mount point (path)
 #define DATA_VOLUME_MOUNT_POINT "/media/fat"
