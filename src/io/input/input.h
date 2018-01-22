@@ -74,7 +74,7 @@ typedef pair<string, InputDevice> InputDevicePair;
 #define RGUI         0x008000
 #define MODMASK      0x00FF00
 
-#define OSD          0x010000  // to be used by OSD, not the core itself
+#define OSD_OSD      0x010000  // to be used by OSD, not the core itself
 #define OSD_OPEN     0x020000  // OSD key not forwarded to core, but queued in arm controller
 #define CAPS_TOGGLE  0x040000  // caps lock toggle behaviour
 #define EXT          0x080000

@@ -297,6 +297,7 @@ void InputPoller::translateEvents(int fd, input_event* events, unsigned numEvent
 	// Resolve device type from descriptor
 	InputDevice& device = m_devices[fd];
 	InputDeviceTypeEnum deviceType = device.type;
+	string name = device.name;
 
 	TRACE("Device %s:'%s' received %d event(s), EV_SYN excluded", device.dumpDeviceType().c_str(), device.model.c_str(), numEvents);
 
@@ -311,7 +312,7 @@ void InputPoller::translateEvents(int fd, input_event* events, unsigned numEvent
 			{
 				topic = EVENT_MOUSE;
 				MInputMessage* event = new MInputMessage();
-				createMouseEvent(event, fd, events, numEvents);
+				createMouseEvent(event, fd, name, events, numEvents);
 				payload = event;
 			}
 			break;
@@ -319,7 +320,7 @@ void InputPoller::translateEvents(int fd, input_event* events, unsigned numEvent
 			{
 				topic = EVENT_KEYBOARD;
 				MInputMessage* event = new MInputMessage();
-				createKeyboardEvent(event, fd, events, numEvents);
+				createKeyboardEvent(event, fd, name, events, numEvents);
 				payload = event;
 			}
 			break;
@@ -327,7 +328,7 @@ void InputPoller::translateEvents(int fd, input_event* events, unsigned numEvent
 			{
 				topic = EVENT_JOYSTICK;
 				MInputMessage* event = new MInputMessage();
-				createJoystickEvent(event, fd, events, numEvents);
+				createJoystickEvent(event, fd, name, events, numEvents);
 				payload = event;
 			}
 			break;
@@ -344,9 +345,10 @@ void InputPoller::translateEvents(int fd, input_event* events, unsigned numEvent
 	}
 }
 
-void InputPoller::createMouseEvent(MInputMessage* message, int fd, input_event* events, unsigned numEvents)
+void InputPoller::createMouseEvent(MInputMessage* message, int fd, const string& name, input_event* events, unsigned numEvents)
 {
 	message->deviceID = fd;
+	message->name = name;
 	message->deviceType = InputDeviceTypeEnum::Mouse;
 
 	uint16_t code;
@@ -407,9 +409,10 @@ void InputPoller::createMouseEvent(MInputMessage* message, int fd, input_event* 
 	}
 }
 
-void InputPoller::createKeyboardEvent(MInputMessage* message, int fd, input_event* events, unsigned numEvents)
+void InputPoller::createKeyboardEvent(MInputMessage* message, int fd, const string& name, input_event* events, unsigned numEvents)
 {
 	message->deviceID = fd;
+	message->name = name;
 	message->deviceType = InputDeviceTypeEnum::Keyboard;
 
 	uint16_t code;
@@ -446,9 +449,10 @@ void InputPoller::createKeyboardEvent(MInputMessage* message, int fd, input_even
 	}
 }
 
-void InputPoller::createJoystickEvent(MInputMessage* message, int fd, input_event* events, unsigned numEvents)
+void InputPoller::createJoystickEvent(MInputMessage* message, int fd, const string& name, input_event* events, unsigned numEvents)
 {
 	message->deviceID = fd;
+	message->name = name;
 	message->deviceType = InputDeviceTypeEnum::Joystick;
 
 	uint16_t code;

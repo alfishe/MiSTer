@@ -2,6 +2,7 @@
 #define IO_INPUT_BASEINPUTDEVICE_H_
 
 #include <stdint.h>
+#include <map>
 #include <string>
 #include <vector>
 #include <linux/input.h>
@@ -44,6 +45,7 @@ public:
 	// Input device fields are located in a base InputDevice class
 
 public:
+	BaseInputDevice();
 	BaseInputDevice(const string& name, const string& path);
 	virtual ~BaseInputDevice();
 
@@ -137,5 +139,9 @@ protected:
 		return (int)n;
 	}
 };
+
+typedef map<string, BaseInputDevice*> BaseInputDeviceMap;
+typedef pair<string, BaseInputDevice*> BaseInputDevicePair;
+typedef map<int, BaseInputDevice*> FDBaseInputDeviceMap;
 
 #endif /* IO_INPUT_BASEINPUTDEVICE_H_ */

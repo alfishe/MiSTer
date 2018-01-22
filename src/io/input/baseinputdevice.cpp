@@ -592,8 +592,6 @@ bool BaseInputDevice::init()
 	// 4. Get device USB VID / PID (if available)
 	deviceID = getDeviceVIDPID();
 
-	closeDevice();
-
 	return result;
 }
 

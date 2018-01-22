@@ -58,6 +58,18 @@ InputManager::~InputManager()
 	InputPoller::instance().dispose();
 }
 
+BaseInputDevice* InputManager::findInputDeviceByName(const string& name)
+{
+	BaseInputDevice* result = nullptr;
+
+	if (key_exists(m_inputDevices, name))
+	{
+		result = m_inputDevices[name];
+	}
+
+	return result;
+}
+
 /// Clear all internal information about devices
 ///
 void InputManager::reset()
@@ -67,14 +79,25 @@ void InputManager::reset()
 	// Detach poller from events from all devices listening
 	InputPoller::instance().reset();
 
+	// Prevent access from multiple threads
+	lock_guard<mutex> lock(m_mutexDevices);
+
 	// Clear all collections
 	m_keyboards.clear();
 	m_mouses.clear();
 	m_joysticks.clear();
+
+	// Free up allocated memory for each device
+	for (auto it = m_inputDevices.begin(); it != m_inputDevices.end(); it++)
+	{
+		BaseInputDevice* device = it->second;
+		delete device;
+	}
+
 	m_inputDevices.clear();
 }
 
-InputDeviceMap& InputManager::detectDevices()
+BaseInputDeviceMap& InputManager::detectDevices()
 {
 	// Scan for available input device using path pattern:  /dev/input/event<N>
 	ScanDir scan;
@@ -86,8 +109,8 @@ InputDeviceMap& InputManager::detectDevices()
 		for_each(devices.begin(), devices.end(),
 			[&](DirectoryEntry& entry)
 			{
-				InputDevice inputDevice;
-				if (resolveDevice(entry.name, inputDevice))
+				BaseInputDevice* inputDevice = resolveDevice(entry.name);
+				if (inputDevice != nullptr)
 				{
 					// Register device in correspondent collections
 					addInputDevice(inputDevice);
@@ -117,7 +140,7 @@ void InputManager::startPolling()
 	// Add all already discovered devices to polling list
 	for (auto it = m_inputDevices.begin(); it != m_inputDevices.end(); it++)
 	{
-		poller.addInputDevice(it->second);
+		poller.addInputDevice(*(it->second));
 	}
 
 	poller.start();
@@ -128,34 +151,24 @@ void InputManager::stopPolling()
 	InputPoller::instance().stop();
 }
 
-
-bool InputManager::resolveDevice(const string& name, InputDevice& inputDevice)
+BaseInputDevice* InputManager::resolveDevice(const string& name)
 {
-	bool result = false;
+	BaseInputDevice* result = nullptr;
 
 	string path = Path::combine(LINUX_DEVICE_INPUT, name).toString();
 
 	if (filemanager::isFileExist(path.c_str()))
 	{
 		// Query device for properties
-		BaseInputDevice device(name, path);
-		device.init();
+		result = new BaseInputDevice(name, path);
+		result->init();
 
-		if (isDeviceTypeAllowed(device.type))
+		if (!isDeviceTypeAllowed(result->type))
 		{
-			inputDevice.name = device.name;
-			inputDevice.path = device.path;
-			inputDevice.model = device.model;
-			inputDevice.index = device.index;
-			inputDevice.deviceID = device.deviceID;
-			inputDevice.eventBits = device.eventBits;
-			inputDevice.type = device.type;
+			LOGWARN("Unknown device with name '%s' detected on path '%s'", result->model.c_str(), result->path.c_str());
 
-			result = true;
-		}
-		else
-		{
-			LOGWARN("Unknown device with name '%s' detected on path '%s'", device.model.c_str(), device.path.c_str());
+			delete result;
+			result = nullptr;
 		}
 	}
 	else
@@ -199,26 +212,26 @@ void InputManager::onMessageEvent(const EventMessageBase& event)
 
 	if (eventName == EVENT_DEVICE_INSERTED)
 	{
-		InputDevice device;
-		if (resolveDevice(name, device))
+		BaseInputDevice* inputDevice = resolveDevice(name);
+		if (inputDevice != nullptr)
 		{
-			LOGINFO("New input device detected:\n%s", dump(device).c_str());
+			LOGINFO("New input device detected:\n%s", dump(inputDevice).c_str());
 
 			// Register device in correspondent collections
-			addInputDevice(device);
+			addInputDevice(inputDevice);
 
 			// Notify poller about changes
-			InputPoller::instance().addInputDevice(device);
+			InputPoller::instance().addInputDevice(*inputDevice);
 		}
 	}
 	else if (eventName == EVENT_DEVICE_REMOVED)
 	{
 		if (key_exists(m_inputDevices, name))
 		{
-			InputDevice& device = m_inputDevices[name];
+			BaseInputDevice* inputDevice = m_inputDevices[name];
 
 			// Notify poller about changes
-			InputPoller::instance().removeInputDevice(device);
+			InputPoller::instance().removeInputDevice(*inputDevice);
 		}
 
 		// Unregister from all collections
@@ -227,10 +240,13 @@ void InputManager::onMessageEvent(const EventMessageBase& event)
 }
 
 // ======================= Protected methods =================================
-void InputManager::addInputDevice(InputDevice& device)
+void InputManager::addInputDevice(BaseInputDevice* inputDevice)
 {
+	BaseInputDevice& device = *inputDevice;
+
 	string name = device.name;
 	string deviceModel = device.model;
+	int fd = device.fd;
 
 	TRACE("%s: adding input device '%s' with name '%s'...", __PRETTY_FUNCTION__, device.model.c_str(), device.name.c_str());
 
@@ -241,20 +257,20 @@ void InputManager::addInputDevice(InputDevice& device)
 	switch (device.type)
 	{
 		case InputDeviceTypeEnum::Mouse:
-			m_mouses.insert({name, device});
+			m_mouses.insert({name, inputDevice});
 			break;
 		case InputDeviceTypeEnum::Joystick:
-			m_joysticks.insert({name, device});
+			m_joysticks.insert({name, inputDevice});
 			break;
 		case InputDeviceTypeEnum::Keyboard:
-			m_keyboards.insert({name, device});
+			m_keyboards.insert({name, inputDevice});
 			break;
 		default:
 			break;
 	}
 
 	// Register in global collection
-	m_inputDevices.insert({name, device});
+	m_inputDevices.insert( {name, inputDevice} );
 
 	TRACE("OK, added");
 }
@@ -268,24 +284,27 @@ void InputManager::removeInputDevice(const string& name)
 		// Protect from simultaneous multithread access
 		lock_guard<mutex> lock(m_mutexDevices);
 
-		InputDevice& device = m_inputDevices[name];
+		BaseInputDevice* inputDevice = m_inputDevices[name];
 
-		switch (device.type)
+		switch (inputDevice->type)
 		{
 			case InputDeviceTypeEnum::Mouse:
-				m_mouses.erase(device.model);
+				m_mouses.erase(inputDevice->name);
 				break;
 			case InputDeviceTypeEnum::Joystick:
-				m_joysticks.erase(device.model);
+				m_joysticks.erase(inputDevice->name);
 				break;
 			case InputDeviceTypeEnum::Keyboard:
-				m_keyboards.erase(device.model);
+				m_keyboards.erase(inputDevice->name);
 				break;
 			default:
 				break;
 		}
 
 		m_inputDevices.erase(name);
+
+		// Free up memory
+		delete inputDevice;
 
 		TRACE("OK, removed");
 	}
@@ -303,7 +322,7 @@ string InputManager::dumpDevicesMap()
 	ss << tfm::format("Available input devices:  %d\n", m_inputDevices.size());
 
 	for_each(m_inputDevices.begin(), m_inputDevices.end(),
-			[&](InputDevicePair pair)
+			[&](BaseInputDevicePair pair)
 		{
 			ss << dump(pair.second);
 			ss << '\n';
@@ -323,24 +342,28 @@ string InputManager::dumpDevicesMap()
 	return ss.str();
 }
 
-string InputManager::dump(InputDevice& inputDevice)
+string InputManager::dump(BaseInputDevice* inputDevice)
 {
+	BaseInputDevice& device = *inputDevice;
+
 	stringstream ss;
 
-	ss << tfm::format("  name: '%s'", inputDevice.name.c_str());
+	ss << tfm::format("  name: '%s'", device.name.c_str());
 	ss << "\n";
-	ss << tfm::format("  path: '%s'", inputDevice.path.c_str());
+	ss << tfm::format("  path: '%s'", device.path.c_str());
 	ss << "\n";
-	ss << tfm::format("  index: %d", inputDevice.index);
+	ss << tfm::format("  index: %d", device.index);
 	ss << "\n";
-	ss << tfm::format("  model: '%s'", inputDevice.model.c_str());
+	ss << tfm::format("  fd: 0x%x", device.fd);
 	ss << "\n";
-	ss << tfm::format("  VID: 0x%04x, PID: 0x%04x", inputDevice.deviceID.vid, inputDevice.deviceID.pid);
+	ss << tfm::format("  model: '%s'", device.model.c_str());
 	ss << "\n";
-	ss << tfm::format("  type: 0x%x ('%s')", inputDevice.type._to_integral(), inputDevice.type._to_string());
+	ss << tfm::format("  VID: 0x%04x, PID: 0x%04x", device.deviceID.vid, device.deviceID.pid);
+	ss << "\n";
+	ss << tfm::format("  type: 0x%x ('%s')", device.type._to_integral(), device.type._to_string());
 	ss << "\n";
 
-	switch (inputDevice.type)
+	switch (device.type)
 	{
 		case InputDeviceTypeEnum::Mouse:
 			break;
@@ -348,7 +371,7 @@ string InputManager::dump(InputDevice& inputDevice)
 			break;
 		case InputDeviceTypeEnum::Keyboard:
 			{
-				Keyboard device(inputDevice.name, inputDevice.path);
+				Keyboard device(device.name, device.path);
 
 				device.openDevice();
 				uint16_t ledBits = device.getDeviceLEDBits();
