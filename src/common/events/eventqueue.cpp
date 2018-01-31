@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include "../../3rdparty/tinyformat/tinyformat.h"
 #include "../helpers/collectionhelper.h"
+#include "events.h"
 
 using namespace chrono;
 using namespace std::chrono_literals;
@@ -143,7 +144,8 @@ void EventQueue::removeObserver(const EventObserverPtr observer)
 				// and add them to list for deletion
 				for (auto it = observers.begin(); it != observers.end(); it++)
 				{
-					if (get<0>(*it) == observer)
+					EventDelegateTuple functor = *it;
+					if (get<0>(functor) == observer)
 					{
 						toRemove.push_back(it);
 					}
