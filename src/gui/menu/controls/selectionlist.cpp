@@ -1,5 +1,7 @@
 #include "selectionlist.h"
 
+#include "../../../common/logger/logger.h"
+
 #include <math.h>
 #include "../../osd/osd.h"
 
@@ -34,7 +36,6 @@ void SelectionList::setDataSource(const ListItemVector& data)
 		m_showScrollBar = false;
 		m_scrollBarTop = -1;
 		m_scrollBarHeight = 0;
-		m_topIndex = -1;
 	}
 
 	// Select first record if available
@@ -74,7 +75,11 @@ void SelectionList::moveUp()
 {
 	if (m_selectedIndex > 0)
 	{
+		removeSelectedHighlight();
+
 		m_selectedIndex--;
+
+		recalcPosition();
 	}
 
 	drawContent();
@@ -82,9 +87,15 @@ void SelectionList::moveUp()
 
 void SelectionList::moveDown()
 {
-	if (m_selectedIndex < m_height && m_selectedIndex < m_data.size())
+	if (m_selectedIndex >= 0 &&
+		m_selectedIndex < m_height &&
+		m_selectedIndex < (int)m_data.size())
 	{
+		removeSelectedHighlight();
+
 		m_selectedIndex++;
+
+		recalcPosition();
 	}
 
 	drawContent();
@@ -94,7 +105,7 @@ void SelectionList::moveDown()
 void SelectionList::drawContent()
 {
 	// Check if we can draw something
-	if (m_data.size() == 0)
+	if (m_data.size() == 0 || m_topIndex < 0)
 	{
 		return;
 	}
@@ -106,49 +117,32 @@ void SelectionList::drawContent()
 	}
 
 	OSD& osd = OSD::instance();
-	/*
-	osd.clear();
-	for (uint8_t x = 0; x < 100; x++)
-		osd.setPixel(x, 80);
-	osd.compose();
-	return;
-	*/
 
-	if (m_topIndex >= 0)
+	uint8_t rowOffset = m_topIndex >= 0 ? m_topIndex : 0;
+	for (uint8_t row = 0; row < m_height && row < m_data.size(); row++)
 	{
-		for (uint8_t row = 0; row < m_height && row < m_data.size(); row++)
+		auto& item = m_data[rowOffset + row];
+		bool isItemHighlighted =  m_selectedIndex == rowOffset + row;
+		int length = item.name.size();
+		uint8_t currentRow = m_top + row;
+
+		// Print item text
+		for (uint8_t col = 0; col < length && m_left + col < allowedWidth; col++)
 		{
-			auto& item = m_data[m_topIndex + row];
-			bool isItemHighlighted =  m_selectedIndex == row;
-			int length = item.name.size();
+			osd.printSymbol(currentRow, m_left + col, item.name[col]);
+		}
 
-			// Print item text
-			for (uint8_t col = 0; col < length && m_left + col < allowedWidth; col++)
-			{
-				//osd.printSymbol(m_top + row, m_left + col, item.name[col], isItemHighlighted);
-				osd.printSymbol(m_top + row, m_left + col, item.name[col]);
-			}
+		if (isItemHighlighted)
+		{
+			// Persist highlighted Y-position
+			m_selectedOnScreenPos = currentRow;
 
-			// If we have space left and it's highlighted menu item - fill with pixels
-			/*if (isItemHighlighted && length < allowedWidth)
-			{
-				uint8_t left = (m_left + length) * 8;
-				uint8_t top = (m_top + row) * 8;
-				uint8_t width = (allowedWidth - length) * 8;
-				uint8_t height = 8;
+			uint8_t left = m_left * 8;
+			uint8_t top = currentRow * 8;
+			uint8_t width = allowedWidth * 8;
+			uint8_t height = 8;
 
-				osd.fillRect(left, top, width, height);
-			}*/
-
-			if (isItemHighlighted)
-			{
-				uint8_t left = m_left * 8;
-				uint8_t top = (m_top + row) * 8;
-				uint8_t width = allowedWidth * 8;
-				uint8_t height = 8;
-
-				osd.invertRectOptimized(left, top, width, height);
-			}
+			osd.invertRect(left, top, width, height);
 		}
 
 		// Debug - should be called when all controls alread drawn from main GUI module
@@ -177,5 +171,39 @@ void SelectionList::drawScrollBar()
 	for (int i = m_scrollBarTop + m_scrollBarHeight; i <  m_height; i++)
 	{
 		// TODO: Fill OSD rectangle with empty pattern
+	}
+}
+
+void SelectionList::removeSelectedHighlight()
+{
+	if (m_selectedOnScreenPos >= 0)
+	{
+		int allowedWidth = m_width;
+		if (m_showScrollBar)
+		{
+			allowedWidth -= 1;
+		}
+
+		OSD& osd = OSD::instance();
+
+		uint8_t left = m_left * 8;
+		uint8_t top = m_selectedOnScreenPos * 8;
+		uint8_t width = allowedWidth * 8;
+		uint8_t height = 8;
+
+		osd.invertRectOptimized(left, top, width, height);
+	}
+}
+
+void SelectionList::recalcPosition()
+{
+	TRACE("selectedIndex: %d", m_selectedIndex);
+
+	if (m_showScrollBar)
+	{
+		if (m_selectedIndex > m_topIndex + m_height)
+		{
+			m_topIndex = m_selectedIndex - m_height;
+		}
 	}
 }

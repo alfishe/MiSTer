@@ -37,11 +37,12 @@ protected:
 	int m_selectedIndex = -1;
 
 	// Context
-	int m_topIndex = -1;			// What record displayed in the very first line
+	int m_topIndex = -1;				// What record displayed in the very first line
+	int m_selectedOnScreenPos = -1;	// What line is currently highlighted on-screen (y-pos in lines)
 
 	// Parameters to show scroll bar
 	bool m_showScrollBar = false;
-	int m_scrollBarTop = -1;		// Coordinates relative to SelectionList
+	int m_scrollBarTop = -1;			// Coordinates relative to SelectionList
 	int m_scrollBarHeight = 0;
 
 // Constructors
@@ -63,6 +64,8 @@ public:
 protected:
 	void drawContent();
 	void drawScrollBar();
+	void removeSelectedHighlight();
+	void recalcPosition();
 };
 
 #endif /* GUI_MENU_CONTROLS_SELECTIONLIST_H_ */
