@@ -88,7 +88,7 @@ protected:
 	uint8_t titlebuffer[2][OSD_HIGHRES_HEIGHT_LINES * 8]; // Horizontal buffer for initial title rendering. After rotation - 16 symbols height in highres and 8 in lowres
 	uint8_t framebuffer[OSD_HIGHRES_HEIGHT_LINES][OSD_LINE_LENGTH_BYTES];
 
-	bool highResolution = false;
+	bool highResolution = true;
 	bool arrowDirection;
 
 	uint32_t scroll_offset = 0; // file/dir name scrolling position
@@ -112,14 +112,14 @@ public:
 	void printLine(uint8_t line, const string& text, bool invert = false);
 
 	void printSymbol(uint8_t row, uint8_t column, char symbol, bool invert = false);
-	bool getPixel(uint8_t x, uint8_t y);
-	void setPixel(uint8_t x, uint8_t y, bool invert = false);
+	bool getPixel(const int x, const int y);
+	void setPixel(const int x, const int y, bool invert = false);
 
 	// Rectangular region operations
 	void fillRect(uint8_t left, uint8_t top, uint8_t width, uint8_t height, bool clear = false);
 	void invertRect(uint8_t left, uint8_t top, uint8_t width, uint8_t height);
 
-	void fillRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t height, bool clear);
+	void fillRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t height, bool clear = false);
 	void invertRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t height);
 
 protected:

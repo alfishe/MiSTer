@@ -65,9 +65,6 @@ void OSD::clear()
 {
 	// Clear internal buffer
 	clearFramebuffer();
-
-	// Transfer changes to FPGA
-	transferFramebuffer();
 }
 
 void OSD::compose()
@@ -211,10 +208,10 @@ void OSD::printSymbol(uint8_t row, uint8_t column, char symbol, bool invert)
 	}
 }
 
-bool OSD::getPixel(uint8_t x, uint8_t y)
+bool OSD::getPixel(const int x, const int y)
 {
-	static uint16_t heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
-	static uint16_t widthLimit = OSD_LINE_LENGTH_BYTES;
+	static int heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
+	static int widthLimit = OSD_LINE_LENGTH_BYTES;
 
 	if (x >= widthLimit || y >= heightLimit)
 	{
@@ -223,16 +220,19 @@ bool OSD::getPixel(uint8_t x, uint8_t y)
 
 	uint8_t byteY = y / 8;
 	uint8_t bitIdx = y % 8;
-	uint8_t value = framebuffer[byteY][x] & (1 << bitIdx);
+	uint8_t value = framebuffer[byteY][x];
+
+	value &= (1 << bitIdx);
+
 	bool result = value != 0;
 
 	return result;
 }
 
-void OSD::setPixel(uint8_t x, uint8_t y, bool invert)
+void OSD::setPixel(const int x, const int y, bool invert)
 {
-	static uint16_t heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
-	static uint16_t widthLimit = OSD_LINE_LENGTH_BYTES;
+	static int heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
+	static int widthLimit = OSD_LINE_LENGTH_BYTES;
 
 	if (x >= widthLimit || y >= heightLimit)
 	{
@@ -258,8 +258,8 @@ void OSD::setPixel(uint8_t x, uint8_t y, bool invert)
 // Rectangular region operations
 void OSD::fillRect(uint8_t left, uint8_t top, uint8_t width, uint8_t height, bool clear)
 {
-	static uint16_t heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
-	static uint16_t widthLimit = OSD_LINE_LENGTH_BYTES;
+	static int heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
+	static int widthLimit = OSD_LINE_LENGTH_BYTES;
 
 	if (left >= widthLimit || top >= heightLimit)
 	{
@@ -267,9 +267,9 @@ void OSD::fillRect(uint8_t left, uint8_t top, uint8_t width, uint8_t height, boo
 		return;
 	}
 
-	for (uint8_t x = left; x < left + width && x < widthLimit; x++)
+	for (int x = left; x < left + width && x < widthLimit; x++)
 	{
-		for (uint8_t y = top; y < top + height && y < heightLimit; y++)
+		for (int y = top; y < top + height && y < heightLimit; y++)
 		{
 			setPixel(x, y, clear);
 		}
@@ -278,8 +278,8 @@ void OSD::fillRect(uint8_t left, uint8_t top, uint8_t width, uint8_t height, boo
 
 void OSD::fillRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t height, bool clear)
 {
-	static uint16_t heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
-	static uint16_t widthLimit = OSD_LINE_LENGTH_BYTES;
+	static int heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
+	static int widthLimit = OSD_LINE_LENGTH_BYTES;
 
 	if (left >= widthLimit || top >= heightLimit)
 	{
@@ -307,15 +307,15 @@ void OSD::fillRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t he
 	if (topOffset != 0)
 	{
 		// Create mask for upper <topOffset> bits
-		uint8_t topMask = ((1 << (topOffset + 1)) - 1) << (7 - topOffset);
+		uint8_t topMask = (1 << topOffset) - 1;
 		uint8_t bottomMask = ~topMask;
 
-		for (uint8_t x = left; x < left + width && x < widthLimit; x++)
+		for (int x = left; x < left + width && x < widthLimit; x++)
 		{
 			uint8_t value = framebuffer[topByteY][x];
 			if (!clear)
 			{
-				value = (0xFF & topMask) | (value & bottomMask);
+				value = (value & topMask) | (0xFF & bottomMask);
 			}
 			else
 			{
@@ -330,9 +330,9 @@ void OSD::fillRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t he
 	{
 		uint8_t fillByte = clear ? 0x00 : 0xFF;
 
-		for (uint8_t x = left; x < left + width && x < widthLimit; x++)
+		for (int x = left; x < left + width && x < widthLimit; x++)
 		{
-			for (uint8_t y = alignedTop; y < (alignedTop + alignedHeight) / 8; y++)
+			for (int y = alignedTop / 8; y < (alignedTop + alignedHeight) / 8; y++)
 			{
 				framebuffer[y][x] = fillByte;
 			}
@@ -343,15 +343,15 @@ void OSD::fillRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t he
 	if (bottomOffset != 0)
 	{
 		// Create mask for lower <bottomOffset> bits
-		uint8_t bottomMask = (1 << (bottomOffset + 1)) - 1;
-		uint8_t topMask = ~bottomMask;
+		uint8_t topMask = (1 << bottomOffset) - 1;
+		uint8_t bottomMask = ~topMask;
 
-		for (uint8_t x = left; x < left + width && x < widthLimit; x++)
+		for (int x = left; x < left + width && x < widthLimit; x++)
 		{
 			uint8_t value = framebuffer[bottomByteY][x];
 			if (!clear)
 			{
-				value = (0xFF & bottomMask) | (value & topMask);
+				value = (0xFF & topMask) | (value & bottomMask);
 			}
 			else
 			{
@@ -364,8 +364,8 @@ void OSD::fillRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t he
 
 void OSD::invertRect(uint8_t left, uint8_t top, uint8_t width, uint8_t height)
 {
-	static uint16_t heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
-	static uint16_t widthLimit = OSD_LINE_LENGTH_BYTES;
+	static int heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
+	static int widthLimit = OSD_LINE_LENGTH_BYTES;
 
 	if (left >= widthLimit || top >= heightLimit)
 	{
@@ -373,20 +373,21 @@ void OSD::invertRect(uint8_t left, uint8_t top, uint8_t width, uint8_t height)
 		return;
 	}
 
-	for (uint8_t x = left; x < left + width && x < widthLimit; x++)
+	for (int x = left; x < left + width && x < widthLimit; x++)
 	{
-		for (uint8_t y = top; y < top + height && y < heightLimit; y++)
+		for (int y = top; y < top + height && y < heightLimit; y++)
 		{
 			bool value = getPixel(x, y);
-			setPixel(x, y, ~value);
+			value = !value;
+			setPixel(x, y, !value);
 		}
 	}
 }
 
 void OSD::invertRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t height)
 {
-	static uint16_t heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
-	static uint16_t widthLimit = OSD_LINE_LENGTH_BYTES;
+	static int heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
+	static int widthLimit = OSD_LINE_LENGTH_BYTES;
 
 	if (left >= widthLimit || top >= heightLimit)
 	{
@@ -414,13 +415,13 @@ void OSD::invertRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t 
 	if (topOffset != 0)
 	{
 		// Create mask for upper <topOffset> bits
-		uint8_t topMask = ((1 << (topOffset + 1)) - 1) << (7 - topOffset);
+		uint8_t topMask = (1 << topOffset) - 1;
 		uint8_t bottomMask = ~topMask;
 
-		for (uint8_t x = left; x < left + width && x < widthLimit; x++)
+		for (int x = left; x < left + width && x < widthLimit; x++)
 		{
 			uint8_t value = framebuffer[topByteY][x];
-			value = (~value & topMask) | (value & bottomMask);
+			value = (value & topMask) | (~value & bottomMask);
 			framebuffer[topByteY][x] = value;
 		}
 	}
@@ -428,11 +429,13 @@ void OSD::invertRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t 
 	// Invert aligned rect
 	if (alignedTop >= 0 && alignedHeight > 0)
 	{
-		for (uint8_t x = left; x < left + width && x < widthLimit; x++)
+		for (int x = left; x < left + width && x < widthLimit; x++)
 		{
-			for (uint8_t y = alignedTop; y < (alignedTop + alignedHeight) / 8; y++)
+			for (int y = alignedTop / 8; y < (alignedTop + alignedHeight) / 8; y++)
 			{
-				framebuffer[y][x] = ~framebuffer[y][x];
+				uint8_t value = framebuffer[y][x];
+				value = ~value;
+				framebuffer[y][x] = value;
 			}
 		}
 	}
@@ -441,13 +444,13 @@ void OSD::invertRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t 
 	if (bottomOffset != 0)
 	{
 		// Create mask for lower <bottomOffset> bits
-		uint8_t bottomMask = (1 << (bottomOffset + 1)) - 1;
-		uint8_t topMask = ~bottomMask;
+		uint8_t topMask = (1 << bottomOffset) - 1;
+		uint8_t bottomMask = ~topMask;
 
-		for (uint8_t x = left; x < left + width && x < widthLimit; x++)
+		for (int x = left; x < left + width && x < widthLimit; x++)
 		{
 			uint8_t value = framebuffer[bottomByteY][x];
-			value = (~value & bottomMask) | (value & topMask);
+			value = (~value & topMask) | (value & bottomMask);
 			framebuffer[bottomByteY][x] = value;
 		}
 	}
@@ -530,6 +533,8 @@ void OSD::transferFramebuffer()
 	FPGAConnector& connector = *(fpga.connector);
 	FPGACommand& command = *(fpga.command);
 
+	TRACE("OSD buffer transfer started");
+
 	command.startOSD();
 
 	// Write to buffer command (Line is selected as render start MM1_OSDCMDWRITE | 0)
@@ -547,4 +552,6 @@ void OSD::transferFramebuffer()
 	}
 
 	command.endOSD();
+
+	TRACE("OSD buffer transfer finished");
 }
