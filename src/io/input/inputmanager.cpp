@@ -160,15 +160,42 @@ BaseInputDevice* InputManager::resolveDevice(const string& name)
 	if (filemanager::isFileExist(path.c_str()))
 	{
 		// Query device for properties
-		result = new BaseInputDevice(name, path);
-		result->init();
-
-		if (!isDeviceTypeAllowed(result->type))
+		int fd = open(path.c_str(), O_RDONLY | O_NONBLOCK);
+		if (InputDeviceHelper::isDescriptorValid(fd))
 		{
-			LOGWARN("Unknown device with name '%s' detected on path '%s'", result->model.c_str(), result->path.c_str());
+			// Get basic device info without creating heavy structures / class instances
+			InputDeviceTypeEnum type = InputDeviceHelper::getDeviceType(fd);
+			string model = InputDeviceHelper::getDeviceModel(fd);
 
-			delete result;
-			result = nullptr;
+			close(fd);
+
+			if (!isDeviceTypeAllowed(type))
+			{
+				LOGWARN("Unknown device with name '%s' detected on path '%s'", model.c_str(), path.c_str());
+			}
+			else
+			{
+				switch (type)
+				{
+					case InputDeviceTypeEnum::Keyboard:
+						result = new Keyboard(name, path);
+						break;
+					case InputDeviceTypeEnum::Mouse:
+						result = new Mouse(name, path);
+						break;
+					case InputDeviceTypeEnum::Joystick:
+						new Joystick(name, path);
+						break;
+					default:
+						break;
+				};
+			}
+		}
+
+		// Initialize device
+		if (result != nullptr)
+		{
+			result->init();
 		}
 	}
 	else
@@ -246,7 +273,6 @@ void InputManager::addInputDevice(BaseInputDevice* inputDevice)
 
 	string name = device.name;
 	string deviceModel = device.model;
-	int fd = device.fd;
 
 	TRACE("%s: adding input device '%s' with name '%s'...", __PRETTY_FUNCTION__, device.model.c_str(), device.name.c_str());
 
@@ -374,7 +400,7 @@ string InputManager::dump(BaseInputDevice* inputDevice)
 				Keyboard device(device.name, device.path);
 
 				device.openDevice();
-				uint16_t ledBits = device.getDeviceLEDBits();
+				uint16_t ledBits = InputDeviceHelper::getDeviceLEDBits(device.fd, device.bit_led, sizeof(device.bit_led));
 				device.closeDevice();
 
 				ss << tfm::format("  LED bits: 0x%04x | %s", ledBits, BaseInputDevice::dumpLEDBits(ledBits).c_str());

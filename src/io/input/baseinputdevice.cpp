@@ -584,10 +584,10 @@ bool BaseInputDevice::init()
 	index = getDeviceIndex();
 
 	// 2. Retrieve device name
-	model = getDeviceName();
+	model = getDeviceModel();
 
 	// 3. Get device type
-	type = getDeviceType();
+	type = InputDeviceHelper::getDeviceType(fd);
 
 	// 4. Get device USB VID / PID (if available)
 	deviceID = getDeviceVIDPID();
@@ -595,20 +595,9 @@ bool BaseInputDevice::init()
 	return result;
 }
 
-const string BaseInputDevice::getDeviceName()
+const string BaseInputDevice::getDeviceModel()
 {
-	static const int EVENT_BUFFER_SIZE = 256;
-
-	string result;
-	result.resize(EVENT_BUFFER_SIZE);
-
-	int res = ioctl(fd, EVIOCGNAME(EVENT_BUFFER_SIZE), result.c_str());
-	if (res >= 0 && res <= EVENT_BUFFER_SIZE)
-	{
-		result.resize(res);
-	}
-
-	return result;
+	return InputDeviceHelper::getDeviceModel(fd);
 }
 
 const int BaseInputDevice::getDeviceIndex()
@@ -642,110 +631,19 @@ VIDPID BaseInputDevice::getDeviceVIDPID()
 	return result;
 }
 
-InputDeviceTypeEnum BaseInputDevice::getDeviceType()
-{
-	InputDeviceTypeEnum result = InputDeviceTypeEnum::Unknown;
-
-	getDeviceEventBits();
-	getDeviceKeyBits();
-
-	// Detect Mouse device
-	if (result == +InputDeviceTypeEnum::Unknown)
-	{
-		// If device supports relative coordinates and supports at least left button - most likely it's a mouse
-		if (hasEventType(bit_ev, EV_REL) &&
-			hasEventType(bit_ev, EV_KEY) && hasEventCode(bit_key, BTN_LEFT)
-			)
-		{
-			result = InputDeviceTypeEnum::Mouse;
-		}
-	}
-
-	// Detect Joystick device
-	if (result == +InputDeviceTypeEnum::Unknown)
-	{
-		// If device supports absolute coordinates and has gamepad button or joystick button - most likely it's a joystick
-		if (hasEventType(bit_ev, EV_ABS) &&
-			hasEventType(bit_ev, EV_KEY) &&
-			(hasEventCode(bit_key, BTN_GAMEPAD) || hasEventCode(bit_key, BTN_JOYSTICK))
-			)
-		{
-			result = InputDeviceTypeEnum::Joystick;
-		}
-	}
-
-	// Detect Keyboard
-	if (result == +InputDeviceTypeEnum::Unknown)
-	{
-		// Keyboard needs to have at least few letter buttons
-		// TODO: Numpads detection (keyboard HID but have only numeric keys)
-		if (hasEventType(bit_ev, EV_KEY) &&
-			hasEventCode(bit_key, KEY_A) &&
-			hasEventCode(bit_key, KEY_Z)
-			)
-		{
-			uint16_t ledBits = getDeviceLEDBits();
-			if (ledBits > 0)
-			{
-				result = InputDeviceTypeEnum::Keyboard;
-			}
-		}
-	}
-
-	return result;
-}
-
 uint32_t BaseInputDevice::getDeviceEventBits()
 {
-	uint32_t result = 0x00000000;
-
-	if (ioctl(fd, EVIOCGBIT(0, sizeof(bit_ev)), &bit_ev) >= 0)
-	{
-		result = (uint32_t)bit_ev[0];
-
-		//TRACE("Device event bits: 0x%08x | %s", result, DisplayHelper::formatBits(result).c_str());
-		//TRACE("Event bits: %s", dumpEventBits(result).c_str());
-		//TRACE("");
-	}
-	else
-	{
-		LOGERROR("Unable to retrieve event bits for device");
-	}
-
-	return result;
+	return InputDeviceHelper::getDeviceEventBits(fd, bit_ev, sizeof(bit_ev));
 }
 
 uint16_t BaseInputDevice::getDeviceLEDBits()
 {
-	uint16_t result = 0x0000;
-
-	if (ioctl(fd, EVIOCGBIT(EV_LED, sizeof(bit_led)), &bit_led) >= 0)
-	{
-		result = (uint16_t)bit_led[0];
-
-		//TRACE("Device LED bits: 0x%04x | %s", result, DisplayHelper::formatBits(result).c_str());
-		//TRACE("LED bits: %s", dumpLEDBits(result).c_str());
-		//TRACE("");
-	}
-	else
-	{
-		LOGERROR("Unable to retrieve LED bits for device");
-	}
-
-	return result;
+	return InputDeviceHelper::getDeviceLEDBits(fd, bit_led, sizeof(bit_led));
 }
 
 const BitType* BaseInputDevice::getDeviceKeyBits()
 {
-	if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(bit_key)), &bit_key) >= 0)
-	{
-	}
-	else
-	{
-		LOGERROR("Unable to retrieve Key bits for device");
-	}
-
-	return bit_key;
+	return InputDeviceHelper::getDeviceKeyBits(fd, bit_key, sizeof(bit_key));
 }
 
 string BaseInputDevice::printDeviceInfo(int fd)

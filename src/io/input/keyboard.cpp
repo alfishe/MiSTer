@@ -2,6 +2,7 @@
 
 #include "../../common/logger/logger.h"
 
+#include <cstring>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -10,6 +11,7 @@
 #include "../../3rdparty/tinyformat/tinyformat.h"
 #include "../../common/consts.h"
 #include "../../common/exception/misterexception.h"
+#include "../../common/helpers/collectionhelper.h"
 
 Keyboard::Keyboard(const string& name, const string& path) : BaseInputDevice(name, path)
 {
@@ -18,6 +20,13 @@ Keyboard::Keyboard(const string& name, const string& path) : BaseInputDevice(nam
 Keyboard::~Keyboard()
 {
 	closeDevice();
+}
+
+void Keyboard::reset()
+{
+	// Reset all internal buffers and states
+	m_keysState.clear();
+	memset(bit_key, 0, sizeof(bit_key));
 }
 
 bool Keyboard::isKeyPressed(uint16_t key)
@@ -30,7 +39,7 @@ bool Keyboard::isKeyPressed(uint16_t key)
 
 bool Keyboard::isKeyPressed(unsigned long* keyBits, uint16_t key)
 {
-	bool result = isBitSet(keyBits, key);
+	bool result = InputDeviceHelper::isBitSet(keyBits, key);
 
 	return result;
 }
@@ -52,7 +61,7 @@ bool Keyboard::pollKeys()
 
 int Keyboard::getPressedKeysCount()
 {
-	int result = bitCount(bit_key_state, sizeof(bit_key_state) / sizeof(bit_key_state[0]));
+	int result = InputDeviceHelper::bitCount(bit_key_state, sizeof(bit_key_state) / sizeof(bit_key_state[0]));
 
 	/* Dumb implementation
 	for (unsigned i = 0; i < KEY_MAX; i++)
@@ -116,6 +125,30 @@ void Keyboard::makeLEDEvent(struct input_event* event, uint16_t ledMask, bool on
 	}
 }
 
+void Keyboard::setKeyState(uint16_t key, bool state)
+{
+	if (key_exists(m_keysState, key))
+	{
+		m_keysState[key] = state;
+	}
+	else
+	{
+		m_keysState.insert( {key, state} );
+	}
+}
+
+bool Keyboard::getKeyState(uint16_t key)
+{
+	bool result = false;
+
+	if (key_exists(m_keysState, key))
+	{
+		result = m_keysState[key];
+	}
+
+	return result;
+}
+
 // Debug methods
 string Keyboard::dumpKeyBits()
 {
@@ -132,7 +165,7 @@ string Keyboard::dumpKeyBits(unsigned long* keyBits)
 	int setBits = 0;
 	for (unsigned i = 0; i < KEY_MAX; i++)
 	{
-		if (isBitSet(keyBits, i))
+		if (InputDeviceHelper::isBitSet(keyBits, i))
 		{
 			if (setBits != 0)
 				ss << ", ";

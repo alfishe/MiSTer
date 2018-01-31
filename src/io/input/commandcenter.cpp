@@ -87,20 +87,31 @@ CommandCenter::~CommandCenter()
 void CommandCenter::handleKeyboard(const MInputMessage& message)
 {
 	auto& events = message.events;
+
+	// Resolve keyboard instance using name
 	Keyboard* keyboard = (Keyboard*)InputManager::instance().findInputDeviceByName(message.name);
 
-	for (auto& ev : events)
+	if (keyboard != nullptr)
 	{
-		if (ev.type == InputEventTypeEnum::Key)
+		for (auto& ev : events)
 		{
-			const KeyEvent& keyEvent = ev.event.keyEvent;
-
-			// Step 1: Process menu command(s)
-			bool res = handleMenu(keyboard, keyEvent);
-
-			//if (!res)
-			//	res = handleGlobal(keyEvent);
+			if (ev.type == InputEventTypeEnum::Key)
+			{
+				// Actualize state for each key arrived in event
+				const KeyEvent& keyEvent = ev.event.keyEvent;
+				keyboard->setKeyState(keyEvent.key, keyEvent.state);
+			}
 		}
+
+		// Step 1: Process menu command(s)
+		bool res = handleMenu(*keyboard);
+
+		//if (!res)
+		//	res = handleGlobal(keyEvent);
+	}
+	else
+	{
+		LOGWARN("%s: unable to resolve keyboard using input device name '%s'", __PRETTY_FUNCTION__, message.name.c_str());
 	}
 }
 
@@ -110,47 +121,47 @@ void CommandCenter::handleCoreStarted(const CoreStartedEvent& message)
 }
 
 // Handle everything related to menu
-bool CommandCenter::handleMenu(Keyboard* keyboard, const KeyEvent& keyEvent)
+bool CommandCenter::handleMenu(Keyboard& keyboard)
 {
 	bool result = false;
 
-	if (keyboard == nullptr)
+	bool f12Pressed = keyboard.getKeyState(KEY_F12);
+	bool altPressed = keyboard.getKeyState(KEY_LEFTALT) | keyboard.getKeyState(KEY_RIGHTALT);
+
+	if (f12Pressed && altPressed)
 	{
-		LOGWARN("%s: empty keyboard object provided as parameter", __PRETTY_FUNCTION__);
-		return result;
-	}
+		OSD& osd = OSD::instance();
 
-	// Handle OSD enable/disable
-
-	// TODO: switch to configurable combination
-	if (keyEvent.key == KEY_F12 && keyEvent.state)
-	{
-		// Initiate update for current keys state
-		keyboard->pollKeys();
-
-		m_isMenuActive = !m_isMenuActive;
-
-		if (keyboard->isKeyPressed(KEY_RIGHTALT) || keyboard->isKeyPressed(KEY_LEFTALT))
+		if (!m_isMenuActive)
 		{
-			m_menuType = MenuTypeEnum::CoreSelection;
-
-			CoreSelectionMenu menu = CoreSelectionMenu();
-			menu.readAvailableCores();
-			auto items = menu.getAvailableCores();
-
-			LOGINFO("%s: %d cores are available", __PRETTY_FUNCTION__, items.size());
-			for (int i = 0; i < items.size(); i++)
+			if (m_menu == nullptr)
 			{
-				LOGINFO("  %s", items[i].displayname.c_str());
+				m_menu = new CoreSelectionMenu();
+				((CoreSelectionMenu *)m_menu)->start();
 			}
-		}
-		else if (keyboard->isKeyPressed(KEY_LEFTMETA) || keyboard->isKeyPressed(KEY_RIGHTMETA))
-		{
-			m_menuType = MenuTypeEnum::GlobalSettings;
+
+			osd.showHighres();
 		}
 		else
 		{
-			m_menuType = MenuTypeEnum::CoreSpecific;
+			osd.hide();
+		}
+
+		m_isMenuActive = !m_isMenuActive;
+	}
+
+	if (m_isMenuActive)
+	{
+		bool upPressed = keyboard.getKeyState(KEY_UP);
+		bool downPressed = keyboard.getKeyState(KEY_DOWN);
+
+		if (upPressed)
+		{
+			((CoreSelectionMenu *)m_menu)->moveUp();
+		}
+		else if (downPressed)
+		{
+			((CoreSelectionMenu *)m_menu)->moveDown();
 		}
 	}
 

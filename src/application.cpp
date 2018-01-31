@@ -5,6 +5,8 @@
 #include "common/messagetypes.h"
 #include "common/events/messagecenter.h"
 #include "system/systemmanager.h"
+#include "fpga/fpgadevice.h"
+#include "fpga/fpgacommand.h"
 #include "io/input/devicedetector/devicedetector.h"
 #include "io/input/inputmanager.h"
 #include "io/input/commandcenter.h"
@@ -25,6 +27,9 @@ Application::~Application()
 
 void Application::onStart()
 {
+	// Initialize FPGA communications
+	FPGADevice& fpga = FPGADevice::instance();
+
 	// Start input device detector
 	DeviceDetector& detector = DeviceDetector::instance();
 	detector.init();

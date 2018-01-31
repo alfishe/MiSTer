@@ -1,10 +1,5 @@
 #include "mouse.h"
 
-mouse::mouse()
+Mouse::Mouse(const string& name, const string& path) : BaseInputDevice(name, path)
 {
 }
-
-mouse::~mouse()
-{
-}
-

@@ -1,7 +1,10 @@
 #ifndef GUI_OSD_OSD_H_
 #define GUI_OSD_OSD_H_
 
+#include <string>
 #include <stdint.h>
+
+using namespace std;
 
 // OSD menu control constants
 #define OSDCTRLUP        0x01        /*OSD up control*/
@@ -78,6 +81,7 @@ public:
 	static const uint16_t OSD_HIGHRES_HEIGHT_PX = OSD_HIGHRES_HEIGHT_LINES * 8;
 	static const uint16_t OSD_HIGHRES_TITLE_WIDTH_PX = OSD_HIGHRES_HEIGHT_PX;
 	static const uint16_t OSD_LINE_LENGTH_BYTES = 256;
+	static const uint16_t OSD_LINE_LENGTH = OSD_LINE_LENGTH_BYTES / 8;
 
 protected:
 	// Fields
@@ -104,8 +108,19 @@ public:
 	void fill();
 	void clear();
 	void compose();
-	void setTitle(const char *title, uint8_t arrows = 0);
-	void printLine(uint8_t line, const char *text, bool invert = false);
+	void setTitle(const string& title, uint8_t arrows = 0);
+	void printLine(uint8_t line, const string& text, bool invert = false);
+
+	void printSymbol(uint8_t row, uint8_t column, char symbol, bool invert = false);
+	bool getPixel(uint8_t x, uint8_t y);
+	void setPixel(uint8_t x, uint8_t y, bool invert = false);
+
+	// Rectangular region operations
+	void fillRect(uint8_t left, uint8_t top, uint8_t width, uint8_t height, bool clear = false);
+	void invertRect(uint8_t left, uint8_t top, uint8_t width, uint8_t height);
+
+	void fillRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t height, bool clear);
+	void invertRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t height);
 
 protected:
 	// Helper methods

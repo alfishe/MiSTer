@@ -5,24 +5,47 @@
 #include <vector>
 #include "../../common/consts.h"
 #include "../../common/file/scandir/scandir.h"
+#include "basemenu.h"
+#include "controls/selectionlist.h"
 
 using namespace std;
 
-class CoreSelectionMenu
+class CoreSelectionMenu : public BaseMenu
 {
 public:
+	SelectionList* m_ctrlSelectionList;
+
 	DirectoryEntryVector m_coreNames;
 	string m_selectedItem;
 	int m_selectedIndex;
 
 public:
-	CoreSelectionMenu() {};
-	virtual ~CoreSelectionMenu() {};
+	CoreSelectionMenu()
+	{
+		m_ctrlSelectionList = new SelectionList(4, 0, 28, 16);
+	};
+	virtual ~CoreSelectionMenu()
+	{
+		if (m_ctrlSelectionList != nullptr)
+		{
+			delete m_ctrlSelectionList;
+		}
+	};
 
-	void readAvailableCores();
+	void start();
+	void stop();
+
 	DirectoryEntryVector& getAvailableCores();
 	void selectItem(int index);
 	void removeSelection();
+
+	// Control events
+	void moveUp();
+	void moveDown();
+
+// Helper methods
+protected:
+	ListItemVector readAvailableCores();
 };
 
 #endif /* GUI_MENU_CORESELECTIONMENU_H_ */

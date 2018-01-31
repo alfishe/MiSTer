@@ -4,6 +4,7 @@
 #include <atomic>
 #include "../../common/messagetypes.h"
 #include "../../common/events/events.h"
+#include "../../gui/menu/basemenu.h"
 #include "inputmanager.h"
 #include "keyboard.h"
 
@@ -21,6 +22,7 @@ class CommandCenter : public EventObserver
 private:
 	atomic<bool> m_isMenuActive;
 	MenuTypeEnum m_menuType = MenuTypeEnum::CoreSelection;
+	BaseMenu* m_menu = nullptr;
 
 public:
 	// Singleton instance
@@ -35,7 +37,8 @@ protected:
 	void handleKeyboard(const MInputMessage& message);
 	void handleCoreStarted(const CoreStartedEvent& message);
 
-	bool handleMenu(Keyboard* keyboard, const KeyEvent& keyEvent);
+	bool handleMenu(Keyboard& keyboard);
+	bool handleGlobalKeys(Keyboard& keyboard);
 
 // Event handlers
 protected:

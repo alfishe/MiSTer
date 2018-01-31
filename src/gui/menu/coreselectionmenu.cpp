@@ -6,30 +6,17 @@
 #include "../../common/file/path/path.h"
 #include "../../common/helpers/collectionhelper.h"
 
-void CoreSelectionMenu::readAvailableCores()
+void CoreSelectionMenu::start()
 {
-	ScanDir scan;
-	scan.scanFolder(DATA_ROOT, ScanDir::getFPGACoreFilter(), ScanDir::getAlphaSortCaseInsensitive());
+	readAvailableCores();
 
-	m_coreNames = scan.getScanResults();
+	auto list = readAvailableCores();
+	m_ctrlSelectionList->setDataSource(list);
+}
 
-	// Strip extensions from displayname property
-	if (m_coreNames.size() > 0)
-	{
-		for_each(m_coreNames.begin(), m_coreNames.end(),
-			[&](DirectoryEntry& entry)
-			{
-				entry.displayname = Path::getFileNameWithoutExtension(entry.displayname);
-			}
-		);
-	}
-	else
-	{
-		LOGINFO("No FPGA cores available \n");
-	}
+void CoreSelectionMenu::stop()
+{
 
-	// Free up ScanDir buffers
-	scan.dispose();
 }
 
 DirectoryEntryVector& CoreSelectionMenu::getAvailableCores()
@@ -51,3 +38,49 @@ void CoreSelectionMenu::removeSelection()
 	m_selectedItem = "";
 	m_selectedIndex = -1;
 }
+
+void CoreSelectionMenu::moveUp()
+{
+	m_ctrlSelectionList->moveUp();
+}
+
+void CoreSelectionMenu::moveDown()
+{
+	m_ctrlSelectionList->moveDown();
+}
+
+// Helper methods
+ListItemVector CoreSelectionMenu::readAvailableCores()
+{
+	ListItemVector result;
+
+	ScanDir scan;
+	scan.scanFolder(DATA_ROOT, ScanDir::getFPGACoreFilter(), ScanDir::getAlphaSortCaseInsensitive());
+
+	m_coreNames = scan.getScanResults();
+
+	// Strip extensions from displayname property
+	if (m_coreNames.size() > 0)
+	{
+		for_each(m_coreNames.begin(), m_coreNames.end(),
+			[&](DirectoryEntry& entry)
+			{
+				entry.displayname = Path::getFileNameWithoutExtension(entry.displayname);
+
+				ListItem item(entry.displayname, 0, false);
+				result.push_back(item);
+			}
+		);
+	}
+	else
+	{
+		LOGINFO("No FPGA cores available \n");
+	}
+
+	// Free up ScanDir buffers
+	scan.dispose();
+
+	return result;
+}
+
+
