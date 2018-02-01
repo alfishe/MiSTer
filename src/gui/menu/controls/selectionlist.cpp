@@ -80,9 +80,9 @@ void SelectionList::moveUp()
 		m_selectedIndex--;
 
 		recalcPosition();
-	}
 
-	drawContent();
+		drawContent();
+	}
 }
 
 void SelectionList::moveDown()
@@ -96,9 +96,9 @@ void SelectionList::moveDown()
 		m_selectedIndex++;
 
 		recalcPosition();
-	}
 
-	drawContent();
+		drawContent();
+	}
 }
 
 // Helper methods
@@ -144,10 +144,10 @@ void SelectionList::drawContent()
 
 			osd.invertRect(left, top, width, height);
 		}
-
-		// Debug - should be called when all controls alread drawn from main GUI module
-		osd.compose();
 	}
+
+	// Debug - should be called when all controls alread drawn from main GUI module
+	osd.compose();
 }
 
 void SelectionList::drawScrollBar()
