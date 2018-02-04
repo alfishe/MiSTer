@@ -149,6 +149,30 @@ bool Keyboard::getKeyState(uint16_t key)
 	return result;
 }
 
+void Keyboard::setPrevKeyState(uint16_t key, bool state)
+{
+	if (key_exists(m_prevKeysState, key))
+	{
+		m_prevKeysState[key] = state;
+	}
+	else
+	{
+		m_prevKeysState.insert( {key, state} );
+	}
+}
+
+bool Keyboard::getPrevKeyState(uint16_t key)
+{
+	bool result = false;
+
+	if (key_exists(m_prevKeysState, key))
+	{
+		result = m_prevKeysState[key];
+	}
+
+	return result;
+}
+
 // Debug methods
 string Keyboard::dumpKeyBits()
 {

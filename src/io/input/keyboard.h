@@ -21,6 +21,7 @@ protected:
 	uint16_t supportedLEDBits = 0x0000;
 
 	KeyStateMap m_keysState;
+	KeyStateMap m_prevKeysState;
 
 public:
 	Keyboard(const string& name, const string& path);
@@ -42,6 +43,8 @@ public:
 	// Key state operations
 	void setKeyState(uint16_t key, bool state);
 	bool getKeyState(uint16_t key);
+	void setPrevKeyState(uint16_t key, bool state);
+	bool getPrevKeyState(uint16_t key);
 
 	// Debug methods
 	string dumpKeyBits();

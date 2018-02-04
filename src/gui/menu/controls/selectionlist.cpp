@@ -132,6 +132,16 @@ void SelectionList::drawContent()
 			osd.printSymbol(currentRow, m_left + col, item.name[col]);
 		}
 
+		// Clear space till end of line (Otherwise there will be artifact during scrolling when one line has more length than other)
+		if (m_left + length < allowedWidth)
+		{
+			uint8_t left = (m_left + length) * 8;
+			uint8_t top = currentRow * 8;
+			uint8_t width = allowedWidth * 8 - left;
+			uint8_t height = 8;
+			osd.fillRectOptimized(left, top, width, height, true);
+		}
+
 		if (isItemHighlighted)
 		{
 			// Persist highlighted Y-position
@@ -197,13 +207,22 @@ void SelectionList::removeSelectedHighlight()
 
 void SelectionList::recalcPosition()
 {
-	TRACE("selectedIndex: %d", m_selectedIndex);
-
+	// If we need to scroll the list...
 	if (m_showScrollBar)
 	{
-		if (m_selectedIndex > m_topIndex + m_height)
+		int adjustedHeight = m_height - 1;
+
+		if (m_selectedIndex >= m_topIndex + adjustedHeight)
 		{
-			m_topIndex = m_selectedIndex - m_height;
+			// Scroll one down, when cusor reaches to the bottom of viewport
+			m_topIndex = m_selectedIndex - adjustedHeight;
+		}
+		else if (m_selectedIndex < m_topIndex)
+		{
+			// Scroll up when selection cursor goes above viewport area
+			m_topIndex = m_selectedIndex;
 		}
 	}
+
+	TRACE("selectedIndex: %d, topIndex: %d", m_selectedIndex, m_topIndex);
 }

@@ -125,10 +125,12 @@ bool CommandCenter::handleMenu(Keyboard& keyboard)
 {
 	bool result = false;
 
+	bool prevF12Pressed = keyboard.getPrevKeyState(KEY_F12);
 	bool f12Pressed = keyboard.getKeyState(KEY_F12);
 	bool altPressed = keyboard.getKeyState(KEY_LEFTALT) | keyboard.getKeyState(KEY_RIGHTALT);
 
-	if (f12Pressed && altPressed)
+	// Reacting only on F12 press positive edge (0 -> 1 transition)
+	if (f12Pressed && altPressed && f12Pressed != prevF12Pressed)
 	{
 		OSD& osd = OSD::instance();
 
@@ -147,22 +149,31 @@ bool CommandCenter::handleMenu(Keyboard& keyboard)
 			osd.hide();
 		}
 
+		TRACE("OSD: %s", m_isMenuActive ? "off" : "on");
+
 		m_isMenuActive = !m_isMenuActive;
 	}
+	keyboard.setPrevKeyState(KEY_F12, f12Pressed);
 
 	if (m_isMenuActive)
 	{
+		bool prevUpPressed = keyboard.getPrevKeyState(KEY_UP);
+		bool prevDownPressed = keyboard.getPrevKeyState(KEY_DOWN);
 		bool upPressed = keyboard.getKeyState(KEY_UP);
 		bool downPressed = keyboard.getKeyState(KEY_DOWN);
 
-		if (upPressed)
+		TRACE("Cursor keypress handled");
+
+		if (upPressed /*&& upPressed != prevUpPressed*/)
 		{
 			((CoreSelectionMenu *)m_menu)->moveUp();
 		}
-		else if (downPressed)
+		else if (downPressed /*&& downPressed != prevDownPressed*/)
 		{
 			((CoreSelectionMenu *)m_menu)->moveDown();
 		}
+		keyboard.setPrevKeyState(KEY_UP, upPressed);
+		keyboard.setPrevKeyState(KEY_DOWN, downPressed);
 	}
 
 	// Handle in-menu actions
@@ -216,5 +227,5 @@ void CommandCenter::onMessageEvent(const EventMessageBase& event)
 	// Extract payload as MInputMessage
 	MInputMessage* payload = (MInputMessage*)event.payload;
 
-	TRACE("%s: notification for fd:%x, type:'%s'", __PRETTY_FUNCTION__, payload->deviceID, payload->deviceType._to_string());
+	//TRACE("%s: notification for fd:%x, type:'%s'", __PRETTY_FUNCTION__, payload->deviceID, payload->deviceType._to_string());
 }
