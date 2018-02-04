@@ -28,8 +28,6 @@ void OSD::show()
 	FPGACommand& command = *(fpga.command);
 
 	command.sendOSDCommand(MM1_OSDCMDENABLE);
-
-	highResolution = false;
 }
 
 void OSD::showHighres()
@@ -39,8 +37,6 @@ void OSD::showHighres()
 
 	command.sendOSDCommand(MM1_OSDCMDENABLE);
 	command.sendOSDCommand(OSD_CMD_OSD);
-
-	highResolution = true;
 }
 
 void OSD::hide()
@@ -49,8 +45,6 @@ void OSD::hide()
 	FPGACommand& command = *(fpga.command);
 
 	command.sendOSDCommand(MM1_OSDCMDDISABLE);
-
-	highResolution = false;
 }
 
 void OSD::fill()
@@ -160,7 +154,7 @@ void OSD::setTitle(const string& title, uint8_t arrows)
 
 void OSD::printLine(uint8_t line, const string& text, bool invert)
 {
-	uint8_t heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_LINES : OSD_HEIGHT_LINES;
+	uint8_t heightLimit = OSD_HIGHRES_HEIGHT_LINES;
 	if (line >= heightLimit)
 		return;
 
@@ -191,7 +185,7 @@ void OSD::printLine(uint8_t line, const string& text, bool invert)
 
 void OSD::printSymbol(uint8_t row, uint8_t column, char symbol, bool invert)
 {
-	uint8_t heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_LINES : OSD_HEIGHT_LINES;
+	uint8_t heightLimit = OSD_HIGHRES_HEIGHT_LINES;
 	uint8_t widthLimit = OSD_LINE_LENGTH;
 	if (row >= heightLimit || column >= widthLimit)
 		return;
@@ -210,7 +204,7 @@ void OSD::printSymbol(uint8_t row, uint8_t column, char symbol, bool invert)
 
 bool OSD::getPixel(const int x, const int y)
 {
-	static int heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
+	static int heightLimit = OSD_HIGHRES_HEIGHT_PX;
 	static int widthLimit = OSD_LINE_LENGTH_BYTES;
 
 	if (x >= widthLimit || y >= heightLimit)
@@ -231,7 +225,7 @@ bool OSD::getPixel(const int x, const int y)
 
 void OSD::setPixel(const int x, const int y, bool invert)
 {
-	static int heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
+	static int heightLimit = OSD_HIGHRES_HEIGHT_PX;
 	static int widthLimit = OSD_LINE_LENGTH_BYTES;
 
 	if (x >= widthLimit || y >= heightLimit)
@@ -258,7 +252,7 @@ void OSD::setPixel(const int x, const int y, bool invert)
 // Rectangular region operations
 void OSD::fillRect(uint8_t left, uint8_t top, uint8_t width, uint8_t height, bool clear)
 {
-	static int heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
+	static int heightLimit = OSD_HIGHRES_HEIGHT_PX;
 	static int widthLimit = OSD_LINE_LENGTH_BYTES;
 
 	if (left >= widthLimit || top >= heightLimit)
@@ -278,7 +272,7 @@ void OSD::fillRect(uint8_t left, uint8_t top, uint8_t width, uint8_t height, boo
 
 void OSD::fillRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t height, bool clear)
 {
-	static int heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
+	static int heightLimit = OSD_HIGHRES_HEIGHT_PX;
 	static int widthLimit = OSD_LINE_LENGTH_BYTES;
 
 	if (left >= widthLimit || top >= heightLimit)
@@ -364,7 +358,7 @@ void OSD::fillRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t he
 
 void OSD::invertRect(uint8_t left, uint8_t top, uint8_t width, uint8_t height)
 {
-	static int heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
+	static int heightLimit = OSD_HIGHRES_HEIGHT_PX;
 	static int widthLimit = OSD_LINE_LENGTH_BYTES;
 
 	if (left >= widthLimit || top >= heightLimit)
@@ -386,7 +380,7 @@ void OSD::invertRect(uint8_t left, uint8_t top, uint8_t width, uint8_t height)
 
 void OSD::invertRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t height)
 {
-	static int heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_PX : OSD_HEIGHT_PX;
+	static int heightLimit = OSD_HIGHRES_HEIGHT_PX;
 	static int widthLimit = OSD_LINE_LENGTH_BYTES;
 
 	if (left >= widthLimit || top >= heightLimit)

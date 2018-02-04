@@ -88,7 +88,6 @@ protected:
 	uint8_t titlebuffer[2][OSD_HIGHRES_HEIGHT_LINES * 8]; // Horizontal buffer for initial title rendering. After rotation - 16 symbols height in highres and 8 in lowres
 	uint8_t framebuffer[OSD_HIGHRES_HEIGHT_LINES][OSD_LINE_LENGTH_BYTES];
 
-	bool highResolution = true;
 	bool arrowDirection;
 
 	uint32_t scroll_offset = 0; // file/dir name scrolling position
