@@ -157,23 +157,67 @@ bool CommandCenter::handleMenu(Keyboard& keyboard)
 
 	if (m_isMenuActive)
 	{
+		CoreSelectionMenu* menuPtr = (CoreSelectionMenu *)m_menu;
+		if (menuPtr == nullptr)
+		{
+			LOGWARN("%s: unable to cast menu pointer to CoreSelectionMenu*", __PRETTY_FUNCTION__);
+			return result;
+		}
+		CoreSelectionMenu& menu = *menuPtr;
+
+		bool prevCancelPressed = keyboard.getPrevKeyState(KEY_ESC);
+		bool cancelPressed = keyboard.getKeyState(KEY_ESC);
+
+		bool prevEnterPressed = keyboard.getPrevKeyState(KEY_ENTER) | keyboard.getPrevKeyState(KEY_KPENTER);
+		bool enterPressed = keyboard.getKeyState(KEY_ENTER) | keyboard.getKeyState(KEY_KPENTER);
+
 		bool prevUpPressed = keyboard.getPrevKeyState(KEY_UP);
 		bool prevDownPressed = keyboard.getPrevKeyState(KEY_DOWN);
 		bool upPressed = keyboard.getKeyState(KEY_UP);
 		bool downPressed = keyboard.getKeyState(KEY_DOWN);
 
-		TRACE("Cursor keypress handled");
+		bool prevPgUpPressed = keyboard.getPrevKeyState(KEY_PAGEUP);
+		bool prevPgDnPressed = keyboard.getPrevKeyState(KEY_PAGEDOWN);
+		bool pgUpPressed = keyboard.getKeyState(KEY_PAGEUP);
+		bool pgDnPressed = keyboard.getKeyState(KEY_PAGEDOWN);
 
-		if (upPressed /*&& upPressed != prevUpPressed*/)
+		TRACE("Keypress handled");
+
+		// React on paging keys
+		if (pgUpPressed && !prevPgUpPressed)
 		{
-			((CoreSelectionMenu *)m_menu)->moveUp();
+			menu.pageUp();
 		}
-		else if (downPressed /*&& downPressed != prevDownPressed*/)
+		else if (pgDnPressed && !prevPgDnPressed)
 		{
-			((CoreSelectionMenu *)m_menu)->moveDown();
+			menu.pageDown();
 		}
+		// React on cursor keys
+		else if (upPressed /*&& !prevUpPressed*/)
+		{
+			menu.moveUp();
+		}
+		else if (downPressed /*&& !prevDownPressed*/)
+		{
+			menu.moveDown();
+		}
+		// React on cancel / enter
+		else if (cancelPressed && ~prevCancelPressed)
+		{
+			menu.cancel();
+		}
+		else if (enterPressed && !prevEnterPressed)
+		{
+			menu.enter();
+		}
+
 		keyboard.setPrevKeyState(KEY_UP, upPressed);
 		keyboard.setPrevKeyState(KEY_DOWN, downPressed);
+		keyboard.setPrevKeyState(KEY_PAGEUP, pgUpPressed);
+		keyboard.setPrevKeyState(KEY_PAGEDOWN, pgDnPressed);
+		keyboard.setPrevKeyState(KEY_ESC, cancelPressed);
+		keyboard.setPrevKeyState(KEY_ENTER, enterPressed);
+		keyboard.setPrevKeyState(KEY_KPENTER, enterPressed);
 	}
 
 	// Handle in-menu actions

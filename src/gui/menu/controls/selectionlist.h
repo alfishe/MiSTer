@@ -57,8 +57,12 @@ public:
 
 // Control methods
 public:
+	void pageUp();
+	void pageDown();
 	void moveUp();
 	void moveDown();
+	void enter();
+	void cancel();
 
 // Helper methods
 protected:

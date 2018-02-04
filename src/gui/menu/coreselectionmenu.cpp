@@ -39,6 +39,17 @@ void CoreSelectionMenu::removeSelection()
 	m_selectedIndex = -1;
 }
 
+// Control events
+void CoreSelectionMenu::pageUp()
+{
+	m_ctrlSelectionList->pageUp();
+}
+
+void CoreSelectionMenu::pageDown()
+{
+	m_ctrlSelectionList->pageDown();
+}
+
 void CoreSelectionMenu::moveUp()
 {
 	m_ctrlSelectionList->moveUp();
@@ -47,6 +58,16 @@ void CoreSelectionMenu::moveUp()
 void CoreSelectionMenu::moveDown()
 {
 	m_ctrlSelectionList->moveDown();
+}
+
+void CoreSelectionMenu::enter()
+{
+	m_ctrlSelectionList->enter();
+}
+
+void CoreSelectionMenu::cancel()
+{
+	m_ctrlSelectionList->cancel();
 }
 
 // Helper methods

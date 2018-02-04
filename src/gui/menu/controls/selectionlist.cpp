@@ -71,6 +71,74 @@ const ListItem* SelectionList::getSelectedItem()
 }
 
 // Control methods
+void SelectionList::pageUp()
+{
+	bool redrawRequired = false;
+	int newSelectedIndex = -1;
+	int adjustedHeight = m_height - 1;
+
+	if (m_topIndex > 0)
+	{
+		if (m_selectedIndex >= adjustedHeight)
+		{
+			newSelectedIndex = m_selectedIndex - adjustedHeight;
+		}
+		else
+		{
+			newSelectedIndex = 0;
+		}
+
+		redrawRequired = true;
+	}
+	else
+	{
+		if (m_selectedIndex > 0)
+		{
+			newSelectedIndex = 0;
+			redrawRequired = true;
+		}
+	}
+
+	// Perform menu redraw only if changes detected
+	if (redrawRequired && newSelectedIndex >= 0)
+	{
+		removeSelectedHighlight();
+
+		m_selectedIndex = newSelectedIndex;
+		recalcPosition();
+		drawContent();
+	}
+}
+
+void SelectionList::pageDown()
+{
+	bool redrawRequired = false;
+	int newSelectedIndex = -1;
+	int adjustedHeight = m_height - 1;
+	int size = m_data.size() > 0 ? m_data.size() - 1 : 0;
+
+	if (m_selectedIndex + adjustedHeight <= size)
+	{
+		newSelectedIndex = m_selectedIndex + adjustedHeight;
+		redrawRequired = true;
+	}
+	else if (m_selectedIndex != size)
+	{
+		newSelectedIndex = m_data.size() - 1;
+		redrawRequired = true;
+	}
+
+	// Perform menu redraw only if changes detected
+	if (redrawRequired && newSelectedIndex >= 0)
+	{
+		removeSelectedHighlight();
+
+		m_selectedIndex = newSelectedIndex;
+		recalcPosition();
+		drawContent();
+	}
+}
+
 void SelectionList::moveUp()
 {
 	if (m_selectedIndex > 0)
@@ -99,6 +167,21 @@ void SelectionList::moveDown()
 
 		drawContent();
 	}
+}
+
+void SelectionList::enter()
+{
+	if (m_selectedIndex >= 0)
+	{
+		ListItem& item = m_data[m_selectedIndex];
+
+		DEBUG("Item '%s' with value: %d selected", item.name.c_str(), item.value);
+	}
+}
+
+void SelectionList::cancel()
+{
+	DEBUG("Cancel/back pressed");
 }
 
 // Helper methods
