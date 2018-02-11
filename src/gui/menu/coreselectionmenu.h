@@ -40,8 +40,12 @@ public:
 	void removeSelection();
 
 	// Control events
+	void pageUp();
+	void pageDown();
 	void moveUp();
 	void moveDown();
+	void enter();
+	void cancel();
 
 // Helper methods
 protected:

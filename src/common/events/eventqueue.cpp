@@ -217,7 +217,7 @@ void EventQueue::removeObservers()
 
 void EventQueue::post(const EventMessageBase& event)
 {
-	TRACE("%s", __PRETTY_FUNCTION__);
+	//TRACE("%s", __PRETTY_FUNCTION__);
 
 	//DEBUG("Event queue before push\n%s", dumpEventQueue().c_str());
 
@@ -230,7 +230,7 @@ void EventQueue::post(const EventMessageBase& event)
 
 	//DEBUG("Event queue after push\n%s", dumpEventQueue().c_str());
 
-	TRACE("Posted successfully");
+	//TRACE("Posted successfully");
 }
 
 // Debug methods
@@ -351,7 +351,7 @@ bool EventQueue::tryPop(EventMessageBase& event)
 	{
 		result = true;
 
-		DEBUG("Event queue before pop\n%s", dumpEventQueueNoLock().c_str());
+		//DEBUG("Event queue before pop\n%s", dumpEventQueueNoLock().c_str());
 
 		event = m_events.back();
 		m_events.pop_back();
@@ -427,7 +427,7 @@ void EventQueue::processEvent(EventMessageBase& event)
 			}
 		}
 
-		DEBUG("%s: Event for topic '%s' processing finished. Observers served: %d, errors: %d\n", __PRETTY_FUNCTION__, name.c_str(), observersProcessed, errorCount);
+		//DEBUG("%s: Event for topic '%s' processing finished. Observers served: %d, errors: %d\n", __PRETTY_FUNCTION__, name.c_str(), observersProcessed, errorCount);
 	}
 	else
 	{

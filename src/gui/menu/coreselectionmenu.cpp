@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "../../common/file/path/path.h"
 #include "../../common/helpers/collectionhelper.h"
+#include "../../cores/coremanager.h"
 
 void CoreSelectionMenu::start()
 {
@@ -63,6 +64,16 @@ void CoreSelectionMenu::moveDown()
 void CoreSelectionMenu::enter()
 {
 	m_ctrlSelectionList->enter();
+
+	int selectedIndex = m_ctrlSelectionList->getSelectedIndex();
+
+	if (selectedIndex >= 0)
+	{
+		const DirectoryEntry& item = m_coreNames[selectedIndex];
+		const string filename = item.name;
+
+		CoreManager::instance().loadCore(filename);
+	}
 }
 
 void CoreSelectionMenu::cancel()
