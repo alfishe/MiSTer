@@ -2,17 +2,40 @@
 
 #include "../../common/logger/logger.h"
 
-VideoMode HDMIPLL::m_videoModes[8] =
+
+#include "cstring"
+#include "hdmi.h"
+#include "../../fpga/fpgadevice.h"
+#include "../../fpga/fpgaconnector.h"
+#include "../../fpga/fpgacommand.h"
+
+// Standard video modes pre-defined
+HDMIVideoMode HDMIPLL::m_videoModes[] =
 {
-	{ {1280, 110, 40,  220, 720,  5,  5, 20}, 74.25  },
-	{ {1024, 24,  136, 160, 768,  3,  6, 29}, 65     },
-	{ {720,  16,  62,  60,  480,  9,  6, 30}, 27     },
-	{ {720,  12,  64,  68,  576,  5,  5, 39}, 27     },
-	{ {1280, 48,  112, 248, 1024, 1,  3, 38}, 108    },
-	{ {800,  40,  128, 88,  600,  1,  4, 23}, 40     },
-	{ {640,  16,  96,  48,  480,  10, 2, 33}, 25.175 },
-	{ {1280, 440, 40,  220, 720,  5,  5, 20}, 74.25  }
+	{ { 1280, 110,  40, 220,  720,  5,  5, 20 }, 74.25 },
+	{ { 1024,  24, 136, 160,  768,  3,  6, 29 }, 65.0 },
+	{ { 720,  16,  62,  60,  480,  9,  6, 30 }, 27.0 },
+	{ { 720,  12,  64,  68,  576,  5,  5, 39 }, 27.0 },
+	{ { 1280,  48, 112, 248, 1024,  1,  3, 38 }, 108 },
+	{ { 800,  40, 128,  88,  600,  1,  4, 23 }, 40.0 },
+	{ { 640,  16,  96,  48,  480, 10,  2, 33 }, 25.175 },
+	{ { 1280, 440,  40, 220,  720,  5,  5, 20 }, 74.25 },
+	{ { 1920,  88,  44, 148, 1080,  4,  5, 36 }, 148.5 },
+	{ { 1920, 528,  44, 148, 1080,  4,  5, 36 }, 148.5 }
 };
+
+// Allow HDMI pixel clock frequency in a range [20:200] MHz
+bool HDMIPLL::isValidHDMIFrequency(double freq)
+{
+	bool result = false;
+
+	if (freq >= 20.0f && freq < 200.1f)
+	{
+		result = true;
+	}
+
+	return result;
+}
 
 // Calculate PLL parameters for specified <freqPixelclock>
 // Input: freqPixelclock - target pixel clock (in MHz)
@@ -24,6 +47,12 @@ VideoMode HDMIPLL::m_videoModes[8] =
 bool HDMIPLL::getPLL(double freqPixelclock, uint32_t *M, uint32_t *K, uint32_t *C)
 {
 	bool result = false;
+
+	if (!isValidHDMIFrequency(freqPixelclock))
+	{
+		LOGERROR("Invalid HDMI pixel clock frequency");
+		return result;
+	}
 
 	LOGWARN("%s: Doesn't work after porting yet!", __PRETTY_FUNCTION__);
 	return result;
@@ -40,7 +69,7 @@ bool HDMIPLL::getPLL(double freqPixelclock, uint32_t *M, uint32_t *K, uint32_t *
 	uint32_t fractionalMultiply_K;	// K-value
 	uint32_t postScaleDivide_C; 		// C-value
 
-	//
+	// Select max multiplier to stay within 400MHz pre-scaled range
 	while ((freqPixelclock * multiplierCoeff) < 400.0)
 	{
 		multiplierCoeff++;
@@ -48,40 +77,50 @@ bool HDMIPLL::getPLL(double freqPixelclock, uint32_t *M, uint32_t *K, uint32_t *
 
 	TRACE("Calculating PLL parameters for freq: %.3f MHz ...", freqPixelclock);
 
+	int iterations = 0;
 	while (true)
 	{
-		printf("C=%d, ", multiplierCoeff);
+		iterations++;
+		if (iterations > 100)
+		{
+			LOGWARN("Unable to find PLL coefficients within %d iterations. FAIL.", iterations);
+			return result;
+		}
+
+		DEBUG("C=%d, ", multiplierCoeff);
 		*C = multiplierCoeff;
 
 		double fvco = freqPixelclock * multiplierCoeff;
-		printf("Fvco=%f, ", fvco);
+		DEBUG("Fvco=%f, ", fvco);
 
 		uint32_t m = (uint32_t)(fvco / 50);
-		printf("M=%d, ", m);
+		DEBUG("M=%d, ", m);
 		*M = m;
 
-		double ko = ((fvco / 50) - m);
-		printf("K_orig=%f, ", ko);
+		double ko = ((fvco / 50.0) - m);
+		DEBUG("K_orig=%f, ", ko);
 
 		uint32_t k = (uint32_t)(ko * 4294967296);
-		if (!k) k = 1;
-		printf("K=%u. ", k);
+		if (k == 0)
+			k = 1;
+
+		DEBUG("K=%u. ", k);
 		*K = k;
 
 		if (ko && (ko <= 0.05f || ko >= 0.95f))
 		{
 			if (fvco > 1500.f)
 			{
-				printf("Fvco > 1500MHz. Cannot calculate PLL parameters!");
+				DEBUG("Fvco > 1500MHz. Cannot calculate PLL parameters!");
 				return 0;
 			}
 
-			printf("K_orig is outside desired range try next C0\n");
+			DEBUG("K_orig is outside desired range try next C0\n");
 			multiplierCoeff++;
 		}
 		else
 		{
-			TRACE("Calculated successfully");
+			DEBUG("Calculated successfully");
 			result = true;
 			break;
 		}
@@ -102,6 +141,53 @@ uint32_t HDMIPLL::getPLLDivisor(uint32_t div)
 	{
 		result = ((div / 2) << 8) | (div / 2);
 	}
+
+	return result;
+}
+
+HDMIVideoModePacket* HDMIPLL::getStandardVideoModePacket(int idxVideoMode)
+{
+	HDMIVideoModePacket* result = nullptr;
+
+	// Initial validation
+	if ((size_t)idxVideoMode >= sizeof(m_videoModes) / sizeof (m_videoModes[0]))
+	{
+		LOGWARN("getStandardVideoModePacket: Invalid idxVideoMode parameter: %d", idxVideoMode);
+		return result;
+	}
+
+	// Alloc HDMIVideoModePacket object. Should be deleted by the caller.
+	result = new HDMIVideoModePacket();
+
+	// Calculate PLL coefficients based on target pixel clock frequency
+	uint32_t M, K, C;
+	getPLL(m_videoModes[idxVideoMode].freqPixelClock, &M, &K, &C);
+
+	result->packet.nVideoMode = idxVideoMode;
+
+	// Transfer first 8 [0:7] 32-bit dwords from video mode to packet structure
+	//memcpy(result, &m_videoModes[idxVideoMode].vmodes, sizeof(m_videoModes[0].vmodes));
+	for (int i = 1; i <= 8; i++)
+	{
+		result->values[i] = m_videoModes[idxVideoMode].vmodes[i];
+	}
+
+	// PLL settings
+	result->packet.v9 = 4;
+	result->packet.pllM = M;
+	result->packet.v11 = 3;
+	result->packet.v12 = 0x10000;
+	result->packet.v13 = 5;
+	result->packet.pllC = C;
+	result->packet.v15 = 9;
+	result->packet.v16 = 2;
+	result->packet.v17 = 8;
+	result->packet.v18 = 7;
+	result->packet.v19 = 7;
+	result->packet.pllK = K;
+
+	// The rest 10 dwords [21:31] will be filled with zeroes and reserved fo future use
+
 
 	return result;
 }
@@ -232,4 +318,50 @@ void HDMIPLL::parseVideoMode(const string& mode)
 	printf("\n");
 	DisableIO();
 	*/
+}
+
+// Send video mode data to FPGA
+// Command: UIO_SET_VIDEO
+// Video mode data: 8x16-bit words
+// PLL data: interleaved 16-bit and 32-bit words
+void HDMIPLL::setVideoMode(HDMIVideoModePacket* modePacket)
+{
+	FPGADevice& fpga = FPGADevice::instance();
+	FPGAConnector& connector = *(fpga.connector);
+	FPGACommand& command = *(fpga.command);
+
+	if (command.startIO())
+	{
+		command.sendCommand(UIO_SET_VIDEO);
+
+		// Video mode word skipped (modePacket->values[0]). FPGA does not need this information.
+
+		// Video mode data [1:8]
+		for (int i = 1; i <= 8; i++)
+		{
+			connector.transferWord(modePacket->values[i]);
+		}
+
+		// PLL data [9:21]
+		for (int i = 9; i < 21; i++)
+		{
+			// Odd index corresponds to 16-bit data words
+			if (i & 1)
+			{
+				connector.transferWord(modePacket->values[i]);
+			}
+			// Even index corresponds to full 32-bit data words
+			else
+			{
+				connector.transferWord(modePacket->values[i]);
+				connector.transferWord(modePacket->values[i] >> 16);
+			}
+		}
+
+		command.endIO();
+	}
+	else
+	{
+		LOGWARN("%s: Unable to set HDMI video mdoe", __PRETTY_FUNCTION__);
+	}
 }

@@ -3,27 +3,26 @@
 
 #include <string>
 #include "../../common/types.h"
+#include "hdmi.h"
 
 using namespace std;
-
-struct VideoMode
-{
-	uint32_t videoParams[8];
-	double freqPixelClock;
-};
-typedef struct VideoMode VideoMode;
 
 class HDMIPLL
 {
 protected:
-	static VideoMode m_videoModes[8];
+	static HDMIVideoMode m_videoModes[];
 
 public:
+	static bool isValidHDMIFrequency(double freq);
 	static bool getPLL(double freqPixelclock, uint32_t *M, uint32_t *K, uint32_t *C);
 	static uint32_t getPLLDivisor(uint32_t div);
 
+	HDMIVideoModePacket* getStandardVideoModePacket(int idxVideoMode);
+
 	static void parseVideoMode(const string& mode);
 	static void parseCustomVideoMode(const string& mode);
+
+	static void setVideoMode(HDMIVideoModePacket* modePacket);
 };
 
 

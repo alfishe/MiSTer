@@ -527,25 +527,30 @@ void OSD::transferFramebuffer()
 	FPGAConnector& connector = *(fpga.connector);
 	FPGACommand& command = *(fpga.command);
 
-	TRACE("OSD buffer transfer started");
-
-	command.startOSD();
-
-	// Write to buffer command (Line is selected as render start MM1_OSDCMDWRITE | 0)
-	command.sendCommand(MM1_OSDCMDWRITE);
-
-	// Transfer changes to FPGA framefuffer (byte size transfers)
-	uint8_t *pBuffer = &framebuffer[0][0];
-	for (unsigned idx = 0; idx < sizeof(framebuffer); idx++)
+	if (command.startOSD())
 	{
-		//unsigned j = idx % OSD_LINE_LENGTH_BYTES;
-		//unsigned i = idx / OSD_LINE_LENGTH_BYTES;
-		//connector.transferByte(framebuffer[i][j]);
+		TRACE("OSD buffer transfer started");
 
-		connector.transferByte(*(pBuffer++));
+		// Write to buffer command (Line is selected as render start MM1_OSDCMDWRITE | 0)
+		command.sendCommand(MM1_OSDCMDWRITE);
+
+		// Transfer changes to FPGA framefuffer (byte size transfers)
+		uint8_t *pBuffer = &framebuffer[0][0];
+		for (unsigned idx = 0; idx < sizeof(framebuffer); idx++)
+		{
+			//unsigned j = idx % OSD_LINE_LENGTH_BYTES;
+			//unsigned i = idx / OSD_LINE_LENGTH_BYTES;
+			//connector.transferByte(framebuffer[i][j]);
+
+			connector.transferByte(*(pBuffer++));
+		}
+
+		command.endOSD();
+
+		TRACE("OSD buffer transfer finished");
 	}
-
-	command.endOSD();
-
-	TRACE("OSD buffer transfer finished");
+	else
+	{
+		LOGWARN("%s: Unable to start FPGA command to transfer OSD buffer", __PRETTY_FUNCTION__);
+	}
 }

@@ -41,6 +41,7 @@ public:
 	FPGACommand(const FPGACommand& that) = delete; // Copy constructor is forbidden here (C++11 feature)
 	virtual ~FPGACommand();
 
+	// Core configuration commands
 	CoreType getCoreType();
 	char* getCoreName();
 	char* getCoreConfig();
@@ -179,6 +180,12 @@ protected:
 #define UIO_GET_KBD_LED 0x1f  // keyboard LEDs control
 #define UIO_SET_VIDEO   0x20  // set HDMI video mode 0: 1280x720p60(TV), 1: 1280x1024p60(PC), 2-255: reserved
 #define UIO_PS2_CTL     0x21  // get PS2 control from supported cores
+#define UIO_RTC         0x22  // transmit RTC data to core
+#define UIO_GET_VRES    0x23  // get video resolution
+#define UIO_TIMESTAMP   0x24  // transmit seconds since Unix epoch
+#define UIO_LEDS        0x25  // control on-board LEDs
+#define UIO_AUDVOL      0x26  // Digital volume as a number of bits to shift to the right
+#define UIO_SETHEIGHT   0x27  // Set scaled vertical resolution (to reduce scaling artefacts)
 
 // codes as used by 8bit (atari 800, zx81) via SS2
 #define UIO_GET_STATUS  0x50

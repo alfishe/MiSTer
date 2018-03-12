@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "../../common/file/path/path.h"
 #include "../../common/helpers/collectionhelper.h"
+#include "../osd/osd.h"
 #include "../../cores/coremanager.h"
 
 void CoreSelectionMenu::start()
@@ -69,6 +70,9 @@ void CoreSelectionMenu::enter()
 
 	if (selectedIndex >= 0)
 	{
+		// Close OSD now as the new core may not even have one
+		OSD::instance().hide();
+
 		const DirectoryEntry& item = m_coreNames[selectedIndex];
 		const string filename = item.name;
 

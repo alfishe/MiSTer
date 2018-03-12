@@ -241,7 +241,7 @@ void InputPoller::readEvents(int fd)
 	{
 		unsigned eventsCount = len / sizeof(input_event);
 
-		TRACE("%s: received: %d raw events", __PRETTY_FUNCTION__, eventsCount);
+		//TRACE("%s: received: %d raw events", __PRETTY_FUNCTION__, eventsCount);
 
 		unsigned packetStartIdx = 0;
 		unsigned idx = 0;
@@ -299,9 +299,9 @@ void InputPoller::translateEvents(int fd, input_event* events, unsigned numEvent
 	InputDeviceTypeEnum deviceType = device.type;
 	string name = device.name;
 
-	TRACE("Device %s:'%s' received %d event(s), EV_SYN excluded", device.dumpDeviceType().c_str(), device.model.c_str(), numEvents);
+	//TRACE("Device %s:'%s' received %d event(s), EV_SYN excluded", device.dumpDeviceType().c_str(), device.model.c_str(), numEvents);
 
-	TRACE(dumpEPollEvents(events, numEvents).c_str());
+	//TRACE(dumpEPollEvents(events, numEvents).c_str());
 
 	string topic;
 	MessagePayloadBase* payload = nullptr;
