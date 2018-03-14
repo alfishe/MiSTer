@@ -163,31 +163,46 @@ HDMIVideoModePacket* HDMIPLL::getStandardVideoModePacket(int idxVideoMode)
 	uint32_t M, K, C;
 	getPLL(m_videoModes[idxVideoMode].freqPixelClock, &M, &K, &C);
 
-	result->packet.nVideoMode = idxVideoMode;
+	result->nVideoMode = idxVideoMode;
 
-	// Transfer first 8 [0:7] 32-bit dwords from video mode to packet structure
+	// Transfer video mode to packet structure
 	//memcpy(result, &m_videoModes[idxVideoMode].vmodes, sizeof(m_videoModes[0].vmodes));
-	for (int i = 1; i <= 8; i++)
+	for (int i = 0; i < 8; i++)
 	{
-		result->values[i] = m_videoModes[idxVideoMode].vmodes[i];
+		result->videoMode.vmodes[i] = m_videoModes[idxVideoMode].vmodes[i];
 	}
 
+	// Transfer PLL register values
+	result->pllRegisters =
+	{
+		{ 0x0004, M },
+		{ 0x0003, 0x10000 },
+		{ 0x0005, C },
+		{ 0x0009, 2 },
+		{ 0x0008, 7 },
+		{ 0x0007, K }
+	};
+
 	// PLL settings
+	/*
 	result->packet.v9 = 4;
 	result->packet.pllM = M;
+
 	result->packet.v11 = 3;
 	result->packet.v12 = 0x10000;
+
 	result->packet.v13 = 5;
 	result->packet.pllC = C;
+
 	result->packet.v15 = 9;
 	result->packet.v16 = 2;
+
 	result->packet.v17 = 8;
 	result->packet.v18 = 7;
+
 	result->packet.v19 = 7;
 	result->packet.pllK = K;
-
-	// The rest 10 dwords [21:31] will be filled with zeroes and reserved fo future use
-
+	*/
 
 	return result;
 }
@@ -334,28 +349,22 @@ void HDMIPLL::setVideoMode(HDMIVideoModePacket* modePacket)
 	{
 		command.sendCommand(UIO_SET_VIDEO);
 
-		// Video mode word skipped (modePacket->values[0]). FPGA does not need this information.
-
-		// Video mode data [1:8]
-		for (int i = 1; i <= 8; i++)
+		// Video mode data from HDMIVideoModeType / HDMIVideoMode
+		for (int i = 0; i < 8; i++)
 		{
-			connector.transferWord(modePacket->values[i]);
+			connector.transferWord(modePacket->videoMode.vmodes[i]);
 		}
 
-		// PLL data [9:21]
-		for (int i = 9; i < 21; i++)
+		// PLL registers data
+		for (PLLPortVector::const_iterator it = modePacket->pllRegisters.begin(); it != modePacket->pllRegisters.end(); it++)
 		{
-			// Odd index corresponds to 16-bit data words
-			if (i & 1)
-			{
-				connector.transferWord(modePacket->values[i]);
-			}
-			// Even index corresponds to full 32-bit data words
-			else
-			{
-				connector.transferWord(modePacket->values[i]);
-				connector.transferWord(modePacket->values[i] >> 16);
-			}
+			// Transfer PLL register address (16-bits)
+			connector.transferWord(it->first);
+
+			// Transfer PLL register value
+			uint32_t value = it->second;
+			connector.transferWord(value);
+			connector.transferWord(value >> 16);
 		}
 
 		command.endIO();
