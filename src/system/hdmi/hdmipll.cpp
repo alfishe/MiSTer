@@ -146,6 +146,8 @@ uint32_t HDMIPLL::getPLLDivisor(uint32_t div)
 }
 
 // See details: https://www.altera.com/en_US/pdfs/literature/ug/altera_pll.pdf
+// See details: https://www.altera.com/en_US/pdfs/literature/an/an661.pdf
+// PLL Reconfiguration calculator: https://www.altera.com/content/dam/altera-www/global/en_US/others/literature/an/PLL_Reconfiguration_Calculator.xlsx
 HDMIVideoModePacket* HDMIPLL::getStandardVideoModePacket(int idxVideoMode)
 {
 	HDMIVideoModePacket* result = nullptr;
@@ -174,14 +176,16 @@ HDMIVideoModePacket* HDMIPLL::getStandardVideoModePacket(int idxVideoMode)
 	}
 
 	// Transfer PLL register values
+	// All values calculated via PLL Reconfiguration calculator: https://www.altera.com/content/dam/altera-www/global/en_US/others/literature/an/PLL_Reconfiguration_Calculator.xlsx
+	// Documentation: AN661 - Implementing Fractional PLL Reconfiguration with Altera PLL and Altera PLL Reconfig IP Cores
 	result->pllRegisters =
 	{
-		{ 0x0004, M },
-		{ 0x0003, 0x10000 },
-		{ 0x0005, C },
-		{ 0x0009, 2 },
-		{ 0x0008, 7 },
-		{ 0x0007, K }
+		{ 0x0004, M },			// 0b000100 - Counter (M). Size: 18-bits
+		{ 0x0003, 0x10000 },		// 0b000011 - Counter(N). Size: 18-bits
+		{ 0x0005, C },			// 0b000101 - Counter(C). Size: 23-bits
+		{ 0x0009, 2 },			// 0b001001 - Charge Pump Setting. Size: 3-bits
+		{ 0x0008, 7 },			// 0b001000 - Bandwidth setting. Size: 4-bits
+		{ 0x0007, K }			// 0b000111 - Counter Fractional Value (K)
 	};
 
 	// PLL settings

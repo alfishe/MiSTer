@@ -1,0 +1,27 @@
+﻿# /proc/bus/input/devices content looks like
+
+I: Bus=0003 Vendor=046d Product=101b Version=0111
+N: Name="Logitech M705"
+P: Phys=usb-ffb40000.usb-1.3:1
+S: Sysfs=/devices/platform/soc/ffb40000.usb/usb1/1-1/1-1.3/1-1.3:1.2/0003:046D:C52B.0003/0003:046D:101B.0004/input/input0
+U: Uniq=
+H: Handlers=mouse0 event0 
+B: PROP=0
+B: EV=17
+B: KEY=ffff0000 0 0 0 0 0 0 0 0
+B: REL=143
+B: MSC=10
+
+I: Bus=0003 Vendor=413c Product=2107 Version=0110
+N: Name="Dell Dell USB Entry Keyboard"
+P: Phys=usb-ffb40000.usb-1.4/input0
+S: Sysfs=/devices/platform/soc/ffb40000.usb/usb1/1-1/1-1.4/1-1.4:1.0/0003:413C:2107.0005/input/input1
+U: Uniq=
+H: Handlers=sysrq leds event1 
+B: PROP=0
+B: EV=120013
+B: KEY=10000 7 ff9f207a c14057ff febeffdf ffefffff ffffffff fffffffe
+B: MSC=10
+B: LED=7
+
+# /sys/class/input/event<N>/device contains structured values
