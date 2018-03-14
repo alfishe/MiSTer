@@ -145,6 +145,7 @@ uint32_t HDMIPLL::getPLLDivisor(uint32_t div)
 	return result;
 }
 
+// See details: https://www.altera.com/en_US/pdfs/literature/ug/altera_pll.pdf
 HDMIVideoModePacket* HDMIPLL::getStandardVideoModePacket(int idxVideoMode)
 {
 	HDMIVideoModePacket* result = nullptr;
@@ -338,7 +339,7 @@ void HDMIPLL::parseVideoMode(const string& mode)
 // Send video mode data to FPGA
 // Command: UIO_SET_VIDEO
 // Video mode data: 8x16-bit words
-// PLL data: interleaved 16-bit and 32-bit words
+// PLL register values: pairs of address(16-bit) and values (32-bit)
 void HDMIPLL::setVideoMode(HDMIVideoModePacket* modePacket)
 {
 	FPGADevice& fpga = FPGADevice::instance();
