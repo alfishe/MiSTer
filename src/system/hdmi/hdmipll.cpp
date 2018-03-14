@@ -188,27 +188,6 @@ HDMIVideoModePacket* HDMIPLL::getStandardVideoModePacket(int idxVideoMode)
 		{ 0x0007, K }			// 0b000111 - Counter Fractional Value (K)
 	};
 
-	// PLL settings
-	/*
-	result->packet.v9 = 4;
-	result->packet.pllM = M;
-
-	result->packet.v11 = 3;
-	result->packet.v12 = 0x10000;
-
-	result->packet.v13 = 5;
-	result->packet.pllC = C;
-
-	result->packet.v15 = 9;
-	result->packet.v16 = 2;
-
-	result->packet.v17 = 8;
-	result->packet.v18 = 7;
-
-	result->packet.v19 = 7;
-	result->packet.pllK = K;
-	*/
-
 	return result;
 }
 
