@@ -15,14 +15,14 @@ typedef vector<PLLPortType> PLLPortVector;
 // See details: http://tinyvga.com/vga-timing
 struct HDMIVideoModeType
 {
-	uint32_t resWidth;		// Width in pixels
-	uint32_t hFrontPorch;	// Left margin for scanline in pixels
-	uint32_t hSync;			// Horizontal sync pulse duration in pixels
-	uint32_t hBackPorch;		// Right margin for scanline in pixels
-	uint32_t resHeight;		// Height in pixels
-	uint32_t vFrontPorch;	// Top margin in lines
-	uint32_t vSync;			// Vertical sync pulse duration in lines
-	uint32_t vBackPorch;		// Bottom margin in lines
+	uint16_t resWidth;		// Width in pixels
+	uint16_t hFrontPorch;	// Left margin for scanline in pixels
+	uint16_t hSync;			// Horizontal sync pulse duration in pixels
+	uint16_t hBackPorch;		// Right margin for scanline in pixels
+	uint16_t resHeight;		// Height in pixels
+	uint16_t vFrontPorch;	// Top margin in lines
+	uint16_t vSync;			// Vertical sync pulse duration in lines
+	uint16_t vBackPorch;		// Bottom margin in lines
 };
 typedef struct HDMIVideoModeType HDMIVideoModeType;
 
@@ -30,7 +30,7 @@ struct HDMIVideoMode
 {
 	union
 	{
-		uint32_t vmodes[8];
+		uint16_t vmodes[8];
 		HDMIVideoModeType videoMode;
 	};
 
