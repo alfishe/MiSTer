@@ -7,11 +7,10 @@
 #include "../../common/helpers/collectionhelper.h"
 #include "../osd/osd.h"
 #include "../../cores/coremanager.h"
+#include "../../system/hdmi/hdmipll.h"
 
 void CoreSelectionMenu::start()
 {
-	readAvailableCores();
-
 	auto list = readAvailableCores();
 	m_ctrlSelectionList->setDataSource(list);
 }
@@ -76,7 +75,12 @@ void CoreSelectionMenu::enter()
 		const DirectoryEntry& item = m_coreNames[selectedIndex];
 		const string filename = item.name;
 
+		// Load FPGA core from file
 		CoreManager::instance().loadCore(filename);
+
+		// Post-load and core set-up activities
+		//HDMIPLL::setStandardVideoMode(8); // FullHD 1920x1080 @
+		HDMIPLL::setStandardVideoMode(0); // 1280x720 @
 	}
 }
 

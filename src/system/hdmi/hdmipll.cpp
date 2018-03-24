@@ -12,17 +12,58 @@
 // Standard video modes pre-defined
 HDMIVideoMode HDMIPLL::m_videoModes[] =
 {
-	{ { 1280, 110,  40, 220,  720,  5,  5, 20 }, 74.25 },
-	{ { 1024,  24, 136, 160,  768,  3,  6, 29 }, 65.0 },
-	{ { 720,  16,  62,  60,  480,  9,  6, 30 }, 27.0 },
-	{ { 720,  12,  64,  68,  576,  5,  5, 39 }, 27.0 },
-	{ { 1280,  48, 112, 248, 1024,  1,  3, 38 }, 108 },
-	{ { 800,  40, 128,  88,  600,  1,  4, 23 }, 40.0 },
-	{ { 640,  16,  96,  48,  480, 10,  2, 33 }, 25.175 },
-	{ { 1280, 440,  40, 220,  720,  5,  5, 20 }, 74.25 },
-	{ { 1920,  88,  44, 148, 1080,  4,  5, 36 }, 148.5 },
-	{ { 1920, 528,  44, 148, 1080,  4,  5, 36 }, 148.5 }
+	{ { 1280, 110,  40, 220,  720,  5,  5, 20 }, 74.25 },		// 1280x720 @
+	{ { 1024,  24, 136, 160,  768,  3,  6, 29 }, 65.0 },		// 1024x768 @
+	{ { 720,  16,  62,  60,  480,  9,  6, 30 }, 27.0 },		// 720x640 @
+	{ { 720,  12,  64,  68,  576,  5,  5, 39 }, 27.0 },		// 720x576 @
+	{ { 1280,  48, 112, 248, 1024,  1,  3, 38 }, 108 },		// 1280x1023 @
+	{ { 800,  40, 128,  88,  600,  1,  4, 23 }, 40.0 },		// 800x600 @
+	{ { 640,  16,  96,  48,  480, 10,  2, 33 }, 25.175 },		// 640x480 @
+	{ { 1280, 440,  40, 220,  720,  5,  5, 20 }, 74.25 },		// 1280x720 @
+	{ { 1920,  88,  44, 148, 1080,  4,  5, 36 }, 148.5 },		// 1920x1080 @
+	{ { 1920, 528,  44, 148, 1080,  4,  5, 36 }, 148.5 }		// 1920x1080 @
 };
+
+bool HDMIPLL::setStandardVideoMode(int idxVideoMode)
+{
+	bool result = false;
+
+	// Initial validation
+	if (!isValidStandardVideoMode(idxVideoMode))
+	{
+		LOGWARN("setStandardVideoMode: Invalid idxVideoMode parameter: %d", idxVideoMode);
+		return result;
+	}
+
+	HDMIVideoModePacket* packet = getStandardVideoModePacket(idxVideoMode);
+	if (packet != nullptr)
+	{
+		setVideoMode(packet);
+		delete packet;
+
+		result = true;
+	}
+	else
+	{
+		LOGERROR("Was unable to get packet for video mode idx: %d", idxVideoMode);
+	}
+
+	// Verification data
+	// Mode = 0
+	// Calculate PLL for 74.250 MHz: C=6, Fvco=445.500000, M=8, K_orig=0.910000, K=3908420239.
+	// Send HDMI parameters:
+	// video: 1280, 110, 40, 220, 720, 5, 5, 20,
+	// PLL: 0x4, 0x404, 0x3, 0x10000, 0x5, 0x303, 0x9, 0x2, 0x8, 0x7, 0x7, 0xE8F5C28F
+
+	return result;
+}
+
+bool HDMIPLL::isValidStandardVideoMode(int idxVideoMode)
+{
+	bool result = (size_t)idxVideoMode < sizeof(m_videoModes) / sizeof (m_videoModes[0]);
+
+	return result;
+}
 
 // Allow HDMI pixel clock frequency in a range [20:200] MHz
 bool HDMIPLL::isValidHDMIFrequency(double freq)
@@ -53,9 +94,6 @@ bool HDMIPLL::getPLL(double freqPixelclock, uint32_t *M, uint32_t *K, uint32_t *
 		LOGERROR("Invalid HDMI pixel clock frequency");
 		return result;
 	}
-
-	LOGWARN("%s: Doesn't work after porting yet!", __PRETTY_FUNCTION__);
-	return result;
 
 	// Limits:
 	// Multiply Factor (M-Counter)		[1-512]				- Specifies the multiply factor of M-counter
@@ -153,7 +191,7 @@ HDMIVideoModePacket* HDMIPLL::getStandardVideoModePacket(int idxVideoMode)
 	HDMIVideoModePacket* result = nullptr;
 
 	// Initial validation
-	if ((size_t)idxVideoMode >= sizeof(m_videoModes) / sizeof (m_videoModes[0]))
+	if (!isValidStandardVideoMode(idxVideoMode))
 	{
 		LOGWARN("getStandardVideoModePacket: Invalid idxVideoMode parameter: %d", idxVideoMode);
 		return result;
@@ -165,6 +203,8 @@ HDMIVideoModePacket* HDMIPLL::getStandardVideoModePacket(int idxVideoMode)
 	// Calculate PLL coefficients based on target pixel clock frequency
 	uint32_t M, K, C;
 	getPLL(m_videoModes[idxVideoMode].freqPixelClock, &M, &K, &C);
+	uint32_t divM = getPLLDivisor(M);
+	uint32_t divC = getPLLDivisor(C);
 
 	result->nVideoMode = idxVideoMode;
 
@@ -180,9 +220,9 @@ HDMIVideoModePacket* HDMIPLL::getStandardVideoModePacket(int idxVideoMode)
 	// Documentation: AN661 - Implementing Fractional PLL Reconfiguration with Altera PLL and Altera PLL Reconfig IP Cores
 	result->pllRegisters =
 	{
-		{ 0x0004, M },			// 0b000100 - Counter (M). Size: 18-bits
+		{ 0x0004, divM },		// 0b000100 - Counter (M). Size: 18-bits
 		{ 0x0003, 0x10000 },		// 0b000011 - Counter(N). Size: 18-bits
-		{ 0x0005, C },			// 0b000101 - Counter(C). Size: 23-bits
+		{ 0x0005, divC },		// 0b000101 - Counter(C). Size: 23-bits
 		{ 0x0009, 2 },			// 0b001001 - Charge Pump Setting. Size: 3-bits
 		{ 0x0008, 7 },			// 0b001000 - Bandwidth setting. Size: 4-bits
 		{ 0x0007, K }			// 0b000111 - Counter Fractional Value (K)
@@ -336,12 +376,16 @@ void HDMIPLL::setVideoMode(HDMIVideoModePacket* modePacket)
 		// Video mode data from HDMIVideoModeType / HDMIVideoMode
 		for (int i = 0; i < 8; i++)
 		{
+			TRACE("VESA value: %d", modePacket->videoMode.vmodes[i]);
+
 			connector.transferWord(modePacket->videoMode.vmodes[i]);
 		}
 
 		// PLL registers data
 		for (PLLPortVector::const_iterator it = modePacket->pllRegisters.begin(); it != modePacket->pllRegisters.end(); it++)
 		{
+			TRACE("PLL register: 0x%X value: 0x%X", it->first, it->second);
+
 			// Transfer PLL register address (16-bits)
 			connector.transferWord(it->first);
 
