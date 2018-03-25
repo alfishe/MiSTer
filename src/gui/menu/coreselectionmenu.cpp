@@ -7,6 +7,8 @@
 #include "../../common/helpers/collectionhelper.h"
 #include "../osd/osd.h"
 #include "../../cores/coremanager.h"
+#include "../../fpga/fpgadevice.h"
+#include "../../fpga/fpgacommand.h"
 #include "../../system/hdmi/hdmipll.h"
 
 void CoreSelectionMenu::start()
@@ -79,8 +81,17 @@ void CoreSelectionMenu::enter()
 		CoreManager::instance().loadCore(filename);
 
 		// Post-load and core set-up activities
-		//HDMIPLL::setStandardVideoMode(8); // FullHD 1920x1080 @
-		HDMIPLL::setStandardVideoMode(0); // 1280x720 @
+
+		// 1. Pass video mode parameters (VESA + HDMI PLL)
+		HDMIPLL::setStandardVideoMode(8); // FullHD 1920x1080 @
+		//HDMIPLL::setStandardVideoMode(0); // 1280x720 @
+
+		// 2. Send UIO_BUT_SW command with settings applied to trigger proper core start
+		FPGACommand& command = *FPGADevice::instance().command;
+		command.sendIOCommand(UIO_BUT_SW, (uint16_t)0);
+
+		// Control if video mode set successfully
+		LOGINFO("%s", command.getVideoMode().c_str());
 	}
 }
 

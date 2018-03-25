@@ -3,11 +3,14 @@
 
 #include "../common/logger/logger.h"
 
+#include <string>
 #include <stdint.h>
 #include <pthread.h>
 
 #include "fpgadevice.h"
 #include "fpgaconnector.h"
+
+using namespace std;
 
 // Forward declaration. Header included from fpgacommand.cpp
 class FPGAConnector;
@@ -43,8 +46,9 @@ public:
 
 	// Core configuration commands
 	CoreType getCoreType();
-	char* getCoreName();
-	char* getCoreConfig();
+	string getCoreName();
+	string getCoreConfig();
+	string getVideoMode();
 
 	// OSD commands
 	bool startOSD();
@@ -67,6 +71,10 @@ public:
 	void sendCommand(uint8_t cmd, uint8_t param);
 	void sendCommand(uint8_t cmd, uint16_t param);
 	void sendCommand(uint8_t cmd, uint32_t param);
+
+	// Read commands
+	uint8_t readByte();
+	uint16_t readWord();
 
 protected:
 	// Helper methods

@@ -2,6 +2,7 @@
 
 #include "../common/logger/logger.h"
 
+#include "../3rdparty/tinyformat/tinyformat.h"
 #include "fpgaconnector.h"
 #include "fpgadevice.h"
 
@@ -61,7 +62,7 @@ CoreType FPGACommand::getCoreType()
 	return result;
 }
 
-char* FPGACommand::getCoreName()
+string FPGACommand::getCoreName()
 {
 	static char result[128 + 1];
 
@@ -101,10 +102,10 @@ char* FPGACommand::getCoreName()
 
 	endIO();
 
-	return result;
+	return string(result);;
 }
 
-char* FPGACommand::getCoreConfig()
+string FPGACommand::getCoreConfig()
 {
 	static char result[128 + 1];
 
@@ -145,6 +146,38 @@ char* FPGACommand::getCoreConfig()
 	}
 
 	endIO();
+
+	return string(result);
+}
+
+string FPGACommand::getVideoMode()
+{
+	string result;
+
+	if (startIO())
+	{
+		sendCommand(UIO_GET_VRES);
+
+		uint8_t byte = readByte();
+
+		uint32_t width  = readWord() | (readWord() << 16);
+		uint32_t height = readWord() | (readWord() << 16);
+		uint32_t htime  = readWord() | (readWord() << 16);
+		uint32_t vtime  = readWord() | (readWord() << 16);
+		uint32_t ptime  = readWord() | (readWord() << 16);
+
+		float vrate = 100000000;
+		vrate /= vtime;
+		float hrate = 100000;
+		hrate /= htime;
+
+		float prate = width*100;
+		prate /= ptime;
+
+		result = tfm::format("\033[1;33mINFO: Video resolution: %u x %u, fHorz = %.1fKHz, fVert = %.1fHz, fPix = %.2fMHz\033[0m\n", width, height, hrate, vrate, prate);
+
+		endIO();
+	}
 
 	return result;
 }
@@ -327,6 +360,21 @@ void FPGACommand::sendCommand(uint8_t cmd, uint32_t param)
 {
 	send8(cmd);
 	send32(param);
+}
+
+// Read commands
+uint8_t FPGACommand::readByte()
+{
+	uint8_t result = connector->transferByte(0);
+
+	return result;
+}
+
+uint16_t FPGACommand::readWord()
+{
+	uint16_t result = connector->transferWord(0);
+
+	return result;
 }
 
 // Helper methods

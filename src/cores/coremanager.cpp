@@ -28,6 +28,11 @@ bool CoreManager::loadCore(const string& filename)
 	if (device.load_rbf(filename))
 	{
 		// Determine core type
+		FPGACommand& command = *device.command;
+		CoreType coreType = command.getCoreType();
+		LOGINFO("Core name: %s", command.getCoreName().c_str());
+		LOGINFO("Core config: %s", command.getCoreConfig().c_str());
+		LOGINFO("%s", command.getVideoMode().c_str());
 
 		// Instantiate correspondent adapter(s) in ARM code
 
