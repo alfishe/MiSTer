@@ -2,26 +2,65 @@
 #define IO_INPUT_INPUTMANAGER_H_
 
 #include <list>
+#include <mutex>
+#include <string>
+#include "../../common/events/events.h"
+#include "../../common/events/messagecenter.h"
+#include "inputpoll/inputpoller.h"
+#include "input.h"
+#include "baseinputdevice.h"
 
 using namespace std;
 
-class InputManager
+class InputManager : public EventObserver
 {
-protected:
+public:
 	// Fields
-	list<int> keyboards;
-	list<int> mouses;
-	list<int> joysticks;
+	BaseInputDeviceMap m_inputDevices;
+
+	BaseInputDeviceMap m_keyboards;
+	BaseInputDeviceMap m_mouses;
+	BaseInputDeviceMap m_joysticks;
+
+	mutex m_mutexDevices;
 
 public:
-	static InputManager& instance();
-	InputManager(const InputManager& that) = delete; // Copy constructor is forbidden here (C++11 feature)
+	static InputManager& instance();							// Singleton instance
+	InputManager(InputManager&&) = delete;					// Disable move constructor (C++11 feature)
+	InputManager(const InputManager& that) = delete; 			// Disable copy constructor (C++11 feature)
+	InputManager& operator =(InputManager const&) = delete;	// Disable assignment operator (C++11 feature)
 	virtual ~InputManager();
-
-	void detectDevices();
-
 private:
-	InputManager() {}; // Disallow direct instances creation
+	InputManager();	// Disable explicit object creation (only singleton instace allowed)
+
+public:
+	// Get/find methods
+	BaseInputDevice* findInputDeviceByName(const string& name);
+
+	// Control methods
+	void reset();
+	BaseInputDeviceMap& detectDevices();
+	void startPolling();
+	void stopPolling();
+
+	bool isDeviceTypeAllowed(InputDeviceTypeEnum type);
+
+	BaseInputDevice* resolveDevice(const string& name);
+
+protected:
+	void addInputDevice(BaseInputDevice* device);
+	void removeInputDevice(const string& name);
+
+public:
+	// Debug methods
+	string dumpDevicesMap();
+	static string dump(BaseInputDevice* inputDevice);
+
+// EventObserver delegates
+public:
+	void onMessageEvent(const EventMessageBase& event);
+
+
 };
 
 #endif /* IO_INPUT_INPUTMANAGER_H_ */

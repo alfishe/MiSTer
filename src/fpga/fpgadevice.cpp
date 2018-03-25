@@ -15,6 +15,7 @@
 #include "fpgacommand.h"
 #include "../common/consts.h"
 #include "../common/addresses.h"
+#include "../3rdparty/tinyformat/tinyformat.h"
 #include "socfpga_reset_manager.h"
 #include "socfpga_fpga_manager.h"
 #include "socfpga_sdram_controller.h"
@@ -75,7 +76,7 @@ bool FPGADevice::init()
 	bool result = false;
 
 	// Map FPGA addresses into application (Linux process) address space
-	if ((fdFPGAMemory = open("/dev/mem", O_RDWR | O_SYNC)) != -1)
+	if ((fdFPGAMemory = open(LINUX_MEMORY_DEVICE, O_RDWR | O_SYNC)) != -1)
 	{
 		map_base = (uint32_t *)mmap(nullptr, FPGA_REG_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fdFPGAMemory, FPGA_REG_BASE);
 		if (map_base != (uint32_t *)MAP_FAILED)
@@ -83,7 +84,7 @@ bool FPGADevice::init()
 			isInitialized = true;
 
 			// Info logging
-			LOGINFO("FPGA address space mapped into the process successfully\n");
+			LOGINFO("FPGA address space mapped into the process successfully");
 		}
 		else
 		{
@@ -96,7 +97,7 @@ bool FPGADevice::init()
 	}
 	else
 	{
-		LOGERROR("Unable to access memory via /dev/mem. Probably program need to be started as 'sudo MiSTer'\n");
+		LOGERROR("Unable to access memory via /dev/mem. Probably program need to be started as 'sudo MiSTer'");
 	}
 
 	return result;
@@ -128,46 +129,42 @@ void FPGADevice::core_reset(bool reset)
 }
 
 // FPGA load
-bool FPGADevice::load_rbf(const char *name)
+bool FPGADevice::load_rbf(const string& name)
 {
 	bool result = false;
 
-	// Should be sufficient if file is located not too deep in folder hierarchy.
-	// Otherwise PATH_MAX (4096) should be used.
-	int filepath_len = NAME_MAX * 2;
-	char filepath[filepath_len];
-
 	// Info logging
-	LOGINFO("Loading RBF file: %s...  ", name);
+	LOGINFO("Loading RBF file: %s...  ", name.c_str());
 
 	// Create full core .rbf filepath (assuming it's in root of data volume)
-	snprintf(filepath, filepath_len, "%s/%s", sysmanager::getDataRootDir(), name);
+	string filePath = Path::combine(sysmanager::getDataRootDir(), name).toString();
 
 #ifdef REBOOT_ON_RBF_LOAD
 	// TODO: re-check whether it's still needed
 	enableHPSFPGABridges(0);
-	result = save_core_name(name);
+	result = saveCoreNameForUboot(name);
 #else
 	// Do loading .RBF file
-	if (filemanager::isFileExist(filepath))
+	if (filemanager::isFileExist(filePath))
 	{
 		// Info logging
-		LOGINFO("Found\n");
+		LOGINFO("Found");
 
-		uint64_t filesize = filemanager::getFileSize(filepath);
+		uint64_t filesize = filemanager::getFileSize(filePath);
 		if (filesize > 0)
 		{
 			// Info logging
-			LOGINFO("FPGA bitstream size: %llu bytes\n", filesize);
+			LOGINFO("FPGA bitstream size: %llu bytes", filesize);
 
 			void* buffer = malloc(filesize);
 			if (buffer != nullptr)
 			{
-				if (filemanager::readFileIntoMemory(filepath, (uint8_t *)buffer, filesize))
+				if (filemanager::readFileIntoMemory(filePath, (uint8_t *)buffer, filesize))
 				{
 					// Disable all HPS<->FPGA bridges before reconfiguring FPGA
 					disableHPSFPGABridges();
 
+					// Programm FPGA with new core
 					if (program(buffer, filesize))
 					{
 						// Enable HPS<->FPGA bridges back, once FPGA successfully reconfigured
@@ -175,29 +172,29 @@ bool FPGADevice::load_rbf(const char *name)
 
 						result = true;
 
-						LOGINFO("FPGA successfully programmed with '%s' file\n", filepath);
+						LOGINFO("FPGA successfully programmed with '%s' file", filePath.c_str());
 					}
 					else
 					{
-						LOGERROR("Unable to program FPGA with '%s' file\n", filepath);
+						LOGERROR("Unable to program FPGA with '%s' file", filePath.c_str());
 					}
 				}
 				else
 				{
-					LOGERROR("Unable to read FPGA bitstream file: %s\n", filepath);
+					LOGERROR("Unable to read FPGA bitstream file: %s", filePath.c_str());
 				}
 
 				free(buffer);
 			}
 			else
 			{
-				LOGERROR("Unable to allocate %llu bytes\n", filesize);
+				LOGERROR("Unable to allocate %llu bytes", filesize);
 			}
 		}
 		else
 		{
 			// Info logging
-			LOGINFO("File has zero size\n");
+			LOGINFO("File has zero size");
 		}
 
 		// Trigger application restart to follow changes in FPGA
@@ -206,9 +203,9 @@ bool FPGADevice::load_rbf(const char *name)
 	else
 	{
 		// Info logging
-		LOGWARN("File '%s' not found\n", filepath);
+		LOGWARN("File '%s' not found", filePath.c_str());
 	}
-#endif
+#endif // REBOOT_ON_RBF_LOAD
 
 	// Info logging
 	if (result)
@@ -269,44 +266,81 @@ bool FPGADevice::program(const void* rbf_data, uint32_t rbf_size)
 
 				if (result)
 				{
-					LOGINFO("FPGA successfully loaded from bitstream file and configured\n");
+					LOGINFO("FPGA successfully loaded from bitstream file and configured");
 				}
 				else
 				{
-					LOGERROR("FPGA didn't enter USER mode\n");
+					LOGERROR("FPGA didn't enter USER mode");
 				}
 			}
 			else
 			{
-				LOGERROR("FPGA didn't enter INIT phase\n");
+				LOGERROR("FPGA didn't enter INIT phase");
 			}
 		}
 		else
 		{
-			LOGERROR("FPGA didn't enter CONFIG DONE state\n");
+			LOGERROR("FPGA didn't enter CONFIG DONE state");
 		}
 	}
 	else
 	{
-		LOGERROR("FPGA programming mode initialization failed\n");
+		LOGERROR("FPGA programming mode initialization failed");
 	}
 
 	return result;
 }
 
+#ifdef REBOOT_ON_RBF_LOAD
+void FPGADevice::saveCoreNameForUboot(const string& name)
+{
+	int fd;
+
+	if ((fd = open(LINUX_MEMORY_DEVICE, O_RDWR | O_SYNC)) != -1)
+	{
+		uint8_t* buffer = (uint8_t *)mmap(nullptr, UBOOT_EXTRA_ENV_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, UBOOT_EXTRA_ENV_BASE);
+		if (buffer != (uint8_t *)MAP_FAILED)
+		{
+			// 4 bytes of signature 0x87654321
+			*((uint32_t*)buffer) = UBOOT_EXTRA_ENV_SIGNATURE;
+
+			// Extra env settings in U-Boot script syntax
+			// 'core="<name>"\0\0\0\0'
+			string ubootEnv = tfm::format("core=\"%s\"\0\0\0\0", name.c_str());
+			memcpy(buffer + 4, ubootEnv.c_str(), ubootEnv.length());
+
+			// Unmap address buffer
+			munmap(buffer, UBOOT_EXTRA_ENV_SIZE);
+		}
+	}
+}
+#endif // REBOOT_ON_RBF_LOAD
+
 void FPGADevice::disableHPSFPGABridges()
 {
-	writel(0, &sysmgr_regs->fpgaintfgrp_module);
-	writel(0, &sdram_regs->fpgaportrst);
-	writel(7, &reset_regs->brg_mod_reset);
-	writel(1, &nic301_regs->remap);
+	// 1. Disable signals from FPGA fabric to EMAC0 and EMAC1 modules
+	// 2. Put SDRAM port into reset state
+	// 3. Reset all bridges (HPS2FPGA, Lightweight HPS2FPGA, FPGA2HPS)
+	// 4. Maps the On-chip RAM to address 0x0 for the MPU L3 master.
+	//    Turn off HPS2FPGA and Lightweight HPS2FPGA bridge visibility to L3 Masters
+
+	writel(0, &sysmgr_regs->fpgaintf_module);				// 1.
+	writel(0, &sdram_regs->fpgaportrst);						// 2.
+	writel(RSTMGR_BRGMODRST_ALL, &reset_regs->brgmodrst);		// 3.
+	writel(L3REGS_REMAP_MPUZERO, &nic301_regs->remap);		// 4.
 }
 
 void FPGADevice::enableHPSFPGABridges()
 {
-	writel(0x00003FFF, &sdram_regs->fpgaportrst);
-	writel(0x00000000, &reset_regs->brg_mod_reset);
-	writel(0x00000019, &nic301_regs->remap);
+	// 1. Write all 1 to bits [13:0] (0x3FFF) of FPGAPORTRST (0xFFC25080), to enable all SDRAM controller ports exit reset
+	// 2. Deassert reset signals from all bridges (HPS2FPGA, Lightweight HPS2FPGA, FPGA2HPS)
+	// 3. Map the On-chip RAM to address 0x0 for the MPU L3 master
+	//    Enable HPS2FPGA AXI bridge visibility for L3 masters
+	//    Enable Lightweight HPS2FPGA AXI bridge visibility for L3 masters
+
+	writel(SDR_FPGAPORTRST_PORTRSTN_MASK, &sdram_regs->fpgaportrst);										// 1.
+	writel(0x00000000, &reset_regs->brgmodrst);															// 2.
+	writel(L3REGS_REMAP_MPUZERO | L3REGS_REMAP_HPS2FPGA | L3REGS_REMAP_LWHPS2FPGA, &nic301_regs->remap);	// 3.
 }
 
 
@@ -378,7 +412,7 @@ uint32_t FPGADevice::core_read(uint32_t offset)
 
 	if (offset <= MAX_FPGA_OFFSET)
 	{
-		// Read 32-bit value using aligned offset address
+		// Read 32-bit value using aligned to 4-bytes offset address
 		result = readl((void*)(SOCFPGA_LWFPGASLAVES_ADDRESS + (offset & ~3)));
 	}
 

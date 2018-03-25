@@ -2,154 +2,93 @@
 
 #include "../../common/logger/logger.h"
 
+#include <cstring>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <linux/input.h>
 #include "../../3rdparty/openbsd/string.h"
+#include "../../3rdparty/tinyformat/tinyformat.h"
 #include "../../common/consts.h"
+#include "../../common/exception/misterexception.h"
+#include "../../common/helpers/collectionhelper.h"
 
-keyboard::keyboard(int fd)
-{
-	this->fd = fd;
-}
-
-keyboard::~keyboard()
+Keyboard::Keyboard(const string& name, const string& path) : BaseInputDevice(name, path)
 {
 }
 
-/*
- * Retrieves device name from the device itself
- * Reference: http://www.linuxjournal.com/files/linuxjournal.com/linuxjournal/articles/064/6429/6429l4.html
- */
-const char * keyboard::getDeviceName()
+Keyboard::~Keyboard()
 {
-	char *result = nullptr;
+	closeDevice();
+}
 
-	char buffer[255];
+void Keyboard::reset()
+{
+	// Reset all internal buffers and states
+	m_keysState.clear();
+	memset(bit_key, 0, sizeof(bit_key));
+}
 
-	if (fd != INVALID_FILE_DESCRIPTOR)
-	{
-		if (ioctl(fd, EVIOCGNAME(sizeof(buffer)), buffer) != -1)
-		{
-			strlcpy(deviceName, buffer, sizeof(buffer));
-			result = deviceName;
-		}
-		else
-		{
-			LOGERROR("%s: unable to get device name\n%s", __PRETTY_FUNCTION__, logger::geterror());
-		}
-	}
-	else
-	{
-		LOGERROR("%s: Device descriptor is not valid\n", __PRETTY_FUNCTION__);
-	}
+bool Keyboard::isKeyPressed(uint16_t key)
+{
+	pollKeys();
+	bool result = isKeyPressed(bit_key_state, key);
 
 	return result;
 }
 
-/*
- * Checks if keyboard has LEDs
- */
-bool keyboard::hasLED()
+bool Keyboard::isKeyPressed(unsigned long* keyBits, uint16_t key)
+{
+	bool result = InputDeviceHelper::isBitSet(keyBits, key);
+
+	return result;
+}
+
+bool Keyboard::pollKeys()
 {
 	bool result = false;
 
-	uint8_t evtype_b[(EV_MAX + 7) / 8];
+	// Clear key states bit array
+	memset(bit_key_state, 0, sizeof(bit_key_state));
 
-	if (fd != INVALID_FILE_DESCRIPTOR)
+	if (ioctl(fd, EVIOCGKEY(sizeof(bit_key_state)), &bit_key_state) >= 0)
 	{
-		memset(&evtype_b, 0, sizeof(evtype_b));
-
-		if (ioctl(fd, EVIOCGBIT(0, sizeof(evtype_b)), evtype_b) != -1)
-		{
-			if (isBitSet(EV_LED, evtype_b))
-			{
-				LOGINFO("has LEDs");
-				result = true;
-			}
-		}
-		else
-		{
-			LOGERROR("%s: unable to get input device capabilities\n%s", __PRETTY_FUNCTION__, logger::geterror());
-		}
-	}
-	else
-	{
-		LOGERROR("%s: Device descriptor is not valid\n", __PRETTY_FUNCTION__);
+		result = true;
 	}
 
 	return result;
 }
 
-/*
- * Check LEDs state for the keyboard
- * Reference: http://www.linuxjournal.com/files/linuxjournal.com/linuxjournal/articles/064/6429/6429l11.html
- */
-void keyboard::getLEDState()
+int Keyboard::getPressedKeysCount()
 {
-	uint8_t led_b[LED_MAX];
+	int result = InputDeviceHelper::bitCount(bit_key_state, sizeof(bit_key_state) / sizeof(bit_key_state[0]));
 
-	if (fd != INVALID_FILE_DESCRIPTOR)
+	/* Dumb implementation
+	for (unsigned i = 0; i < KEY_MAX; i++)
 	{
-		memset(led_b, 0, sizeof(led_b));
-		if (ioctl(fd, EVIOCGLED(sizeof(led_b)), led_b) != -1)
+		if (isBitSet(bit_key_state, i))
 		{
-			for (int i = 0; i < LED_MAX; i++)
-			{
-				if (isBitSet(i, led_b))
-				{
-					TRACE("LED 0x%02x", i);
-
-					switch (i)
-					{
-						case LED_NUML:
-							TRACE("NumLock LED");
-							break;
-						case LED_CAPSL:
-							TRACE("CapsLock LED");
-							break;
-						case LED_SCROLLL:
-							TRACE("ScrollLock LED");
-							break;
-						default:
-							TRACE("Unknown LED: 0x%04hx", i);
-							break;
-					}
-				}
-			}
-		}
-		else
-		{
-			LOGERROR("%s: unable to get keyboard LEDs state\n%s", __PRETTY_FUNCTION__, logger::geterror());
+			result++;
 		}
 	}
-	else
-	{
-		LOGERROR("%s: Device descriptor is not valid\n", __PRETTY_FUNCTION__);
-	}
+	*/
 
-	// All LEDS available (defined in input-event-codes.h)
-/*
-	#define LED_NUML		0x00
-	#define LED_CAPSL		0x01
-	#define LED_SCROLLL		0x02
-	#define LED_COMPOSE		0x03
-	#define LED_KANA			0x04
-	#define LED_SLEEP		0x05
-	#define LED_SUSPEND		0x06
-	#define LED_MUTE			0x07
-	#define LED_MISC			0x08
-	#define LED_MAIL			0x09
-	#define LED_CHARGING		0x0a
-*/
+	return result;
 }
 
-void keyboard::setLEDState(uint8_t state)
+uint16_t Keyboard::getLEDState()
 {
-	input_event event;
-	event.type = EV_LED;
-	event.code = state;
+	uint16_t result = 0x0000;
+
+	throw MiSTerException("Not implemented");
+
+	return result;
+}
+
+void Keyboard::setLEDState(uint16_t ledMask, bool on)
+{
+	struct input_event event;
+	makeLEDEvent(&event, ledMask, on);
 
 	if (fd != INVALID_FILE_DESCRIPTOR)
 	{
@@ -166,4 +105,109 @@ void keyboard::setLEDState(uint8_t state)
 	{
 		LOGERROR("%s: Device descriptor is not valid\n", __PRETTY_FUNCTION__);
 	}
+}
+
+void Keyboard::makeLEDEvent(struct input_event* event, uint16_t ledMask, bool on)
+{
+	if (event == nullptr)
+		return;
+
+	event->type = EV_LED;
+	event->code = ledMask;
+
+	if (on)
+	{
+		event->value = 1;
+	}
+	else
+	{
+		event->value = 0;
+	}
+}
+
+void Keyboard::setKeyState(uint16_t key, bool state)
+{
+	if (key_exists(m_keysState, key))
+	{
+		m_keysState[key] = state;
+	}
+	else
+	{
+		m_keysState.insert( {key, state} );
+	}
+}
+
+bool Keyboard::getKeyState(uint16_t key)
+{
+	bool result = false;
+
+	if (key_exists(m_keysState, key))
+	{
+		result = m_keysState[key];
+	}
+
+	return result;
+}
+
+void Keyboard::setPrevKeyState(uint16_t key, bool state)
+{
+	if (key_exists(m_prevKeysState, key))
+	{
+		m_prevKeysState[key] = state;
+	}
+	else
+	{
+		m_prevKeysState.insert( {key, state} );
+	}
+}
+
+bool Keyboard::getPrevKeyState(uint16_t key)
+{
+	bool result = false;
+
+	if (key_exists(m_prevKeysState, key))
+	{
+		result = m_prevKeysState[key];
+	}
+
+	return result;
+}
+
+// Debug methods
+string Keyboard::dumpKeyBits()
+{
+	string result = dumpKeyBits(bit_key_state);
+
+	return result;
+}
+
+string Keyboard::dumpKeyBits(unsigned long* keyBits)
+{
+	string result;
+	stringstream ss;
+
+	int setBits = 0;
+	for (unsigned i = 0; i < KEY_MAX; i++)
+	{
+		if (InputDeviceHelper::isBitSet(keyBits, i))
+		{
+			if (setBits != 0)
+				ss << ", ";
+
+			if (i < keyNames.size())
+			{
+				ss << tfm::format("0x%04x %s", i, keyNames[i].c_str());
+			}
+			else
+			{
+				ss << tfm::format("0x%04x UNKNOWN_%04x", i, i);
+			}
+
+			setBits++;
+		}
+	}
+
+	result = tfm::format("Keys set: %d\n%s\n", setBits, ss.str().c_str());
+
+	return result;
 }

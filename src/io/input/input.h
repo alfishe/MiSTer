@@ -1,6 +1,63 @@
 #ifndef IO_INPUT_INPUT_H_
 #define IO_INPUT_INPUT_H_
 
+#include <map>
+#include <string>
+#include <vector>
+#include "../../common/consts.h"
+#include "../../common/types.h"
+
+using namespace std;
+
+
+/*
+enum InputDeviceType
+{
+	Unknown = 0,
+	Keyboard,
+	Mouse,
+	Joystick
+};
+*/
+
+struct InputDevice
+{
+	// Better-enums workaround (declare proxy enum within struct/class)
+	typedef InputDeviceTypeEnum InputDeviceType;
+
+	int fd = INVALID_FILE_DESCRIPTOR;
+	uint32_t eventBits;
+
+	int index = -1;
+	string name;
+	string path;
+	VIDPID deviceID;
+	InputDeviceType type = InputDeviceType::Unknown;
+	string model;
+
+// Debug methods
+public:
+	string dumpDeviceType()
+	{
+		string result = type._to_string();
+
+		return result;
+	};
+};
+
+typedef vector<InputDevice> InputDeviceVector;
+typedef map<string, InputDevice> InputDeviceMap;
+typedef pair<string, InputDevice> InputDevicePair;
+
+// Linux device paths related to input
+#define LINUX_DEVICE_INPUT "/dev/input"
+#define LINUX_INPUT_DEVICE "/sys/class/input/event%d/device/"
+#define LINUX_INPUT_DEVICE_ID "/sys/class/input/event%d/device/id/"
+#define LINUX_INPUT_DEVICE_VID "/sys/class/input/event%d/device/id/vendor"
+#define LINUX_INPUT_DEVICE_PID "/sys/class/input/event%d/device/id/product"
+
+#define REGEX_INPUT_DEVICE_INDEX "event(\\d+)"
+
 #define HID_LED_NUM_LOCK    1
 #define HID_LED_CAPS_LOCK   2
 #define HID_LED_SCROLL_LOCK 4
@@ -17,7 +74,7 @@
 #define RGUI         0x008000
 #define MODMASK      0x00FF00
 
-#define OSD          0x010000  // to be used by OSD, not the core itself
+#define OSD_OSD      0x010000  // to be used by OSD, not the core itself
 #define OSD_OPEN     0x020000  // OSD key not forwarded to core, but queued in arm controller
 #define CAPS_TOGGLE  0x040000  // caps lock toggle behaviour
 #define EXT          0x080000

@@ -11,49 +11,43 @@
 #include "../../fpga/fpgaconnector.h"
 #include "../../fpga/fpgacommand.h"
 
-osd& osd::instance()
+OSD& OSD::instance()
 {
-	static osd instance;
+	static OSD instance;
 
 	return instance;
 }
 
-osd::~osd()
+OSD::~OSD()
 {
 }
 
-void osd::show()
+void OSD::show()
 {
 	FPGADevice& fpga = FPGADevice::instance();
 	FPGACommand& command = *(fpga.command);
 
 	command.sendOSDCommand(MM1_OSDCMDENABLE);
-
-	highResolution = false;
 }
 
-void osd::showHighres()
+void OSD::showHighres()
 {
 	FPGADevice& fpga = FPGADevice::instance();
 	FPGACommand& command = *(fpga.command);
 
 	command.sendOSDCommand(MM1_OSDCMDENABLE);
 	command.sendOSDCommand(OSD_CMD_OSD);
-
-	highResolution = true;
 }
 
-void osd::hide()
+void OSD::hide()
 {
 	FPGADevice& fpga = FPGADevice::instance();
 	FPGACommand& command = *(fpga.command);
 
 	command.sendOSDCommand(MM1_OSDCMDDISABLE);
-
-	highResolution = false;
 }
 
-void osd::fill()
+void OSD::fill()
 {
 	memset(framebuffer, 0xAA, sizeof(framebuffer));
 
@@ -61,17 +55,15 @@ void osd::fill()
 	transferFramebuffer();
 }
 
-void osd::clear()
+void OSD::clear()
 {
 	// Clear internal buffer
 	clearFramebuffer();
-
-	// Transfer changes to FPGA
-	transferFramebuffer();
 }
 
-void osd::compose()
+void OSD::compose()
 {
+	/*
 	// Copy Title over framebuffer content
 	for (unsigned idx = 0; idx < sizeof(titlebuffer) / 2; idx++)
 	{
@@ -87,11 +79,12 @@ void osd::compose()
 			//rotateCharacter(&titlebuffer[y][x], &framebuffer[OSD_HIGHRES_HEIGHT_PX - x][y]);
 		}
 	}
+	*/
 
 	transferFramebuffer();
 }
 
-void osd::setTitle(const char *title, uint8_t arrows)
+void OSD::setTitle(const string& title, uint8_t arrows)
 {
 	uint8_t idx = 0;
 	uint8_t xOffset = 0;
@@ -159,20 +152,20 @@ void osd::setTitle(const char *title, uint8_t arrows)
 	}
 }
 
-void osd::printLine(uint8_t line, const char *text, bool invert)
+void OSD::printLine(uint8_t line, const string& text, bool invert)
 {
-	uint8_t heightLimit = highResolution ? OSD_HIGHRES_HEIGHT_LINES : OSD_HEIGHT_LINES;
+	uint8_t heightLimit = OSD_HIGHRES_HEIGHT_LINES;
 	if (line >= heightLimit)
 		return;
 
-	int i = 0;
-	int curOffset = 16; // Make 2 symbols right shift (since will be overlapped with title anyway)
+	unsigned i = 0;
+	int curOffset = 16; // (in px). Make 2 symbols right shift (since will be overlapped with title anyway)
 
-	while (true)
+	while (i < text.size())
 	{
 		uint8_t symbol = text[i++];
 
-		if (symbol != '\0' && (curOffset < OSD_LINE_LENGTH_BYTES))
+		if (curOffset < OSD_LINE_LENGTH_BYTES)
 		{
 			for (int j = 0; j < 8; ++j)
 			{
@@ -190,14 +183,280 @@ void osd::printLine(uint8_t line, const char *text, bool invert)
 	}
 }
 
-// Helper methods
+void OSD::printSymbol(uint8_t row, uint8_t column, char symbol, bool invert)
+{
+	uint8_t heightLimit = OSD_HIGHRES_HEIGHT_LINES;
+	uint8_t widthLimit = OSD_LINE_LENGTH;
+	if (row >= heightLimit || column >= widthLimit)
+		return;
 
-void osd::clearFramebuffer()
+	// Print symbol by copying bytes from font array
+	uint8_t curOffset = column * 8;
+	for (uint8_t j = 0; j < 8; ++j)
+	{
+		uint8_t fontByte = charfont[(uint8_t)symbol][j];
+		if (invert)
+			fontByte = ~fontByte;
+
+		framebuffer[row][curOffset++] = fontByte;
+	}
+}
+
+bool OSD::getPixel(const int x, const int y)
+{
+	static int heightLimit = OSD_HIGHRES_HEIGHT_PX;
+	static int widthLimit = OSD_LINE_LENGTH_BYTES;
+
+	if (x >= widthLimit || y >= heightLimit)
+	{
+		LOGWARN("%s: coordinates outside boundaries", __PRETTY_FUNCTION__);
+	}
+
+	uint8_t byteY = y / 8;
+	uint8_t bitIdx = y % 8;
+	uint8_t value = framebuffer[byteY][x];
+
+	value &= (1 << bitIdx);
+
+	bool result = value != 0;
+
+	return result;
+}
+
+void OSD::setPixel(const int x, const int y, bool invert)
+{
+	static int heightLimit = OSD_HIGHRES_HEIGHT_PX;
+	static int widthLimit = OSD_LINE_LENGTH_BYTES;
+
+	if (x >= widthLimit || y >= heightLimit)
+	{
+		LOGWARN("%s: coordinates outside boundaries", __PRETTY_FUNCTION__);
+	}
+
+	uint8_t byteY = y / 8;
+	uint8_t bitIdx = y % 8;
+	uint8_t value = framebuffer[byteY][x];
+
+	if (!invert)
+	{
+		value |= (1 << bitIdx);
+	}
+	else
+	{
+		value &= ~(1 << bitIdx);
+	}
+
+	framebuffer[byteY][x] = value;
+}
+
+// Rectangular region operations
+void OSD::fillRect(uint8_t left, uint8_t top, uint8_t width, uint8_t height, bool clear)
+{
+	static int heightLimit = OSD_HIGHRES_HEIGHT_PX;
+	static int widthLimit = OSD_LINE_LENGTH_BYTES;
+
+	if (left >= widthLimit || top >= heightLimit)
+	{
+		LOGWARN("%s: left/top coordinates outside boundaries", __PRETTY_FUNCTION__);
+		return;
+	}
+
+	for (int x = left; x < left + width && x < widthLimit; x++)
+	{
+		for (int y = top; y < top + height && y < heightLimit; y++)
+		{
+			setPixel(x, y, clear);
+		}
+	}
+}
+
+void OSD::fillRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t height, bool clear)
+{
+	static int heightLimit = OSD_HIGHRES_HEIGHT_PX;
+	static int widthLimit = OSD_LINE_LENGTH_BYTES;
+
+	if (left >= widthLimit || top >= heightLimit)
+	{
+		LOGWARN("%s: left/top coordinates outside boundaries", __PRETTY_FUNCTION__);
+		return;
+	}
+
+	// Calculate if pixel lines are not aligned to byte boundary (8 vertical line pixels correspond to a byte in framebuffer)
+	uint8_t topOffset = top % 8;
+	uint8_t topByteY = top / 8;
+	uint8_t bottomOffset = (top + height) % 8;
+	uint8_t bottomByteY = (top + height) / 8;
+
+	// Calculate aligned rectangular where we can use byte operations for better speed
+	int alignedLines = height - topOffset - bottomOffset;
+	int alignedTop = -1;
+	int alignedHeight = -1;
+	if (alignedLines > 0 && alignedLines % 8 == 0)
+	{
+		alignedTop = top + topOffset;
+		alignedHeight = alignedLines;
+	}
+
+	// Fill upper non-aligned rect
+	if (topOffset != 0)
+	{
+		// Create mask for upper <topOffset> bits
+		uint8_t topMask = (1 << topOffset) - 1;
+		uint8_t bottomMask = ~topMask;
+
+		for (int x = left; x < left + width && x < widthLimit; x++)
+		{
+			uint8_t value = framebuffer[topByteY][x];
+			if (!clear)
+			{
+				value = (value & topMask) | (0xFF & bottomMask);
+			}
+			else
+			{
+				value = value & bottomMask;
+			}
+			framebuffer[topByteY][x] = value;
+		}
+	}
+
+	// Fill aligned rect
+	if (alignedTop >= 0 && alignedHeight > 0)
+	{
+		uint8_t fillByte = clear ? 0x00 : 0xFF;
+
+		for (int x = left; x < left + width && x < widthLimit; x++)
+		{
+			for (int y = alignedTop / 8; y < (alignedTop + alignedHeight) / 8; y++)
+			{
+				framebuffer[y][x] = fillByte;
+			}
+		}
+	}
+
+	// Fill bottom non-aligned rect
+	if (bottomOffset != 0)
+	{
+		// Create mask for lower <bottomOffset> bits
+		uint8_t topMask = (1 << bottomOffset) - 1;
+		uint8_t bottomMask = ~topMask;
+
+		for (int x = left; x < left + width && x < widthLimit; x++)
+		{
+			uint8_t value = framebuffer[bottomByteY][x];
+			if (!clear)
+			{
+				value = (0xFF & topMask) | (value & bottomMask);
+			}
+			else
+			{
+				value = value & topMask;
+			}
+			framebuffer[bottomByteY][x] = value;
+		}
+	}
+}
+
+void OSD::invertRect(uint8_t left, uint8_t top, uint8_t width, uint8_t height)
+{
+	static int heightLimit = OSD_HIGHRES_HEIGHT_PX;
+	static int widthLimit = OSD_LINE_LENGTH_BYTES;
+
+	if (left >= widthLimit || top >= heightLimit)
+	{
+		LOGWARN("%s: left/top coordinates outside boundaries", __PRETTY_FUNCTION__);
+		return;
+	}
+
+	for (int x = left; x < left + width && x < widthLimit; x++)
+	{
+		for (int y = top; y < top + height && y < heightLimit; y++)
+		{
+			bool value = getPixel(x, y);
+			value = !value;
+			setPixel(x, y, !value);
+		}
+	}
+}
+
+void OSD::invertRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t height)
+{
+	static int heightLimit = OSD_HIGHRES_HEIGHT_PX;
+	static int widthLimit = OSD_LINE_LENGTH_BYTES;
+
+	if (left >= widthLimit || top >= heightLimit)
+	{
+		LOGWARN("%s: left/top coordinates outside boundaries", __PRETTY_FUNCTION__);
+		return;
+	}
+
+	// Calculate if pixel lines are not aligned to byte boundary (8 vertical line pixels correspond to a byte in framebuffer)
+	uint8_t topOffset = top % 8;
+	uint8_t topByteY = top / 8;
+	uint8_t bottomOffset = (top + height) % 8;
+	uint8_t bottomByteY = (top + height) / 8;
+
+	// Calculate aligned rectangular where we can use byte operations for better speed
+	int alignedLines = height - topOffset - bottomOffset;
+	int alignedTop = -1;
+	int alignedHeight = -1;
+	if (alignedLines > 0 && alignedLines % 8 == 0)
+	{
+		alignedTop = top + topOffset;
+		alignedHeight = alignedLines;
+	}
+
+	// Invert upper non-aligned rect
+	if (topOffset != 0)
+	{
+		// Create mask for upper <topOffset> bits
+		uint8_t topMask = (1 << topOffset) - 1;
+		uint8_t bottomMask = ~topMask;
+
+		for (int x = left; x < left + width && x < widthLimit; x++)
+		{
+			uint8_t value = framebuffer[topByteY][x];
+			value = (value & topMask) | (~value & bottomMask);
+			framebuffer[topByteY][x] = value;
+		}
+	}
+
+	// Invert aligned rect
+	if (alignedTop >= 0 && alignedHeight > 0)
+	{
+		for (int x = left; x < left + width && x < widthLimit; x++)
+		{
+			for (int y = alignedTop / 8; y < (alignedTop + alignedHeight) / 8; y++)
+			{
+				uint8_t value = framebuffer[y][x];
+				value = ~value;
+				framebuffer[y][x] = value;
+			}
+		}
+	}
+
+	// Invert bottom non-aligned rect
+	if (bottomOffset != 0)
+	{
+		// Create mask for lower <bottomOffset> bits
+		uint8_t topMask = (1 << bottomOffset) - 1;
+		uint8_t bottomMask = ~topMask;
+
+		for (int x = left; x < left + width && x < widthLimit; x++)
+		{
+			uint8_t value = framebuffer[bottomByteY][x];
+			value = (~value & topMask) | (value & bottomMask);
+			framebuffer[bottomByteY][x] = value;
+		}
+	}
+}
+
+// Helper methods
+void OSD::clearFramebuffer()
 {
 	memset(framebuffer, 0, sizeof(framebuffer));
 }
 
-void osd::rotateCharacter(uint8_t *in, uint8_t *out)
+void OSD::rotateCharacter(uint8_t *in, uint8_t *out)
 {
 	uint8_t value;
 
@@ -214,7 +473,7 @@ void osd::rotateCharacter(uint8_t *in, uint8_t *out)
 	}
 }
 
-uint8_t osd::scale4Bits(uint8_t byte)
+uint8_t OSD::scale4Bits(uint8_t byte)
 {
 	uint8_t result = 0;
 	uint8_t mask = 0b00000001;
@@ -235,7 +494,7 @@ uint8_t osd::scale4Bits(uint8_t byte)
 	return result;
 }
 
-uint16_t osd::scale8Bits(uint8_t byte)
+uint16_t OSD::scale8Bits(uint8_t byte)
 {
 	uint16_t result = 0;
 	uint16_t mask = 0b0000000000000001;
@@ -258,31 +517,40 @@ uint16_t osd::scale8Bits(uint8_t byte)
 }
 
 /*
- * Transfer the whole OSD framebuffer (4096) bytes to the FPGA side
+ * Transfer the whole OSD framebuffer (4096 bytes) to the FPGA side
  * Usually takes ~6.1ms to accomplish
  * Not VBlank synchronized, so don't try to make heavy animations
  */
-void osd::transferFramebuffer()
+void OSD::transferFramebuffer()
 {
 	FPGADevice& fpga = FPGADevice::instance();
 	FPGAConnector& connector = *(fpga.connector);
 	FPGACommand& command = *(fpga.command);
 
-	command.startOSD();
-
-	// Write to buffer command (Line is selected as render start MM1_OSDCMDWRITE | 0)
-	command.sendCommand(MM1_OSDCMDWRITE);
-
-	// Transfer changes to FPGA framefuffer (byte size transfers)
-	uint8_t *pBuffer = &framebuffer[0][0];
-	for (unsigned idx = 0; idx < sizeof(framebuffer); idx++)
+	if (command.startOSD())
 	{
-		//unsigned j = idx % OSD_LINE_LENGTH_BYTES;
-		//unsigned i = idx / OSD_LINE_LENGTH_BYTES;
-		//connector.transferByte(framebuffer[i][j]);
+		TRACE("OSD buffer transfer started");
 
-		connector.transferByte(*(pBuffer++));
+		// Write to buffer command (Line is selected as render start MM1_OSDCMDWRITE | 0)
+		command.sendCommand(MM1_OSDCMDWRITE);
+
+		// Transfer changes to FPGA framefuffer (byte size transfers)
+		uint8_t *pBuffer = &framebuffer[0][0];
+		for (unsigned idx = 0; idx < sizeof(framebuffer); idx++)
+		{
+			//unsigned j = idx % OSD_LINE_LENGTH_BYTES;
+			//unsigned i = idx / OSD_LINE_LENGTH_BYTES;
+			//connector.transferByte(framebuffer[i][j]);
+
+			connector.transferByte(*(pBuffer++));
+		}
+
+		command.endOSD();
+
+		TRACE("OSD buffer transfer finished");
 	}
-
-	command.endOSD();
+	else
+	{
+		LOGWARN("%s: Unable to start FPGA command to transfer OSD buffer", __PRETTY_FUNCTION__);
+	}
 }

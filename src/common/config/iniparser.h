@@ -2,7 +2,10 @@
 #define COMMON_CONFIG_INIPARSER_H_
 
 #include <inttypes.h>
+#include <string>
 #include "../types.h"
+
+using namespace std;
 
 typedef struct
 {
@@ -61,6 +64,9 @@ protected:
 	bool getSection();
 	bool getLine();
 	char getch();
+
+	bool readJSON(string filename);
+	string getJSONValue(string name);
 
 };
 

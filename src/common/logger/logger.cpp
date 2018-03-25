@@ -1,9 +1,12 @@
 #include "logger.h"
 
+#include <sstream>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 #include <errno.h>
+
+using namespace std;
 
 // Field definitions
 char logger::buffer[MAX_LOG_MESSAGE_LENGTH];
@@ -38,7 +41,7 @@ void logger::info(const char* format, ...)
 
 	vsnprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
 
-	printf("I:%s", buffer);
+	printf("%.1lf I:%s\n", chrono::duration <double, milli> (chrono::steady_clock::now() - applicationStart).count(), buffer);
 	fflush(stdout);
 
 	va_end(arguments);
@@ -51,7 +54,7 @@ void logger::warning(const char* format, ...)
 
 	vsnprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
 
-	printf("W:%s", buffer);
+	printf("%.1lf W:%s\n", chrono::duration <double, milli> (chrono::steady_clock::now() - applicationStart).count(), buffer);
 	fflush(stdout);
 
 	va_end(arguments);
@@ -64,7 +67,7 @@ void logger::error(const char* format, ...)
 
 	vsnprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
 
-	printf("E:%s", buffer);
+	printf("%.1lf E:%s\n", chrono::duration <double, milli> (chrono::steady_clock::now() - applicationStart).count(), buffer);
 	fflush(stdout);
 
 	va_end(arguments);
@@ -77,7 +80,7 @@ void logger::debug(const char* format, ...)
 
 	vsnprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
 
-	printf("D:%s\n", buffer);
+	printf("%.1lf D:%s\n", chrono::duration <double, milli> (chrono::steady_clock::now() - applicationStart).count(), buffer);
 	fflush(stdout);
 
 	va_end(arguments);
@@ -90,7 +93,7 @@ void logger::trace(const char* format, ...)
 
 	vsnprintf(buffer, MAX_LOG_MESSAGE_LENGTH, format, arguments);
 
-	printf("T:%s\n", buffer);
+	printf("%.1lf T:%s\n", chrono::duration <double, milli> (chrono::steady_clock::now() - applicationStart).count(), buffer);
 	fflush(stdout);
 
 	va_end(arguments);

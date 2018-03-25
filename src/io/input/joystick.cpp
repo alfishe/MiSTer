@@ -1,10 +1,7 @@
 #include "joystick.h"
 
-joystick::joystick()
+Joystick::Joystick(const string& name, const string& path) : BaseInputDevice(name, path)
 {
 }
 
-joystick::~joystick()
-{
-}
 

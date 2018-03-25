@@ -1,7 +1,10 @@
 #ifndef GUI_OSD_OSD_H_
 #define GUI_OSD_OSD_H_
 
+#include <string>
 #include <stdint.h>
+
+using namespace std;
 
 // OSD menu control constants
 #define OSDCTRLUP        0x01        /*OSD up control*/
@@ -64,9 +67,9 @@
 #define OSD_ENABLE		((uint8_t)0x01)
 #define OSD_DISABLE		((uint8_t)0x00)
 
-class osd
+class OSD
 {
-protected:
+public:
 	// Low-res mode (32x8 symbols, 256x8 bytes)
 	// High-res mode (32x16 symbols, 256x16 bytes)
 
@@ -78,21 +81,22 @@ protected:
 	static const uint16_t OSD_HIGHRES_HEIGHT_PX = OSD_HIGHRES_HEIGHT_LINES * 8;
 	static const uint16_t OSD_HIGHRES_TITLE_WIDTH_PX = OSD_HIGHRES_HEIGHT_PX;
 	static const uint16_t OSD_LINE_LENGTH_BYTES = 256;
+	static const uint16_t OSD_LINE_LENGTH = OSD_LINE_LENGTH_BYTES / 8;
 
+protected:
 	// Fields
 	uint8_t titlebuffer[2][OSD_HIGHRES_HEIGHT_LINES * 8]; // Horizontal buffer for initial title rendering. After rotation - 16 symbols height in highres and 8 in lowres
 	uint8_t framebuffer[OSD_HIGHRES_HEIGHT_LINES][OSD_LINE_LENGTH_BYTES];
 
-	bool highResolution = false;
 	bool arrowDirection;
 
 	uint32_t scroll_offset = 0; // file/dir name scrolling position
 	uint32_t scroll_timer = 0;  // file/dir name scrolling timer
 
 public:
-	static osd& instance();
-	osd(osd &that) = delete; // Copy constructor is forbidden here (C++11 feature)
-	virtual ~osd();
+	static OSD& instance();
+	OSD(OSD &that) = delete; // Copy constructor is forbidden here (C++11 feature)
+	virtual ~OSD();
 
 	// Show/hide logic methods
 	void show();
@@ -103,8 +107,19 @@ public:
 	void fill();
 	void clear();
 	void compose();
-	void setTitle(const char *title, uint8_t arrows = 0);
-	void printLine(uint8_t line, const char *text, bool invert = false);
+	void setTitle(const string& title, uint8_t arrows = 0);
+	void printLine(uint8_t line, const string& text, bool invert = false);
+
+	void printSymbol(uint8_t row, uint8_t column, char symbol, bool invert = false);
+	bool getPixel(const int x, const int y);
+	void setPixel(const int x, const int y, bool invert = false);
+
+	// Rectangular region operations
+	void fillRect(uint8_t left, uint8_t top, uint8_t width, uint8_t height, bool clear = false);
+	void invertRect(uint8_t left, uint8_t top, uint8_t width, uint8_t height);
+
+	void fillRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t height, bool clear = false);
+	void invertRectOptimized(uint8_t left, uint8_t top, uint8_t width, uint8_t height);
 
 protected:
 	// Helper methods
@@ -115,7 +130,7 @@ protected:
 	void transferFramebuffer();
 
 private:
-	osd() {}; // Prevent creation. Only singleton via instance() should be accessible
+	OSD() {}; // Prevent creation. Only singleton via instance() should be accessible
 };
 
 #endif /* GUI_OSD_OSD_H_ */

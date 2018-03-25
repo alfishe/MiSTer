@@ -1,11 +1,15 @@
 #ifndef IO_INPUT_JOYSTICK_H_
 #define IO_INPUT_JOYSTICK_H_
+#include <string>
+#include "baseinputdevice.h"
 
-class joystick
+using namespace std;
+
+class Joystick: public BaseInputDevice
 {
 public:
-	joystick();
-	virtual ~joystick();
+	Joystick(const string& name, const string& path);
+	virtual ~Joystick() {};
 };
 
 #endif /* IO_INPUT_JOYSTICK_H_ */

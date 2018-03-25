@@ -12,7 +12,7 @@
 #include "../file/filemanager.h"
 #include "../system/sysmanager.h"
 
-StringSet* DirectoryManager::fileExclusions = new StringSet();
+CharStringSet* DirectoryManager::fileExclusions = new CharStringSet();
 
 // Constructors / destructors
 
@@ -28,6 +28,10 @@ DirectoryManager::DirectoryManager()
 	// Fill out file exclusions list (files that cannot be selected for load)
 	fileExclusions->insert("menu.rbf");
 	fileExclusions->insert("boot.rom");
+	fileExclusions->insert("MiSTer");
+
+	// Windows service folders
+	fileExclusions->insert("System Volume Information");
 }
 
 DirectoryManager::~DirectoryManager()
@@ -43,8 +47,18 @@ DirectoryManager::~DirectoryManager()
 // Public methods
 
 DirectoryListPtr DirectoryManager::scanDirectory(
+		string& folderPath,
+		CharStringSet* supportedExtensions,
+		bool includeFolders,
+		bool withExtensions)
+{
+	return scanDirectory(folderPath.c_str(), supportedExtensions, includeFolders, withExtensions);
+}
+
+DirectoryListPtr DirectoryManager::scanDirectory(
 		const char* folderPath,
-		StringSet* supportedExtensions,
+		CharStringSet* supportedExtensions,
+		bool includeFolders,
 		bool withExtensions)
 {
 	static char fullPath[PATH_MAX + 1];
@@ -68,12 +82,19 @@ DirectoryListPtr DirectoryManager::scanDirectory(
 			switch (de->d_type)
 			{
 				case DT_DIR:		// Current entry is folder
-					if (!strcmp(de->d_name, "."))
+					if (strcmp(de->d_name, ".") == 0)
 						continue;
-					if (!strcmp(de->d_name, ".."))
+					if (strcmp(de->d_name, "..") == 0)
+						continue;
+
+					if (includeFolders && isFileAllowed(de->d_name))
 					{
-						if (!strlen(folderPath))
-							continue;
+						DirectoryEntryChar* item = new DirectoryEntryChar();
+						item->isFolder = true;
+						strlcpy(item->name, de->d_name, sizeof(item->name));
+						strlcpy(item->displayname, de->d_name, sizeof(item->displayname));
+
+						list->emplace_back(item);
 					}
 					break;
 				case DT_REG:		// Current entry is regular file
@@ -81,7 +102,7 @@ DirectoryListPtr DirectoryManager::scanDirectory(
 					{
 						if (isFileMatchExtension(de->d_name, supportedExtensions))
 						{
-							DirectoryEntry* item = new DirectoryEntry();
+							DirectoryEntryChar* item = new DirectoryEntryChar();
 							strlcpy(item->name, de->d_name, sizeof(item->name));
 
 							if (withExtensions)
@@ -116,6 +137,13 @@ DirectoryListPtr DirectoryManager::scanDirectory(
 
 // Helper methods
 
+bool DirectoryManager::isFileAllowed(const string& filename)
+{
+	bool result = isFileAllowed(filename.c_str());
+
+	return result;
+}
+
 bool DirectoryManager::isFileAllowed(const char *filename)
 {
 	bool result = true;
@@ -125,6 +153,10 @@ bool DirectoryManager::isFileAllowed(const char *filename)
 		result = false;
 	}
 	else if (strlen(filename) == 0) // filename cannot be empty
+	{
+		result = false;
+	}
+	else if (filename[0] == '.') // Mask hidden folders and files
 	{
 		result = false;
 	}
@@ -147,7 +179,14 @@ bool DirectoryManager::isFileAllowed(const char *filename)
 	return result;
 }
 
-bool DirectoryManager::isFileMatchExtension(const char *filename, StringSet* extensions)
+bool DirectoryManager::isFileMatchExtension(const string& filename, CharStringSet* extensions)
+{
+	bool result = isFileMatchExtension(filename.c_str(), extensions);
+
+	return result;
+}
+
+bool DirectoryManager::isFileMatchExtension(const char *filename, CharStringSet* extensions)
 {
 	bool result = false;
 

@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+// See more on Cyclone V HPS Memory Map documentation page: https://www.altera.com/hps/cyclone-v/hps.html
+
 // Module instance: sdr
 // Base address: 0xFFC20000 (SOCFPGA_SDR_ADDRESS)
 // End address:  0xFFC3FFFF
@@ -64,5 +66,21 @@ struct socfpga_sdram_controller
 
 	uint32_t remappriority;		// 0x50E0
 };
+
+// fpgaportrst (0x5080) Fields and masks
+// Details: https://www.altera.com/hps/cyclone-v/index.html#topic/sfo1411577376106.html
+// FPGAPORTRST (0xFFC25080), used bits [13:0]
+// This register should be written to with a 1 to enable the selected FPGA port to exit reset.
+// Writing a bit to a zero will stretch the port reset until the register is written.
+// Bits [3:0] - Read data ports
+// Bits [7:4] - Write data ports
+// Bits [13:0] - Command ports
+//    Bit 8 - Command port 0
+//    Bit 9 - Command port 1
+//    Bit 10 - Command port 2
+//    Bit 11 - Command port 3
+//    Bit 12 - Command port 4
+//    Bit 13 - Command port 5
+#define SDR_FPGAPORTRST_PORTRSTN_MASK 0x00003FFF	// Bits [13:0] - This register should be written to with a 1 to enable the selected FPGA port to exit reset. Writing a bit to a zero will stretch the port reset until the register is written. Read data ports are connected to bits 3:0, with read data port 0 at bit 0 to read data port 3 at bit 3. Write data ports 0 to 3 are mapped to 4 to 7, with write data port 0 connected to bit 4 to write data port 3 at bit 7. Command ports are connected to bits 8 to 13, with command port 0 at bit 8 to command port 5 at bit 13. Expected usage would be to set all the bits at the same time but setting some bits to a zero and others to a one is supported
 
 #endif /* FPGA_SOCFPGA_SDRAM_CONTROLLER_H_ */

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../../3rdparty/openbsd/string.h"
+#include "../../common/file/directorymanager.h"
 #include "../../fpga/fpgadevice.h"
 #include "../../fpga/fpgacommand.h"
 #include "../osd/osd.h"
@@ -303,7 +304,7 @@ bool menu::selectFile(const char* extension)
 // Helper methods
 void menu::menuNone1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	helptext = helptexts[HELPTEXT_NONE];
 	menumask = 0;
@@ -318,7 +319,7 @@ void menu::menuNone2()
 
 	FPGADevice& fpga = FPGADevice::instance();
 	FPGACommand& command = *fpga.command;
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	CoreType coreType = command.getCoreType();
 
@@ -361,7 +362,7 @@ void menu::menuNone2()
 
 void menu::menuArchieMain1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0x3F;
 	osd.setTitle("ARCHIE", false);
@@ -1177,7 +1178,7 @@ void menu::menuMistStorageFileSelected()
 
 void menu::menuMistSystem1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0xFF;
 	osd.setTitle("System", false);
@@ -1304,7 +1305,7 @@ void menu::menuMistSystemFileSelected()
 
 void menu::menuMistVideo1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0x7f;
 	osd.setTitle("A/V", false);
@@ -1411,7 +1412,7 @@ void menu::menuMistVideo2()
 
 void menu::menuMistVideoAdjust1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0x1F;
 	osd.setTitle("V-adjust");
@@ -1752,12 +1753,12 @@ void menu::menuLoadConfig2()
  */
 void menu::menuFileSelect1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	helptext = helptexts[HELPTEXT_NONE];
 	osd.setTitle("Select");
 
-	//PrintDirectory();
+	printFolder();
 	menustate = MENU_FILE_SELECT2;
 }
 
@@ -1980,7 +1981,7 @@ void menu::menuSaveConfig2()
 
 void menu::menuSettingsChipset1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	helptext = helptexts[HELPTEXT_CHIPSET];
 	menumask = 0;
@@ -2114,7 +2115,7 @@ void menu::menuSettingsChipset2()
 
 void menu::menuSettingsMemory1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	helptext = helptexts[HELPTEXT_MEMORY];
 	menumask = 0x3F;
@@ -2216,7 +2217,7 @@ void menu::menuSettingsHardfile1()
 	// Make the menu work on the copy, not the original, and copy on acceptance,
 	// not on rejection.
 
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	helptext = helptexts[HELPTEXT_HARDFILE];
 	osd.setTitle("Harddisks");
@@ -2429,7 +2430,7 @@ void menu::menuHardfileExit()
  */
 void menu::menuHardfileChanged1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0x03;
 	parentstate = menustate;
@@ -2500,7 +2501,7 @@ void menu::menuHardfileChanged2()
 
 void menu::menuSynthRDB1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0x01;
 	parentstate = menustate;
@@ -2525,7 +2526,7 @@ void menu::menuSynthRDB1()
 
 void menu::menuSynthRDB2_1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0x01;
 	parentstate = menustate;
@@ -2560,7 +2561,7 @@ void menu::menuSynthRDB2()
 
 void menu::menuSettingsVideo1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0x0F;
 	parentstate = menustate;
@@ -2651,7 +2652,7 @@ void menu::menuRomfileSelected()
 
 void menu::menuRomfileSelected1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	menumask = 0x03;
 	parentstate = menustate;
@@ -2719,7 +2720,7 @@ void menu::menuRomfileSelected2()
 
 void menu::menuFirmware1()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	helptext = helptexts[HELPTEXT_NONE];
 	parentstate = menustate;
@@ -2841,7 +2842,7 @@ void menu::menuFirmware2()
 
 void menu::menuFirmwareCoreFileSelected()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	// close OSD now as the new core may not even have one
 	osd.hide();
@@ -2910,7 +2911,7 @@ void menu::menuStorage()
 
 void menu::menuKbdmap()
 {
-	osd& osd = osd::instance();
+	OSD& osd = OSD::instance();
 
 	helptext = 0;
 	menumask = 1;
@@ -3032,6 +3033,42 @@ void menu::menuInfo()
 	else if (CheckTimer(menu_timer))
 		menustate = MENU_NONE1;
 	*/
+}
+
+void menu::printFolder()
+{
+	OSD& osd = OSD::instance();
+
+	CharStringSet extensions;
+	extensions.insert("rbf");
+	auto fileList = DirectoryManager::instance().scanDirectory(currentFolder, &extensions, false, false);
+
+	if (fileList != nullptr && fileList->size() > 0)
+	{
+		// Show folder contents
+
+		auto it = fileList->begin();
+		for (uint16_t i = 0; i < fileList->size() && i < osd.OSD_HEIGHT_LINES; i++)
+		{
+			auto& item = *((*it++).get());
+
+			string filename;
+			if (strlen(item.displayname) > 0)
+			{
+				filename = item.displayname;
+			}
+			else
+			{
+				filename = item.name;
+			}
+
+			osd.printLine(i, filename.c_str());
+		}
+	}
+	else
+	{
+		// No files available
+	}
 }
 
 bool menu::changeCurrentFolder(const char *folderpath)

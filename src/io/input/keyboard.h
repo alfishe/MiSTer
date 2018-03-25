@@ -2,30 +2,56 @@
 #define IO_INPUT_KEYBOARD_H_
 
 #include <stdint.h>
+#include <map>
+#include <string>
 #include "../../common/consts.h"
+#include "baseinputdevice.h"
 
-class keyboard
+using namespace std;
+
+typedef map<uint16_t, bool> KeyStateMap;
+
+class Keyboard : public BaseInputDevice
 {
+	friend class InputManager;
+
 protected:
-	int fd = INVALID_FILE_DESCRIPTOR;
-	char deviceName[256];
+	unsigned long bit_key_state[BITFIELD_LONGS_PER_ARRAY(KEY_MAX)];
+	unsigned long bit_led[BITFIELD_LONGS_PER_ARRAY(LED_MAX)];
+	uint16_t supportedLEDBits = 0x0000;
+
+	KeyStateMap m_keysState;
+	KeyStateMap m_prevKeysState;
 
 public:
-	keyboard(int fd);
-	virtual ~keyboard();
+	Keyboard(const string& name, const string& path);
+	virtual ~Keyboard();
 
-	const char * getDeviceName();
-	bool hasLED();
-	void getLEDState();
-	void setLEDState(uint8_t state);
+	// Common control methods
+	void reset();
 
-private:
-	static inline int isBitSet(int bit, const uint8_t *array) __attribute__((always_inline))
-	{
-	    int result = array [bit / 8] & (1 << (bit % 8));
+	// Key operations
+	bool isKeyPressed(uint16_t key);
+	bool isKeyPressed(unsigned long* keyBits, uint16_t key);
+	bool pollKeys();
+	int getPressedKeysCount();
 
-	    return result;
-	}
+	// LED operations
+	uint16_t getLEDState();
+	void setLEDState(uint16_t ledMask, bool on);
+
+	// Key state operations
+	void setKeyState(uint16_t key, bool state);
+	bool getKeyState(uint16_t key);
+	void setPrevKeyState(uint16_t key, bool state);
+	bool getPrevKeyState(uint16_t key);
+
+	// Debug methods
+	string dumpKeyBits();
+	static string dumpKeyBits(unsigned long* keyBits);
+
+protected:
+	void makeLEDEvent(struct input_event* event, uint16_t ledMask, bool on);
 };
 
 #endif /* IO_INPUT_KEYBOARD_H_ */

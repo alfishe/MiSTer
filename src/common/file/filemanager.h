@@ -4,6 +4,7 @@
 #include <string>
 #include <stdint.h>
 #include <inttypes.h>
+#include <string>
 #include "../../common/consts.h"
 #include "../../common/types.h"
 
@@ -13,25 +14,25 @@ class filemanager
 {
 public:
 	// Files/folders information
-	static bool isFolderExists(const char *path);
-	static bool isPathMounted(char *path);
-	static bool isFileExist(const char *path);
-	static bool isFileWritable(const char *path);
-	static uint64_t getFileSize(const char *path);
+	static bool isFolderExists(const string& path);
+	static bool isPathMounted(const string& path);
+	static bool isFileExist(const string& path);
+	static bool isFileWritable(const string& path);
+	static uint64_t getFileSize(const string& path);
 	static uint64_t getFileSize(int fd);
 	static uint64_t getDiskFreeSpace();
 
 	// Raw POSIX oriented file methods (for compatibility only)
 	static void flush();
-	static int openFileReadOnly(char *filepath);
+	static int openFileReadOnly(const string& filepath);
 	static bool fileSeek(int fd, __off64_t offset, int origin);
 
 	// Higher level fileDescriptor oriented file methods
 	static FileDescriptor getFileInfo(char *path);
 	static FileDescriptor getFileInfo(int fd);
 	static bool fileSeek(FileDescriptor *file, __off64_t offset, int origin);
-	static bool openFile(FileDescriptor *file, char *filepath);
-	static bool openFileReadOnly(FileDescriptor *file, char *filepath);
+	static bool openFile(FileDescriptor *file, const string& filepath);
+	static bool openFileReadOnly(FileDescriptor *file, const string& filepath);
 	static void closeFile(FileDescriptor *file);
 
 	// Partial file operations
@@ -43,11 +44,11 @@ public:
 	static bool writeSector(FileDescriptor *file, uint8_t *buffer);
 
 	// Whole file operations
-	static bool readFileIntoMemory(char *filepath, uint8_t* buffer, uint32_t bufferSize);
+	static bool readFileIntoMemory(const string& filepath, uint8_t* buffer, uint32_t bufferSize);
 
 	// Complex file operations using plugins
-	static bool lockFileForCore(char *path, char *core);
-	static bool unlockFileForCore(char *path, char* *core);
+	static bool lockFileForCore(const string& filepath, const string& core);
+	static bool unlockFileForCore(const string& filepath, const string& core);
 
 	// Path helpers
 	static string getExtension(const string& filename);
