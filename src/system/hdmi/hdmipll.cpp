@@ -12,16 +12,16 @@
 // Standard video modes pre-defined
 HDMIVideoMode HDMIPLL::m_videoModes[] =
 {
-	{ { 1280, 110,  40, 220,  720,  5,  5, 20 }, 74.25 },		// 1280x720 @
-	{ { 1024,  24, 136, 160,  768,  3,  6, 29 }, 65.0 },		// 1024x768 @
-	{ { 720,  16,  62,  60,  480,  9,  6, 30 }, 27.0 },		// 720x640 @
-	{ { 720,  12,  64,  68,  576,  5,  5, 39 }, 27.0 },		// 720x576 @
-	{ { 1280,  48, 112, 248, 1024,  1,  3, 38 }, 108 },		// 1280x1023 @
-	{ { 800,  40, 128,  88,  600,  1,  4, 23 }, 40.0 },		// 800x600 @
-	{ { 640,  16,  96,  48,  480, 10,  2, 33 }, 25.175 },		// 640x480 @
-	{ { 1280, 440,  40, 220,  720,  5,  5, 20 }, 74.25 },		// 1280x720 @
-	{ { 1920,  88,  44, 148, 1080,  4,  5, 36 }, 148.5 },		// 1920x1080 @
-	{ { 1920, 528,  44, 148, 1080,  4,  5, 36 }, 148.5 }		// 1920x1080 @
+	{ { 1280, 110,  40, 220,  720,  5,  5, 20 }, 74.25 },	// [0] 1280x720 @ 60Hz
+	{ { 1024,  24, 136, 160,  768,  3,  6, 29 }, 65.0 },	// [1] 1024x768 @
+	{ { 720,  16,  62,  60,  480,  9,  6, 30 }, 27.0 },		// [2] 720x640 @
+	{ { 720,  12,  64,  68,  576,  5,  5, 39 }, 27.0 },		// [3] 720x576 @
+	{ { 1280,  48, 112, 248, 1024,  1,  3, 38 }, 108 },		// [4] 1280x1023 @
+	{ { 800,  40, 128,  88,  600,  1,  4, 23 }, 40.0 },		// [5] 800x600 @
+	{ { 640,  16,  96,  48,  480, 10,  2, 33 }, 25.175 },	// [6] 640x480 @
+	{ { 1280, 440,  40, 220,  720,  5,  5, 20 }, 74.25 },	// [7] 1280x720 @
+	{ { 1920,  88,  48, 148, 1080,  4,  5, 36 }, 148.5 },	// [8] 1920x1080 @ 60Hz
+	{ { 1920, 528,  44, 148, 1080,  4,  5, 36 }, 148.5 }	// [9] 1920x1080 @
 };
 
 bool HDMIPLL::setStandardVideoMode(int idxVideoMode)
@@ -98,13 +98,13 @@ bool HDMIPLL::getPLL(double freqPixelclock, uint32_t *M, uint32_t *K, uint32_t *
 	// Limits:
 	// Multiply Factor (M-Counter)		[1-512]				- Specifies the multiply factor of M-counter
 	// Fractional Multiply Factor (K)	[1 to (2^Fcout-1)]	- Specifies the fractional multiply factor of DSM. Fcout is the value of fractional carry out parameter.
-	// Divide Factor (C-Counter)			[1-512]				- Specifies the divide factor for the output clock (C-counter)
+	// Divide Factor (C-Counter)		[1-512]				- Specifies the divide factor for the output clock (C-counter)
 	//
-	// Divide Factor (N-Counter)			[1-512]				- Specifies the divide factor of N-counter
+	// Divide Factor (N-Counter)		[1-512]				- Specifies the divide factor of N-counter
 
 	uint32_t multiplierCoeff = 1;
 	uint32_t feedbackMultiply_M;		// M-value
-	uint32_t fractionalMultiply_K;	// K-value
+	uint32_t fractionalMultiply_K;		// K-value
 	uint32_t postScaleDivide_C; 		// C-value
 
 	// Select max multiplier to stay within 400MHz pre-scaled range
@@ -221,7 +221,7 @@ HDMIVideoModePacket* HDMIPLL::getStandardVideoModePacket(int idxVideoMode)
 	result->pllRegisters =
 	{
 		{ 0x0004, divM },		// 0b000100 - Counter (M). Size: 18-bits
-		{ 0x0003, 0x10000 },		// 0b000011 - Counter(N). Size: 18-bits
+		{ 0x0003, 0x10000 },	// 0b000011 - Counter(N). Size: 18-bits
 		{ 0x0005, divC },		// 0b000101 - Counter(C). Size: 23-bits
 		{ 0x0009, 2 },			// 0b001001 - Charge Pump Setting. Size: 3-bits
 		{ 0x0008, 7 },			// 0b001000 - Bandwidth setting. Size: 4-bits
