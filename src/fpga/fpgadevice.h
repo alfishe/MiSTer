@@ -32,7 +32,7 @@ class FPGADevice
 
 protected:
 	// Fields
-	bool isInitialized = false;
+	volatile bool isInitialized = false;
 	int fdFPGAMemory = INVALID_FILE_DESCRIPTOR;
 	uint32_t *map_base = INVALID_ADDRESS_UINT32;
 
@@ -48,7 +48,9 @@ protected:
 	// Cached "shadow" copy of FPGA gpo register
 	volatile uint32_t gpo_caching_copy = 0;
 
-// Methods
+	// Cached "shadow" copy of FPGA Core status
+	volatile uint32_t fpga_status_copy = 0;
+
 public:
 	// Singleton instance
 	static FPGADevice& instance();

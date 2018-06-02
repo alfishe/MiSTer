@@ -124,7 +124,7 @@ uint16_t FPGAConnector::transferWord(uint16_t word)
 	// Read current gpo value, put 16 bit value into data block (lower 16 bits) and reset STROBE bit in control block (upper 16 bits)
 	uint32_t gpo = (fpga->gpo_read() & ~(0xFFFF | SSPI_STROBE)) | word;
 
-	// Step 1: reset strobe bit for FPGA
+	// Step 1: send reset strobe bit to FPGA
 	fpga->gpo_write(gpo);
 
 	// Step 2: set strobe bit (positive edge indicates data transfer start for FPGA)
