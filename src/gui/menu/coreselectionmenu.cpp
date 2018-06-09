@@ -81,14 +81,29 @@ void CoreSelectionMenu::enter()
 		CoreManager::instance().loadCore(filename);
 
 		// Post-load and core set-up activities
-
-		// 1. Pass video mode parameters (VESA + HDMI PLL)
-		HDMIPLL::setStandardVideoMode(8); // FullHD 1920x1080 @
-		//HDMIPLL::setStandardVideoMode(0); // 1280x720 @
-
-		// 2. Send UIO_BUT_SW command with settings applied to trigger proper core start
 		FPGACommand& command = *FPGADevice::instance().command;
+
+		uint8_t ioSize = command.getFPGAIOSize();
+		uint8_t ioVersion = command.getFPGAIOVersion();
+		LOGINFO("ioSize: %d, ioVersion: %d", ioSize, ioVersion);
+
+		// 1. Put core into reset state
+		uint32_t mask = UIO_STATUS_RESET;
+		command.setStatus(UIO_STATUS_RESET, mask);
+		//command.setStatus32(UIO_STATUS_RESET);
+
+		// 2. Pass video mode parameters (VESA + HDMI PLL)
+		HDMIPLL::setStandardVideoMode(8); // FullHD 1920x1080 @ 60Hz
+		//HDMIPLL::setStandardVideoMode(0); // 1280x720 @ 60 Hz
+
+		// 3. Send UIO_BUT_SW command after all 8 VESA params sent to FPGA side to have settings applied (works as latch)
 		command.sendIOCommand(UIO_BUT_SW, (uint16_t)0);
+
+		// 4. [Optional] step to apply saved settings and ROM files for the core
+
+		// 5. Send status bit change sequence to release core from reset
+		//command.setStatus(0, mask);
+		command.setStatus32(0, mask);
 
 		// Control if video mode set successfully
 		LOGINFO("%s", command.getVideoMode().c_str());
@@ -105,6 +120,7 @@ ListItemVector CoreSelectionMenu::readAvailableCores()
 {
 	ListItemVector result;
 
+	// Get all .rbf cores (except menu.rbf), sorted alphabetically in ascending order
 	ScanDir scan;
 	scan.scanFolder(DATA_ROOT, ScanDir::getFPGACoreFilter(), ScanDir::getAlphaSortCaseInsensitive());
 
@@ -122,6 +138,8 @@ ListItemVector CoreSelectionMenu::readAvailableCores()
 				result.push_back(item);
 			}
 		);
+
+		LOGINFO("%d cores available", result.size());
 	}
 	else
 	{
