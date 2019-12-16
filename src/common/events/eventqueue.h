@@ -29,10 +29,12 @@ protected:
 
 // Internal counters
 protected:
-	int m_processedEvents = 0;
-	int m_subscribersCount = 0;
-	int m_topicsCount = 0;
+	volatile int m_postedEvents = 0;
+	volatile int m_processedEvents = 0;
+	volatile int m_subscribersCount = 0;
+	volatile int m_topicsCount = 0;
 
+// Class methods
 public:
 	EventQueue();
 	virtual ~EventQueue();
@@ -53,7 +55,7 @@ public:
 
 	void post(const EventMessageBase& event);
 
-// Statitic methods
+// Statistic methods
 public:
 	void resetCounters();
 

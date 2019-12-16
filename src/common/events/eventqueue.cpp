@@ -70,6 +70,9 @@ void EventQueue::addObserver(const string& topic, const EventObserverPtr observe
 		m_observersReverse.insert({observer, StringSet()});
 	}
 	m_observersReverse[observer].insert(topic);
+
+	// Update counter(s)
+	m_subscribersCount++;
 }
 
 // Register lambda delegate
@@ -112,6 +115,9 @@ void EventQueue::addObserver(const string& topic, const EventObserverPtr observe
 		m_observersReverse.insert({observer, StringSet()});
 	}
 	m_observersReverse[observer].insert(topic);
+
+	// Update counter(s)
+	m_subscribersCount++;
 }
 
 void EventQueue::removeObserver(const EventObserverPtr observer)
@@ -161,6 +167,9 @@ void EventQueue::removeObserver(const EventObserverPtr observer)
 
 		// Remove from reverse map
 		m_observersReverse.erase(observer);
+
+		// Update counter(s)
+		m_subscribersCount--;
 	}
 }
 
@@ -202,6 +211,9 @@ void EventQueue::removeObserver(const string& topic, const EventObserverPtr obse
 		topics.erase(topics.find(topic));
 
 		erase_entry_if_empty(m_observersReverse, observer);
+
+		// Update counter(s)
+		m_subscribersCount--;
 	}
 }
 
@@ -213,6 +225,9 @@ void EventQueue::removeObservers()
 	m_observers.clear();
 	m_fObservers.clear();
 	m_observersReverse.clear();
+
+	// Update counter(s)
+	m_subscribersCount = 0;
 }
 
 void EventQueue::post(const EventMessageBase& event)
@@ -231,6 +246,9 @@ void EventQueue::post(const EventMessageBase& event)
 	//DEBUG("Event queue after push\n%s", dumpEventQueue().c_str());
 
 	//TRACE("Posted successfully");
+
+	// Update counter(s)
+	m_postedEvents++;
 }
 
 // Debug methods
@@ -449,6 +467,9 @@ void EventQueue::processEvent(EventMessageBase& event)
 	{
 		delete event.payload;
 	}
+
+	// Update counter(s)
+	m_processedEvents++;
 }
 
 // Runnable methods
@@ -505,6 +526,8 @@ void EventQueue::run()
 // Statistic methods
 void EventQueue::resetCounters()
 {
+	m_postedEvents = 0;
 	m_processedEvents = 0;
 	m_subscribersCount = 0;
+	m_topicsCount = 0;
 }
